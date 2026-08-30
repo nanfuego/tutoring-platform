@@ -50,14 +50,6 @@
   color: var(--color-muted, #777);
 }
 
-.admin-title {
-  margin: 0;
-  font-family: var(--font-display, Georgia, serif);
-  font-size: 2.1rem;
-  font-weight: 500;
-  line-height: 1;
-}
-
 .admin-divider {
   margin: 1.5rem 0 1.5rem;
   border: none;
@@ -73,92 +65,39 @@
   display: flex;
   align-items: center;
   gap: 0.6rem;
+  flex-wrap: wrap;
 }
 
-
-/* Add Student */
-
-.add-student-button {
-  border: none;
-  border-radius: 8px;
-  padding: 0.65rem 1rem;
-  background: var(--color-accent, #426b62);
-  color: white;
-  font-family: var(--font-body, Arial, sans-serif);
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition:
-    background 0.15s ease,
-    transform 0.15s ease;
-}
-
-.add-student-button:hover {
-  opacity: 0.9;
-}
-
-.add-student-button:active {
-  transform: translateY(1px);
-}
-
-
-/* Delete Students */
-
-.delete-students-button {
-  border: none;
-  border-radius: 8px;
-  padding: 0.65rem 1rem;
-  background: var(--color-accent, #426b62);
-  color: white;
-  font-family: var(--font-body, Arial, sans-serif);
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition:
-    background 0.15s ease,
-    transform 0.15s ease;
-}
-
-.delete-students-button:hover {
-  opacity: 0.9;
-}
-
-.delete-students-button:active {
-  transform: translateY(1px);
-}
-
-
-/* Create Invoice */
-
+.add-student-button,
+.delete-students-button,
 .create-invoice-button {
+  border: none;
+  border-radius: 8px;
+  padding: 0.65rem 1rem;
+  background: var(--color-accent, #426b62);
+  color: white;
+  font-family: var(--font-body, Arial, sans-serif);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  border: none;
-  border-radius: 8px;
-  padding: 0.65rem 1rem;
-  background: var(--color-accent, #426b62);
-  color: white;
-  font-family: var(--font-body, Arial, sans-serif);
-  font-size: 0.85rem;
-  font-weight: 500;
-  text-decoration: none;
-  cursor: pointer;
-  transition:
-    background 0.15s ease,
-    transform 0.15s ease;
+  transition: opacity 0.15s ease, transform 0.15s ease;
 }
 
+.add-student-button:hover,
+.delete-students-button:hover,
 .create-invoice-button:hover {
   opacity: 0.9;
 }
 
+.add-student-button:active,
+.delete-students-button:active,
 .create-invoice-button:active {
   transform: translateY(1px);
 }
-
-
-/* Sign out */
 
 .logout-button {
   border: none;
@@ -170,9 +109,7 @@
   font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
-  transition:
-    background 0.15s ease,
-    transform 0.15s ease;
+  transition: background 0.15s ease, transform 0.15s ease;
 }
 
 .logout-button:hover {
@@ -185,12 +122,12 @@
 
 
 /* =========================================
-   SEARCH + STATUS FILTERS
+   SEARCH + SCHOOL FILTER
    ========================================= */
 
 .dashboard-controls {
   display: flex;
-  gap: 1rem;
+  gap: 0.75rem;
   margin-bottom: 1.75rem;
   flex-wrap: wrap;
   align-items: center;
@@ -198,8 +135,8 @@
 
 .dashboard-search {
   flex: 1;
-  min-width: 240px;
-  max-width: 360px;
+  min-width: 220px;
+  max-width: 340px;
   padding: 0.55rem 0.9rem;
   border: 1px solid var(--color-border, #dedbd4);
   border-radius: 8px;
@@ -214,27 +151,21 @@
   outline-offset: 1px;
 }
 
-.status-filters {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.filter-pill {
+.school-filter {
+  padding: 0.55rem 0.9rem;
   border: 1px solid var(--color-border, #dedbd4);
-  border-radius: 999px;
-  padding: 0.4rem 0.9rem;
-  background: var(--color-surface, #fff);
-  color: var(--color-muted, #777);
+  border-radius: 8px;
   font-family: var(--font-body, Arial, sans-serif);
-  font-size: 0.8rem;
+  font-size: 0.875rem;
+  background: white;
+  color: var(--color-ink, #222);
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  min-width: 150px;
 }
 
-.filter-pill.active {
-  background: var(--color-accent, #426b62);
-  border-color: var(--color-accent, #426b62);
-  color: white;
+.school-filter:focus {
+  outline: 2px solid var(--color-accent, #426b62);
+  outline-offset: 1px;
 }
 
 
@@ -266,35 +197,17 @@
 
 
 /* =========================================
-   UNIVERSITY CONTAINER
+   SINGLE STUDENTS CARD
    ========================================= */
 
-.university-container {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1.5rem;
-  width: 100%;
-}
-
-
-/* =========================================
-   UNIVERSITY CARD
-   ========================================= */
-
-.university-card {
-  min-width: 0;
-  overflow: hidden;
+.students-card {
   border: 1px solid var(--color-border, #dedbd4);
   border-radius: 10px;
   background: var(--color-surface, #ffffff);
+  overflow: hidden;
 }
 
-
-/* =========================================
-   UNIVERSITY HEADER
-   ========================================= */
-
-.university-header {
+.students-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -302,14 +215,14 @@
   border-bottom: 1px solid var(--color-border, #dedbd4);
 }
 
-.university-header h2 {
+.students-card-header h2 {
   margin: 0;
   font-family: var(--font-display, Georgia, serif);
   font-size: 1.25rem;
   font-weight: 500;
 }
 
-.university-header span {
+.students-card-header span {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -371,28 +284,21 @@
   background: #faf9f6;
 }
 
-
-/* Column sizing (Name | Email | Subject | Phone) */
-
+/* Column widths: Name | Email | Phone | Subject | School */
 .student-table th:nth-child(1),
-.student-table td:nth-child(1) {
-  width: 26%;
-}
+.student-table td:nth-child(1) { width: 22%; }
 
 .student-table th:nth-child(2),
-.student-table td:nth-child(2) {
-  width: 30%;
-}
+.student-table td:nth-child(2) { width: 26%; }
 
 .student-table th:nth-child(3),
-.student-table td:nth-child(3) {
-  width: 22%;
-}
+.student-table td:nth-child(3) { width: 18%; }
 
 .student-table th:nth-child(4),
-.student-table td:nth-child(4) {
-  width: 22%;
-}
+.student-table td:nth-child(4) { width: 18%; }
+
+.student-table th:nth-child(5),
+.student-table td:nth-child(5) { width: 16%; }
 
 
 /* =========================================
@@ -408,32 +314,6 @@
 .student-name-link:hover {
   color: var(--color-accent, #426b62);
   text-decoration: underline;
-}
-
-
-/* =========================================
-   STATUS BADGE (still used in delete modal)
-   ========================================= */
-
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.25rem 0.55rem;
-  border-radius: 999px;
-  font-family: var(--font-body, Arial, sans-serif);
-  font-size: 0.7rem;
-  font-weight: 600;
-}
-
-.status-badge.active {
-  background: #e5f1ea;
-  color: #26734d;
-}
-
-.status-badge.inactive {
-  background: #eeeeee;
-  color: #777;
 }
 
 
@@ -846,11 +726,7 @@
    RESPONSIVE
    ========================================= */
 
-@media (max-width: 800px) {
-  .university-container {
-    grid-template-columns: 1fr;
-  }
-
+@media (max-width: 700px) {
   .dashboard-controls {
     flex-direction: column;
     align-items: stretch;
@@ -864,15 +740,9 @@
   .modal-canvas-grid {
     grid-template-columns: 1fr;
   }
-}
 
-@media (max-width: 600px) {
   .admin-topbar-row {
     flex-direction: column;
     align-items: flex-start;
-  }
-
-  .student-action-buttons {
-    flex-wrap: wrap;
   }
 }

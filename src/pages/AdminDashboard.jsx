@@ -39,9 +39,9 @@ function AdminDashboard() {
   // Live clock
   const [currentTime, setCurrentTime] = useState(() => formatNow())
 
-  // Search + Status filter
+  // Search + School filter
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all') // all | active | inactive
+  const [schoolFilter, setSchoolFilter] = useState('all')
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(formatNow()), 30000)
@@ -87,10 +87,6 @@ function AdminDashboard() {
     await supabase.auth.signOut()
   }
 
-  // =========================================
-  // FORM HANDLING
-  // =========================================
-
   function handleChange(event) {
     const { name, value, type, checked } = event.target
 
@@ -99,10 +95,6 @@ function AdminDashboard() {
       [name]: type === 'checkbox' ? checked : value,
     }))
   }
-
-  // =========================================
-  // OPEN ADD STUDENT
-  // =========================================
 
   function openAddStudent() {
     setError('')
@@ -124,20 +116,11 @@ function AdminDashboard() {
     setShowAddStudent(true)
   }
 
-  // =========================================
-  // CLOSE ADD STUDENT
-  // =========================================
-
   function closeAddStudent() {
     if (saving) return
-
     setShowAddStudent(false)
     setError('')
   }
-
-  // =========================================
-  // ADD STUDENT
-  // =========================================
 
   async function handleAddStudent(event) {
     event.preventDefault()
@@ -187,24 +170,17 @@ function AdminDashboard() {
     setSaving(false)
   }
 
-  // =========================================
-  // DELETE SELECTION
-  // =========================================
-
   function toggleStudentSelection(studentId) {
     setSelectedStudents((current) => {
       if (current.includes(studentId)) {
         return current.filter((id) => id !== studentId)
       }
-
       return [...current, studentId]
     })
   }
 
   function toggleSelectAll() {
-    if (students.length === 0) {
-      return
-    }
+    if (students.length === 0) return
 
     if (selectedStudents.length === students.length) {
       setSelectedStudents([])
@@ -213,14 +189,8 @@ function AdminDashboard() {
     }
   }
 
-  // =========================================
-  // DELETE SELECTED STUDENTS
-  // =========================================
-
   async function handleDeleteSelected() {
-    if (selectedStudents.length === 0) {
-      return
-    }
+    if (selectedStudents.length === 0) return
 
     const selectedStudentObjects = students.filter((student) =>
       selectedStudents.includes(student.id)
@@ -234,9 +204,7 @@ function AdminDashboard() {
       `Are you sure you want to permanently delete ${names}?\n\nThis will remove their profiles and associated notes.`
     )
 
-    if (!confirmed) {
-      return
-    }
+    if (!confirmed) return
 
     setDeleting(true)
     setError('')
@@ -254,9 +222,7 @@ function AdminDashboard() {
     }
 
     setStudents((current) =>
-      current.filter(
-        (student) => !selectedStudents.includes(student.id)
-      )
+      current.filter((student) => !selectedStudents.includes(student.id))
     )
 
     setSelectedStudents([])
@@ -264,11 +230,13 @@ function AdminDashboard() {
     setShowDeleteStudents(false)
   }
 
-  // =========================================
-  // FILTER STUDENTS
-  // =========================================
-
+  // Filtered list
   const filteredStudents = students.filter((student) => {
+    // School filter
+    if (schoolFilter !== 'all' && student.university !== schoolFilter) {
+      return false
+    }
+
     // Search
     if (search.trim()) {
       const q = search.toLowerCase()
@@ -280,108 +248,27 @@ function AdminDashboard() {
       if (!matchesSearch) return false
     }
 
-    // Status filter
-    if (statusFilter === 'active' && !student.active) return false
-    if (statusFilter === 'inactive' && student.active) return false
-
     return true
   })
-
-  const auhsStudents = filteredStudents.filter(
-    (student) => student.university === 'AUHS'
-  )
-
-  const pacificStudents = filteredStudents.filter(
-    (student) => student.university === 'PACIFIC'
-  )
-
-  // =========================================
-  // STUDENT TABLE
-  // =========================================
-
-  function StudentTable({ students }) {
-    return (
-      <div className="student-table-wrapper">
-        {students.length === 0 ? (
-          <div className="empty-table">
-            <p className="empty-title">No students found</p>
-            <p className="empty-subtitle">
-              {search || statusFilter !== 'all'
-                ? 'Try changing the search or filter.'
-                : 'Add a student to get started.'}
-            </p>
-          </div>
-        ) : (
-          <table className="student-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Subject</th>
-                <th>Phone</th>
-              </tr>
-            </thead>
-            <tbody>
-              {students.map((student) => (
-                <tr key={student.id}>
-                  <td>
-                    <Link
-                      to={`/admin/students/${student.id}`}
-                      className="student-name-link"
-                    >
-                      {student.name}
-                    </Link>
-                  </td>
-                  <td>{student.email || '—'}</td>
-                  <td>{student.subject || '—'}</td>
-                  <td>{student.phone || '—'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-    )
-  }
-
-  // =========================================
-  // PAGE
-  // =========================================
 
   return (
     <div className="admin-page">
 
       {/* TOP BAR */}
-
       <div className="admin-topbar">
-
         <div className="admin-topbar-row">
-
           <div className="admin-heading">
-            <p className="admin-welcome">
-              Welcome, Joyce!
-            </p>
-            <p className="admin-clock">
-              {currentTime}
-            </p>
+            <p className="admin-welcome">Welcome, Joyce!</p>
+            <p className="admin-clock">{currentTime}</p>
           </div>
 
-          <button
-            onClick={handleLogout}
-            className="logout-button"
-          >
+          <button onClick={handleLogout} className="logout-button">
             Sign Out
           </button>
-
         </div>
 
         <div className="student-action-buttons">
-
-          <button
-            type="button"
-            onClick={openAddStudent}
-            className="add-student-button"
-          >
+          <button type="button" onClick={openAddStudent} className="add-student-button">
             + Add Student
           </button>
           <button
@@ -399,14 +286,12 @@ function AdminDashboard() {
           <Link to="/admin/payments" className="create-invoice-button">
             💵 Payments
           </Link>
-
         </div>
-
       </div>
 
       <hr className="admin-divider" />
 
-      {/* Search + Status Filter */}
+      {/* Search + School Filter */}
       <div className="dashboard-controls">
         <input
           type="text"
@@ -416,105 +301,81 @@ function AdminDashboard() {
           onChange={(e) => setSearch(e.target.value)}
         />
 
-        <div className="status-filters">
-          <button
-            className={statusFilter === 'all' ? 'filter-pill active' : 'filter-pill'}
-            onClick={() => setStatusFilter('all')}
-          >
-            All
-          </button>
-          <button
-            className={statusFilter === 'active' ? 'filter-pill active' : 'filter-pill'}
-            onClick={() => setStatusFilter('active')}
-          >
-            Active
-          </button>
-          <button
-            className={statusFilter === 'inactive' ? 'filter-pill active' : 'filter-pill'}
-            onClick={() => setStatusFilter('inactive')}
-          >
-            Inactive
-          </button>
-        </div>
+        <select
+          className="school-filter"
+          value={schoolFilter}
+          onChange={(e) => setSchoolFilter(e.target.value)}
+        >
+          <option value="all">All Schools</option>
+          <option value="AUHS">AUHS</option>
+          <option value="PACIFIC">PACIFIC</option>
+        </select>
       </div>
 
       {/* ERROR */}
-
       {error && !showAddStudent && !showDeleteStudents && (
-        <div className="dashboard-error">
-          {error}
-        </div>
+        <div className="dashboard-error">{error}</div>
       )}
 
-
-      {/* STUDENT TABLES */}
-
+      {/* SINGLE TABLE */}
       {loading ? (
-
-        <p className="loading-text">
-          Loading...
-        </p>
-
+        <p className="loading-text">Loading...</p>
       ) : (
+        <div className="students-card">
+          <div className="students-card-header">
+            <h2>Students</h2>
+            <span>{filteredStudents.length}</span>
+          </div>
 
-        <div className="university-container">
-
-          {/* AUHS */}
-
-          <section className="university-card">
-
-            <div className="university-header">
-
-              <h2>
-                AUHS
-              </h2>
-
-              <span>
-                {auhsStudents.length}
-              </span>
-
-            </div>
-
-            <StudentTable
-              students={auhsStudents}
-            />
-
-          </section>
-
-
-          {/* PACIFIC */}
-
-          <section className="university-card">
-
-            <div className="university-header">
-
-              <h2>
-                PACIFIC
-              </h2>
-
-              <span>
-                {pacificStudents.length}
-              </span>
-
-            </div>
-
-            <StudentTable
-              students={pacificStudents}
-            />
-
-          </section>
-
+          <div className="student-table-wrapper">
+            {filteredStudents.length === 0 ? (
+              <div className="empty-table">
+                <p className="empty-title">No students found</p>
+                <p className="empty-subtitle">
+                  {search || schoolFilter !== 'all'
+                    ? 'Try changing the search or school filter.'
+                    : 'Add a student to get started.'}
+                </p>
+              </div>
+            ) : (
+              <table className="student-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Subject</th>
+                    <th>School</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredStudents.map((student) => (
+                    <tr key={student.id}>
+                      <td>
+                        <Link
+                          to={`/admin/students/${student.id}`}
+                          className="student-name-link"
+                        >
+                          {student.name}
+                        </Link>
+                      </td>
+                      <td>{student.email || '—'}</td>
+                      <td>{student.phone || '—'}</td>
+                      <td>{student.subject || '—'}</td>
+                      <td>{student.university || '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
-
       )}
-
 
       {/* =====================================
           ADD STUDENT MODAL
           ===================================== */}
-
       {showAddStudent && (
-
         <div
           className="modal-overlay"
           onMouseDown={(event) => {
@@ -523,26 +384,15 @@ function AdminDashboard() {
             }
           }}
         >
-
           <div
             className="add-student-modal"
             onMouseDown={(event) => event.stopPropagation()}
           >
-
             <div className="modal-header">
-
               <div>
-
-                <h2>
-                  Add Student
-                </h2>
-
-                <p>
-                  Enter the student's information below.
-                </p>
-
+                <h2>Add Student</h2>
+                <p>Enter the student's information below.</p>
               </div>
-
               <button
                 type="button"
                 className="modal-close-button"
@@ -551,27 +401,14 @@ function AdminDashboard() {
               >
                 ×
               </button>
-
             </div>
 
+            {error && <div className="modal-error">{error}</div>}
 
-            {error && (
-              <div className="modal-error">
-                {error}
-              </div>
-            )}
-
-
-            <form
-              onSubmit={handleAddStudent}
-              className="add-student-form"
-            >
-
+            <form onSubmit={handleAddStudent} className="add-student-form">
               <div className="modal-form-grid">
-
                 <label>
                   Name
-
                   <input
                     type="text"
                     name="name"
@@ -582,10 +419,8 @@ function AdminDashboard() {
                   />
                 </label>
 
-
                 <label>
                   Email
-
                   <input
                     type="email"
                     name="email"
@@ -594,31 +429,21 @@ function AdminDashboard() {
                   />
                 </label>
 
-
                 <label>
                   University
-
                   <select
                     name="university"
                     value={form.university}
                     onChange={handleChange}
                     required
                   >
-                    <option value="AUHS">
-                      AUHS
-                    </option>
-
-                    <option value="PACIFIC">
-                      PACIFIC
-                    </option>
+                    <option value="AUHS">AUHS</option>
+                    <option value="PACIFIC">PACIFIC</option>
                   </select>
-
                 </label>
-
 
                 <label>
                   Subject
-
                   <input
                     type="text"
                     name="subject"
@@ -627,10 +452,8 @@ function AdminDashboard() {
                   />
                 </label>
 
-
                 <label>
                   Program / Course
-
                   <input
                     type="text"
                     name="program"
@@ -639,10 +462,8 @@ function AdminDashboard() {
                   />
                 </label>
 
-
                 <label>
                   Phone
-
                   <input
                     type="text"
                     name="phone"
@@ -651,10 +472,8 @@ function AdminDashboard() {
                   />
                 </label>
 
-
                 <label>
                   Status Page Slug
-
                   <input
                     type="text"
                     name="slug"
@@ -664,51 +483,30 @@ function AdminDashboard() {
                   />
                 </label>
 
-
                 <label className="modal-status-label">
-
                   Status
-
                   <span className="modal-checkbox-row">
-
                     <input
                       type="checkbox"
                       name="active"
                       checked={form.active}
                       onChange={handleChange}
                     />
-
                     Active student
-
                   </span>
-
                 </label>
-
               </div>
 
-
               {/* CANVAS */}
-
               <div className="modal-canvas-section">
-
                 <div className="modal-canvas-heading">
-
-                  <h3>
-                    Canvas
-                  </h3>
-
-                  <p>
-                    Canvas login information for this student.
-                  </p>
-
+                  <h3>Canvas</h3>
+                  <p>Canvas login information for this student.</p>
                 </div>
 
-
                 <div className="modal-canvas-grid">
-
                   <label>
                     UN
-
                     <input
                       type="text"
                       name="canvas_un"
@@ -716,54 +514,33 @@ function AdminDashboard() {
                       onChange={handleChange}
                       autoComplete="off"
                     />
-
                   </label>
-
 
                   <label>
                     PW
-
                     <div className="modal-password-field">
-
                       <input
-                        type={
-                          showCanvasPassword
-                            ? 'text'
-                            : 'password'
-                        }
+                        type={showCanvasPassword ? 'text' : 'password'}
                         name="canvas_pw"
                         value={form.canvas_pw}
                         onChange={handleChange}
                         autoComplete="off"
                       />
-
                       <button
                         type="button"
                         className="show-password-button"
                         onClick={() =>
-                          setShowCanvasPassword(
-                            (current) => !current
-                          )
+                          setShowCanvasPassword((current) => !current)
                         }
                       >
-                        {showCanvasPassword
-                          ? 'Hide'
-                          : 'Show'}
+                        {showCanvasPassword ? 'Hide' : 'Show'}
                       </button>
-
                     </div>
-
                   </label>
-
                 </div>
-
               </div>
 
-
-              {/* ACTIONS */}
-
               <div className="modal-actions">
-
                 <button
                   type="button"
                   className="cancel-button"
@@ -772,107 +549,59 @@ function AdminDashboard() {
                 >
                   Cancel
                 </button>
-
-                <button
-                  type="submit"
-                  className="primary-button"
-                  disabled={saving}
-                >
-                  {saving
-                    ? 'Adding Student...'
-                    : 'Add Student'}
+                <button type="submit" className="primary-button" disabled={saving}>
+                  {saving ? 'Adding Student...' : 'Add Student'}
                 </button>
-
               </div>
-
             </form>
-
           </div>
-
         </div>
-
       )}
-
 
       {/* =====================================
           DELETE STUDENTS MODAL
           ===================================== */}
-
       {showDeleteStudents && (
-
         <div
           className="modal-overlay"
           onMouseDown={(event) => {
-
             if (event.target === event.currentTarget) {
-
               if (!deleting) {
                 setShowDeleteStudents(false)
                 setSelectedStudents([])
                 setError('')
               }
-
             }
-
           }}
         >
-
           <div
             className="delete-students-modal"
             onMouseDown={(event) => event.stopPropagation()}
           >
-
-            {/* HEADER */}
-
             <div className="modal-header">
-
               <div>
-
-                <h2>
-                  Delete Students
-                </h2>
-
-                <p>
-                  Select the students you want to delete.
-                </p>
-
+                <h2>Delete Students</h2>
+                <p>Select the students you want to delete.</p>
               </div>
-
               <button
                 type="button"
                 className="modal-close-button"
                 onClick={() => {
-
                   if (deleting) return
-
                   setShowDeleteStudents(false)
                   setSelectedStudents([])
                   setError('')
-
                 }}
                 disabled={deleting}
               >
                 ×
               </button>
-
             </div>
 
-
-            {/* ERROR */}
-
-            {error && (
-              <div className="modal-error">
-                {error}
-              </div>
-            )}
-
-
-            {/* SELECT ALL */}
+            {error && <div className="modal-error">{error}</div>}
 
             <div className="select-all-row">
-
               <label className="student-checkbox-label">
-
                 <input
                   type="checkbox"
                   checked={
@@ -880,45 +609,22 @@ function AdminDashboard() {
                     selectedStudents.length === students.length
                   }
                   onChange={toggleSelectAll}
-                  disabled={
-                    deleting ||
-                    students.length === 0
-                  }
+                  disabled={deleting || students.length === 0}
                 />
-
-                <span>
-                  Select All
-                </span>
-
+                <span>Select All</span>
               </label>
-
-
               <span className="selected-count">
                 {selectedStudents.length} selected
               </span>
-
             </div>
 
-
-            {/* STUDENT LIST */}
-
             <div className="simple-delete-list">
-
               {students.length === 0 ? (
-
-                <div className="delete-empty">
-                  No students available.
-                </div>
-
+                <div className="delete-empty">No students available.</div>
               ) : (
-
                 students.map((student) => {
-
-                  const isSelected =
-                    selectedStudents.includes(student.id)
-
+                  const isSelected = selectedStudents.includes(student.id)
                   return (
-
                     <label
                       key={student.id}
                       className={
@@ -927,37 +633,20 @@ function AdminDashboard() {
                           : 'simple-delete-row'
                       }
                     >
-
                       <input
                         type="checkbox"
                         checked={isSelected}
-                        onChange={() =>
-                          toggleStudentSelection(student.id)
-                        }
+                        onChange={() => toggleStudentSelection(student.id)}
                         disabled={deleting}
                       />
-
-
                       <div className="simple-student-info">
-
-                        <div className="simple-student-name">
-                          {student.name}
-                        </div>
-
+                        <div className="simple-student-name">{student.name}</div>
                         <div className="simple-student-details">
-
                           <span className="university-label">
                             {student.university || '—'}
                           </span>
-
-                          <span>
-                            {student.email || 'No email'}
-                          </span>
-
-                          <span>
-                            {student.subject || 'No subject'}
-                          </span>
-
+                          <span>{student.email || 'No email'}</span>
+                          <span>{student.subject || 'No subject'}</span>
                           <span
                             className={
                               student.active
@@ -965,56 +654,35 @@ function AdminDashboard() {
                                 : 'delete-status inactive'
                             }
                           >
-                            {student.active
-                              ? 'Active'
-                              : 'Inactive'}
+                            {student.active ? 'Active' : 'Inactive'}
                           </span>
-
                         </div>
-
                       </div>
-
                     </label>
-
                   )
-
                 })
-
               )}
-
             </div>
 
-
-            {/* ACTIONS */}
-
             <div className="modal-actions">
-
               <button
                 type="button"
                 className="cancel-button"
                 onClick={() => {
-
                   if (deleting) return
-
                   setShowDeleteStudents(false)
                   setSelectedStudents([])
                   setError('')
-
                 }}
                 disabled={deleting}
               >
                 Cancel
               </button>
-
-
               <button
                 type="button"
                 className="delete-selected-button"
                 onClick={handleDeleteSelected}
-                disabled={
-                  deleting ||
-                  selectedStudents.length === 0
-                }
+                disabled={deleting || selectedStudents.length === 0}
               >
                 {deleting
                   ? 'Deleting...'
@@ -1024,15 +692,10 @@ function AdminDashboard() {
                         : ''
                     }`}
               </button>
-
             </div>
-
           </div>
-
         </div>
-
       )}
-
     </div>
   )
 }
