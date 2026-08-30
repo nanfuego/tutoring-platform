@@ -581,11 +581,11 @@ function AdminDashboard() {
           </div>
 
           <Link to="/admin/activity" className="nav-button">
-            Activity Tracker
+            Student Progress
           </Link>
 
           <Link to="/admin/payments" className="nav-button">
-            Payments
+            Payment Management
           </Link>
         </div>
 

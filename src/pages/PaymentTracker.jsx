@@ -27,15 +27,12 @@ function getMonthKey(dateStr) {
 }
 
 function getLastDayOfMonth(year, month) {
-  // month is 0-based
   const lastDay = new Date(year, month + 1, 0)
   return lastDay.toISOString().slice(0, 10)
 }
 
 function getMonthOptions(payments) {
   const options = [{ value: 'all', label: 'All Months' }]
-
-  // Collect unique months from the payments
   const monthSet = new Set()
 
   payments.forEach((p) => {
@@ -46,17 +43,16 @@ function getMonthOptions(payments) {
     }
   })
 
-  // Convert to array and sort (newest first)
-  const sortedMonths = Array.from(monthSet).sort((a, b) => b.localeCompare(a))
-
-  sortedMonths.forEach((key) => {
-    const [year, month] = key.split('-').map(Number)
-    const label = new Date(year, month - 1).toLocaleString('default', {
-      month: 'long',
-      year: 'numeric',
+  Array.from(monthSet)
+    .sort((a, b) => b.localeCompare(a))
+    .forEach((key) => {
+      const [year, month] = key.split('-').map(Number)
+      const label = new Date(year, month - 1).toLocaleString('default', {
+        month: 'long',
+        year: 'numeric',
+      })
+      options.push({ value: key, label })
     })
-    options.push({ value: key, label })
-  })
 
   return options
 }
@@ -68,11 +64,10 @@ function PaymentTracker() {
   const [activeFilter, setActiveFilter] = useState('all')
   const [search, setSearch] = useState('')
   const [schoolFilter, setSchoolFilter] = useState('all')
-  const [monthFilter, setMonthFilter] = useState('all') // default = All Months
+  const [monthFilter, setMonthFilter] = useState('all')
   const [updatingId, setUpdatingId] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
 
-  // Create Invoice modal
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [students, setStudents] = useState([])
   const [loadingStudents, setLoadingStudents] = useState(true)
@@ -115,7 +110,6 @@ function PaymentTracker() {
     setCurrency('USD')
     setDescription('')
 
-    // Pre-fill due date
     if (monthFilter !== 'all') {
       const [y, m] = monthFilter.split('-').map(Number)
       setDueDate(getLastDayOfMonth(y, m - 1))
@@ -141,6 +135,7 @@ function PaymentTracker() {
       setFormError('Please select a student.')
       return
     }
+
     if (!amount || Number(amount) <= 0) {
       setFormError('Please enter a valid amount.')
       return
@@ -172,23 +167,33 @@ function PaymentTracker() {
   async function toggleStatus(payment) {
     setUpdatingId(payment.id)
     const newStatus = payment.status === 'paid' ? 'pending' : 'paid'
+
     const { error } = await supabase
       .from('payments')
       .update({ status: newStatus })
       .eq('id', payment.id)
+
     setUpdatingId(null)
+
     if (!error) {
       setPayments((current) =>
-        current.map((p) => (p.id === payment.id ? { ...p, status: newStatus } : p))
+        current.map((p) =>
+          p.id === payment.id ? { ...p, status: newStatus } : p
+        )
       )
     }
   }
 
   async function handleDelete(payment) {
-    if (!window.confirm(`Delete invoice for ${payment.students?.name || 'this student'}?`)) return
+    if (!window.confirm(`Delete invoice for ${payment.students?.name || 'this student'}?`)) {
+      return
+    }
 
     setDeletingId(payment.id)
-    const { error } = await supabase.from('payments').delete().eq('id', payment.id)
+    const { error } = await supabase
+      .from('payments')
+      .delete()
+      .eq('id', payment.id)
     setDeletingId(null)
 
     if (!error) {
@@ -196,7 +201,6 @@ function PaymentTracker() {
     }
   }
 
-  // Filter by month
   const monthPayments = useMemo(() => {
     if (monthFilter === 'all') return payments
 
@@ -206,7 +210,6 @@ function PaymentTracker() {
     })
   }, [payments, monthFilter])
 
-  // Apply school + status + search
   const filtered = useMemo(() => {
     let list = monthPayments
 
@@ -234,6 +237,7 @@ function PaymentTracker() {
 
   const totals = useMemo(() => {
     let base = monthPayments
+
     if (schoolFilter !== 'all') {
       base = base.filter((p) => p.students?.university === schoolFilter)
     }
@@ -259,6 +263,8 @@ function PaymentTracker() {
       ? 'All Months'
       : monthOptions.find((o) => o.value === monthFilter)?.label || ''
 
+  const selectedStudent = students.find((s) => s.id === studentId)
+
   return (
     <div className="tracker-page">
       <button className="back-link" onClick={() => navigate('/admin')}>
@@ -272,8 +278,6 @@ function PaymentTracker() {
         </button>
       </div>
 
- 
-      {/* Summary Cards */}
       <div className="tracker-summary">
         <div className="summary-card">
           <p className="summary-label">Outstanding</p>
@@ -289,40 +293,38 @@ function PaymentTracker() {
         </div>
       </div>
 
-  {/* Search + Month + School Filters */}
-<div className="tracker-controls">
-  <input
-    type="text"
-    className="tracker-search"
-    placeholder="Search student or description..."
-    value={search}
-    onChange={(e) => setSearch(e.target.value)}
-  />
+      <div className="tracker-controls">
+        <input
+          type="text"
+          className="tracker-search"
+          placeholder="Search student or description..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
 
-  <select
-    className="month-filter"
-    value={monthFilter}
-    onChange={(e) => setMonthFilter(e.target.value)}
-  >
-    {monthOptions.map((opt) => (
-      <option key={opt.value} value={opt.value}>
-        {opt.label}
-      </option>
-    ))}
-  </select>
+        <select
+          className="month-filter"
+          value={monthFilter}
+          onChange={(e) => setMonthFilter(e.target.value)}
+        >
+          {monthOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
 
-  <select
-    className="school-filter"
-    value={schoolFilter}
-    onChange={(e) => setSchoolFilter(e.target.value)}
-  >
-    <option value="all">All Schools</option>
-    <option value="AUHS">AUHS</option>
-    <option value="PACIFIC">PACIFIC</option>
-  </select>
-</div>
+        <select
+          className="school-filter"
+          value={schoolFilter}
+          onChange={(e) => setSchoolFilter(e.target.value)}
+        >
+          <option value="all">All Schools</option>
+          <option value="AUHS">AUHS</option>
+          <option value="PACIFIC">PACIFIC</option>
+        </select>
+      </div>
 
-      {/* Status Filters */}
       <div className="tracker-filters">
         {filters.map((f) => (
           <button
@@ -347,21 +349,22 @@ function PaymentTracker() {
         <div className="tracker-table-wrapper">
           <table className="tracker-table">
             <thead>
-  <tr>
-    <th>Student</th>
-    <th>School</th>
-    <th>Description</th>
-    <th>Amount</th>
-    <th>Invoice Date</th>
-    <th>Due</th>
-    <th>Status</th>
-    <th>Action</th>
-    <th></th>
-  </tr>
-</thead>
+              <tr>
+                <th>Student</th>
+                <th>School</th>
+                <th>Description</th>
+                <th>Amount</th>
+                <th>Invoice Date</th>
+                <th>Due</th>
+                <th>Status</th>
+                <th>Action</th>
+                <th></th>
+              </tr>
+            </thead>
             <tbody>
               {filtered.map((p) => {
                 const overdue = isOverdue(p)
+
                 return (
                   <tr key={p.id}>
                     <td>{p.students?.name || '—'}</td>
@@ -386,27 +389,27 @@ function PaymentTracker() {
                       </span>
                     </td>
                     <td>
-  <button
-    className="mark-paid-button"
-    onClick={() => toggleStatus(p)}
-    disabled={updatingId === p.id}
-  >
-    {updatingId === p.id
-      ? 'Updating...'
-      : p.status === 'paid'
-      ? 'Mark unpaid'
-      : 'Mark paid'}
-  </button>
-</td>
-<td>
-  <button
-    className="delete-button"
-    onClick={() => handleDelete(p)}
-    disabled={deletingId === p.id}
-  >
-    {deletingId === p.id ? '...' : 'Delete'}
-  </button>
-</td>
+                      <button
+                        className="mark-paid-button"
+                        onClick={() => toggleStatus(p)}
+                        disabled={updatingId === p.id}
+                      >
+                        {updatingId === p.id
+                          ? 'Updating...'
+                          : p.status === 'paid'
+                          ? 'Mark unpaid'
+                          : 'Mark paid'}
+                      </button>
+                    </td>
+                    <td>
+                      <button
+                        className="delete-button"
+                        onClick={() => handleDelete(p)}
+                        disabled={deletingId === p.id}
+                      >
+                        {deletingId === p.id ? '...' : 'Delete'}
+                      </button>
+                    </td>
                   </tr>
                 )
               })}
@@ -415,105 +418,195 @@ function PaymentTracker() {
         </div>
       )}
 
-      {/* Create Invoice Modal */}
       {showCreateModal && (
         <div
-          className="modal-overlay"
+          className="invoice-modal-overlay"
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) closeCreateModal()
           }}
         >
-          <div className="invoice-modal" onMouseDown={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+          <div
+            className="invoice-modal invoice-modal-modern"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-invoice-title"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <div className="invoice-modal-header">
               <div>
-                <h2>Create Invoice</h2>
+                <div className="invoice-modal-kicker">PAYMENT TRACKER</div>
+                <h2 id="create-invoice-title">Create Invoice</h2>
                 <p>
                   {monthFilter !== 'all'
-                    ? `Will appear under ${selectedMonthLabel}`
-                    : 'Select a due date for this invoice'}
+                    ? `New invoice · ${selectedMonthLabel}`
+                    : 'Create a new invoice for a student'}
                 </p>
               </div>
+
               <button
                 type="button"
-                className="modal-close-button"
+                className="invoice-modal-close"
                 onClick={closeCreateModal}
                 disabled={saving}
+                aria-label="Close create invoice modal"
               >
                 ×
               </button>
             </div>
 
-            <form className="invoice-form" onSubmit={handleCreateInvoice}>
-              <label>
-                Student
+            <form className="invoice-form-modern" onSubmit={handleCreateInvoice}>
+              <section className="invoice-form-section">
+                <div className="invoice-section-heading">
+                  <span className="invoice-section-number">01</span>
+                  <div>
+                    <strong>Student</strong>
+                    <span>Select who this invoice belongs to</span>
+                  </div>
+                </div>
+
                 {loadingStudents ? (
-                  <p className="loading-text">Loading students...</p>
+                  <div className="invoice-select-loading">
+                    <span className="invoice-spinner" />
+                    Loading students...
+                  </div>
                 ) : (
-                  <select value={studentId} onChange={(e) => setStudentId(e.target.value)}>
-                    <option value="">Select a student</option>
-                    {students.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name} ({s.university}){!s.active ? ' (inactive)' : ''}
-                      </option>
-                    ))}
-                  </select>
+                  <label className="invoice-field">
+                    <span>Student <b>*</b></span>
+                    <select
+                      value={studentId}
+                      onChange={(e) => setStudentId(e.target.value)}
+                    >
+                      <option value="">Select a student</option>
+                      {students.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name} ({s.university}){!s.active ? ' (inactive)' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                 )}
-              </label>
 
-              <div className="invoice-row">
-                <label>
-                  Amount
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                  />
-                </label>
+                {selectedStudent && (
+                  <div className="invoice-student-preview">
+                    <div className="invoice-student-avatar">
+                      {selectedStudent.name
+                        ?.split(' ')
+                        .map((part) => part[0])
+                        .join('')
+                        .slice(0, 2)
+                        .toUpperCase()}
+                    </div>
+                    <div>
+                      <strong>{selectedStudent.name}</strong>
+                      <span>
+                        {selectedStudent.university || 'School not assigned'}
+                        {!selectedStudent.active ? ' · Inactive' : ''}
+                      </span>
+                    </div>
+                    <span className="invoice-status-chip">PENDING</span>
+                  </div>
+                )}
+              </section>
 
-                <label>
-                  Currency
-                  <select value={currency} onChange={(e) => setCurrency(e.target.value)}>
-                    <option value="USD">USD</option>
-                    <option value="PHP">PHP</option>
-                  </select>
-                </label>
-              </div>
+              <section className="invoice-form-section">
+                <div className="invoice-section-heading">
+                  <span className="invoice-section-number">02</span>
+                  <div>
+                    <strong>Invoice Details</strong>
+                    <span>Amount, description and payment deadline</span>
+                  </div>
+                </div>
 
-              <label>
-                Description
-                <input
-                  type="text"
-                  placeholder="e.g. Tutoring — August sessions"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                />
-              </label>
+                <div className="invoice-field-row invoice-field-row-main">
+                  <label className="invoice-field invoice-field-wide">
+                    <span>Description</span>
+                    <input
+                      type="text"
+                      placeholder="e.g. Tutoring — August sessions"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                    />
+                  </label>
 
-              <label>
-                Due date
-                <input
-                  type="date"
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                />
-              </label>
+                  <label className="invoice-field">
+                    <span>Amount <b>*</b></span>
+                    <div className="invoice-amount-input">
+                      <span>{currency === 'PHP' ? '₱' : '$'}</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                      />
+                    </div>
+                  </label>
+                </div>
 
-              {formError && <p className="login-error">{formError}</p>}
+                <div className="invoice-field-row">
+                  <label className="invoice-field">
+                    <span>Currency</span>
+                    <select
+                      value={currency}
+                      onChange={(e) => setCurrency(e.target.value)}
+                    >
+                      <option value="USD">USD — US Dollar</option>
+                      <option value="PHP">PHP — Philippine Peso</option>
+                    </select>
+                  </label>
 
-              <div className="modal-actions">
+                  <label className="invoice-field">
+                    <span>Due date</span>
+                    <input
+                      type="date"
+                      value={dueDate}
+                      onChange={(e) => setDueDate(e.target.value)}
+                    />
+                  </label>
+                </div>
+
+                <div className="invoice-pending-note">
+                  <span className="invoice-pending-dot" />
+                  <div>
+                    <strong>Invoice starts as Pending</strong>
+                    <span>
+                      You can mark it as paid later from the Payments table.
+                    </span>
+                  </div>
+                </div>
+              </section>
+
+              {formError && (
+                <div className="invoice-form-error" role="alert">
+                  <span>!</span>
+                  <div>{formError}</div>
+                </div>
+              )}
+
+              <div className="invoice-modal-footer">
                 <button
                   type="button"
-                  className="cancel-button"
+                  className="invoice-cancel-button"
                   onClick={closeCreateModal}
                   disabled={saving}
                 >
                   Cancel
                 </button>
-                <button type="submit" className="primary-button" disabled={saving}>
-                  {saving ? 'Creating...' : 'Create Invoice'}
+
+                <button
+                  type="submit"
+                  className="invoice-create-button"
+                  disabled={saving || loadingStudents}
+                >
+                  {saving ? (
+                    <>
+                      <span className="invoice-spinner invoice-spinner-light" />
+                      Creating...
+                    </>
+                  ) : (
+                    'Create Invoice'
+                  )}
                 </button>
               </div>
             </form>

@@ -319,11 +319,11 @@ function StudentDetail() {
 
   if (loading) return <div className="detail-page"><div className="detail-loading"><div className="loading-spinner" /><p>Loading student...</p></div></div>
 
-  if (!student) return <div className="detail-page"><Link to="/admin" className="back-link">← Back to Students</Link><div className="detail-error">Student could not be found.</div></div>
+  if (!student) return <div className="detail-page"><Link to="/admin" className="back-link">← Back to Dashboard</Link><div className="detail-error">Student could not be found.</div></div>
 
   return (
     <div className="detail-page">
-      <div className="detail-topbar"><Link to="/admin" className="back-link">← Back to Students</Link></div>
+      <div className="detail-topbar"><Link to="/admin" className="back-link">← Back to Dashboard</Link></div>
 
       <header className="student-hero">
         <div className="student-hero-main">
