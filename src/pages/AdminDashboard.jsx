@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../supabaseClient'
 import './AdminDashboard.css'
 
@@ -43,9 +43,24 @@ function AdminDashboard() {
   const [search, setSearch] = useState('')
   const [schoolFilter, setSchoolFilter] = useState('all')
 
+  // Student Manager dropdown
+  const [showManagerMenu, setShowManagerMenu] = useState(false)
+  const managerRef = useRef(null)
+
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(formatNow()), 30000)
     return () => clearInterval(timer)
+  }, [])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (managerRef.current && !managerRef.current.contains(event.target)) {
+        setShowManagerMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
   // Add Student form
@@ -97,6 +112,7 @@ function AdminDashboard() {
   }
 
   function openAddStudent() {
+    setShowManagerMenu(false)
     setError('')
 
     setForm({
@@ -114,6 +130,13 @@ function AdminDashboard() {
 
     setShowCanvasPassword(false)
     setShowAddStudent(true)
+  }
+
+  function openDeleteStudents() {
+    setShowManagerMenu(false)
+    setError('')
+    setSelectedStudents([])
+    setShowDeleteStudents(true)
   }
 
   function closeAddStudent() {
@@ -232,12 +255,10 @@ function AdminDashboard() {
 
   // Filtered list
   const filteredStudents = students.filter((student) => {
-    // School filter
     if (schoolFilter !== 'all' && student.university !== schoolFilter) {
       return false
     }
 
-    // Search
     if (search.trim()) {
       const q = search.toLowerCase()
       const matchesSearch =
@@ -268,23 +289,34 @@ function AdminDashboard() {
         </div>
 
         <div className="student-action-buttons">
-          <button type="button" onClick={openAddStudent} className="add-student-button">
-            + Add Student
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setError('')
-              setSelectedStudents([])
-              setShowDeleteStudents(true)
-            }}
-            className="delete-students-button"
-          >
-            <span className="trash-icon"> 🗑 </span>Delete Students
-          </button>
+          {/* Student Manager Dropdown */}
+          <div className="manager-dropdown" ref={managerRef}>
+            <button
+              type="button"
+              className="manager-button"
+              onClick={() => setShowManagerMenu((prev) => !prev)}
+            >
+              Student Manager ▾
+            </button>
 
-          <Link to="/admin/payments" className="create-invoice-button">
-            💵 Payments
+            {showManagerMenu && (
+              <div className="manager-menu">
+                <button type="button" onClick={openAddStudent}>
+                  + Add Student
+                </button>
+                <button type="button" onClick={openDeleteStudents}>
+                  🗑 Delete Students
+                </button>
+              </div>
+            )}
+          </div>
+
+          <Link to="/admin/activity" className="nav-button">
+            Activity Tracker
+          </Link>
+
+          <Link to="/admin/payments" className="nav-button">
+            Payments
           </Link>
         </div>
       </div>
@@ -497,7 +529,6 @@ function AdminDashboard() {
                 </label>
               </div>
 
-              {/* CANVAS */}
               <div className="modal-canvas-section">
                 <div className="modal-canvas-heading">
                   <h3>Canvas</h3>
