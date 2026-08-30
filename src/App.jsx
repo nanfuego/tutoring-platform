@@ -4,14 +4,18 @@ import AdminLogin from './pages/AdminLogin'
 import AdminDashboard from './pages/AdminDashboard'
 import StudentDetail from './pages/StudentDetail'
 import PaymentTracker from './pages/PaymentTracker'
+import ActivityTracker from './pages/ActivityTracker'
 import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<h1>Tutoring Platform</h1>} />
+
       <Route path="/status/:slug" element={<StudentStatus />} />
+
       <Route path="/admin/login" element={<AdminLogin />} />
+
       <Route
         path="/admin"
         element={
@@ -20,6 +24,7 @@ function App() {
           </ProtectedRoute>
         }
       />
+
       <Route
         path="/admin/students/:id"
         element={
@@ -28,6 +33,16 @@ function App() {
           </ProtectedRoute>
         }
       />
+
+      <Route
+        path="/admin/activity"
+        element={
+          <ProtectedRoute>
+            <ActivityTracker />
+          </ProtectedRoute>
+        }
+      />
+
       <Route
         path="/admin/payments"
         element={
@@ -41,3 +56,4 @@ function App() {
 }
 
 export default App
+
