@@ -20,12 +20,57 @@ function formatMoney(amount, currency) {
   return `${symbol}${Number(amount).toFixed(2)}`
 }
 
+function getMonthKey(dateStr) {
+  if (!dateStr) return null
+  const d = new Date(dateStr)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
+function getLastDayOfMonth(year, month) {
+  // month is 0-based
+  const lastDay = new Date(year, month + 1, 0)
+  return lastDay.toISOString().slice(0, 10)
+}
+
+function getMonthOptions(payments) {
+  const options = [{ value: 'all', label: 'All Months' }]
+
+  // Collect unique months from the payments
+  const monthSet = new Set()
+
+  payments.forEach((p) => {
+    const dateToUse = p.due_date || p.invoice_date
+    if (dateToUse) {
+      const key = getMonthKey(dateToUse)
+      if (key) monthSet.add(key)
+    }
+  })
+
+  // Convert to array and sort (newest first)
+  const sortedMonths = Array.from(monthSet).sort((a, b) => b.localeCompare(a))
+
+  sortedMonths.forEach((key) => {
+    const [year, month] = key.split('-').map(Number)
+    const label = new Date(year, month - 1).toLocaleString('default', {
+      month: 'long',
+      year: 'numeric',
+    })
+    options.push({ value: key, label })
+  })
+
+  return options
+}
+
 function PaymentTracker() {
   const navigate = useNavigate()
   const [payments, setPayments] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeFilter, setActiveFilter] = useState('all')
+  const [search, setSearch] = useState('')
+  const [schoolFilter, setSchoolFilter] = useState('all')
+  const [monthFilter, setMonthFilter] = useState('all') // default = All Months
   const [updatingId, setUpdatingId] = useState(null)
+  const [deletingId, setDeletingId] = useState(null)
 
   // Create Invoice modal
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -43,7 +88,7 @@ function PaymentTracker() {
     setLoading(true)
     const { data } = await supabase
       .from('payments')
-      .select('*, students(name)')
+      .select('*, students(name, university)')
       .order('due_date', { ascending: true })
     setPayments(data || [])
     setLoading(false)
@@ -53,7 +98,7 @@ function PaymentTracker() {
     setLoadingStudents(true)
     const { data } = await supabase
       .from('students')
-      .select('id, name, active')
+      .select('id, name, active, university')
       .order('name')
     setStudents(data || [])
     setLoadingStudents(false)
@@ -69,7 +114,16 @@ function PaymentTracker() {
     setAmount('')
     setCurrency('USD')
     setDescription('')
-    setDueDate('')
+
+    // Pre-fill due date
+    if (monthFilter !== 'all') {
+      const [y, m] = monthFilter.split('-').map(Number)
+      setDueDate(getLastDayOfMonth(y, m - 1))
+    } else {
+      const now = new Date()
+      setDueDate(getLastDayOfMonth(now.getFullYear(), now.getMonth()))
+    }
+
     setShowCreateModal(true)
     fetchStudentsForModal()
   }
@@ -130,21 +184,80 @@ function PaymentTracker() {
     }
   }
 
+  async function handleDelete(payment) {
+    if (!window.confirm(`Delete invoice for ${payment.students?.name || 'this student'}?`)) return
+
+    setDeletingId(payment.id)
+    const { error } = await supabase.from('payments').delete().eq('id', payment.id)
+    setDeletingId(null)
+
+    if (!error) {
+      setPayments((current) => current.filter((p) => p.id !== payment.id))
+    }
+  }
+
+  // Filter by month
+  const monthPayments = useMemo(() => {
+    if (monthFilter === 'all') return payments
+
+    return payments.filter((p) => {
+      const dateToUse = p.due_date || p.invoice_date
+      return getMonthKey(dateToUse) === monthFilter
+    })
+  }, [payments, monthFilter])
+
+  // Apply school + status + search
   const filtered = useMemo(() => {
-    if (activeFilter === 'all') return payments
-    if (activeFilter === 'overdue') return payments.filter(isOverdue)
-    return payments.filter((p) => p.status === activeFilter)
-  }, [payments, activeFilter])
+    let list = monthPayments
+
+    if (schoolFilter !== 'all') {
+      list = list.filter((p) => p.students?.university === schoolFilter)
+    }
+
+    if (activeFilter === 'overdue') {
+      list = list.filter(isOverdue)
+    } else if (activeFilter !== 'all') {
+      list = list.filter((p) => p.status === activeFilter)
+    }
+
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      list = list.filter(
+        (p) =>
+          p.students?.name?.toLowerCase().includes(q) ||
+          p.description?.toLowerCase().includes(q)
+      )
+    }
+
+    return list
+  }, [monthPayments, activeFilter, search, schoolFilter])
 
   const totals = useMemo(() => {
-    const pendingTotal = payments
+    let base = monthPayments
+    if (schoolFilter !== 'all') {
+      base = base.filter((p) => p.students?.university === schoolFilter)
+    }
+
+    const pendingTotal = base
       .filter((p) => p.status !== 'paid')
       .reduce((sum, p) => sum + Number(p.amount || 0), 0)
-    const paidTotal = payments
+
+    const paidTotal = base
       .filter((p) => p.status === 'paid')
       .reduce((sum, p) => sum + Number(p.amount || 0), 0)
-    return { pendingTotal, paidTotal }
-  }, [payments])
+
+    const overdueTotal = base
+      .filter(isOverdue)
+      .reduce((sum, p) => sum + Number(p.amount || 0), 0)
+
+    return { pendingTotal, paidTotal, overdueTotal }
+  }, [monthPayments, schoolFilter])
+
+  const monthOptions = getMonthOptions(payments)
+  const selectedMonthLabel =
+    monthFilter === 'all'
+      ? 'All Months'
+      : monthOptions.find((o) => o.value === monthFilter)?.label || ''
 
   return (
     <div className="tracker-page">
@@ -159,6 +272,8 @@ function PaymentTracker() {
         </button>
       </div>
 
+ 
+      {/* Summary Cards */}
       <div className="tracker-summary">
         <div className="summary-card">
           <p className="summary-label">Outstanding</p>
@@ -168,8 +283,46 @@ function PaymentTracker() {
           <p className="summary-label">Collected</p>
           <p className="summary-value paid">{formatMoney(totals.paidTotal, 'USD')}</p>
         </div>
+        <div className="summary-card">
+          <p className="summary-label">Overdue</p>
+          <p className="summary-value overdue">{formatMoney(totals.overdueTotal, 'USD')}</p>
+        </div>
       </div>
 
+  {/* Search + Month + School Filters */}
+<div className="tracker-controls">
+  <input
+    type="text"
+    className="tracker-search"
+    placeholder="Search student or description..."
+    value={search}
+    onChange={(e) => setSearch(e.target.value)}
+  />
+
+  <select
+    className="month-filter"
+    value={monthFilter}
+    onChange={(e) => setMonthFilter(e.target.value)}
+  >
+    {monthOptions.map((opt) => (
+      <option key={opt.value} value={opt.value}>
+        {opt.label}
+      </option>
+    ))}
+  </select>
+
+  <select
+    className="school-filter"
+    value={schoolFilter}
+    onChange={(e) => setSchoolFilter(e.target.value)}
+  >
+    <option value="all">All Schools</option>
+    <option value="AUHS">AUHS</option>
+    <option value="PACIFIC">PACIFIC</option>
+  </select>
+</div>
+
+      {/* Status Filters */}
       <div className="tracker-filters">
         {filters.map((f) => (
           <button
@@ -185,28 +338,37 @@ function PaymentTracker() {
       {loading ? (
         <p className="loading-text">Loading...</p>
       ) : filtered.length === 0 ? (
-        <p className="empty-table">No invoices in this view.</p>
+        <p className="empty-table">
+          No invoices
+          {monthFilter !== 'all' ? ` for ${selectedMonthLabel}` : ''}
+          {schoolFilter !== 'all' ? ` (${schoolFilter})` : ''}.
+        </p>
       ) : (
         <div className="tracker-table-wrapper">
           <table className="tracker-table">
             <thead>
-              <tr>
-                <th>Student</th>
-                <th>Description</th>
-                <th>Amount</th>
-                <th>Due</th>
-                <th>Status</th>
-                <th></th>
-              </tr>
-            </thead>
+  <tr>
+    <th>Student</th>
+    <th>School</th>
+    <th>Description</th>
+    <th>Amount</th>
+    <th>Invoice Date</th>
+    <th>Due</th>
+    <th>Status</th>
+    <th>Action</th>
+    <th></th>
+  </tr>
+</thead>
             <tbody>
               {filtered.map((p) => {
                 const overdue = isOverdue(p)
                 return (
                   <tr key={p.id}>
                     <td>{p.students?.name || '—'}</td>
+                    <td>{p.students?.university || '—'}</td>
                     <td className="desc-cell">{p.description || '—'}</td>
                     <td>{formatMoney(p.amount, p.currency)}</td>
+                    <td>{p.invoice_date || '—'}</td>
                     <td className={overdue ? 'overdue-date' : ''}>
                       {p.due_date || '—'}
                     </td>
@@ -224,18 +386,27 @@ function PaymentTracker() {
                       </span>
                     </td>
                     <td>
-                      <button
-                        className="mark-paid-button"
-                        onClick={() => toggleStatus(p)}
-                        disabled={updatingId === p.id}
-                      >
-                        {updatingId === p.id
-                          ? 'Updating...'
-                          : p.status === 'paid'
-                          ? 'Mark unpaid'
-                          : 'Mark paid'}
-                      </button>
-                    </td>
+  <button
+    className="mark-paid-button"
+    onClick={() => toggleStatus(p)}
+    disabled={updatingId === p.id}
+  >
+    {updatingId === p.id
+      ? 'Updating...'
+      : p.status === 'paid'
+      ? 'Mark unpaid'
+      : 'Mark paid'}
+  </button>
+</td>
+<td>
+  <button
+    className="delete-button"
+    onClick={() => handleDelete(p)}
+    disabled={deletingId === p.id}
+  >
+    {deletingId === p.id ? '...' : 'Delete'}
+  </button>
+</td>
                   </tr>
                 )
               })}
@@ -244,6 +415,7 @@ function PaymentTracker() {
         </div>
       )}
 
+      {/* Create Invoice Modal */}
       {showCreateModal && (
         <div
           className="modal-overlay"
@@ -255,7 +427,11 @@ function PaymentTracker() {
             <div className="modal-header">
               <div>
                 <h2>Create Invoice</h2>
-                <p>Logs the invoice here. PayPal sending isn't connected yet.</p>
+                <p>
+                  {monthFilter !== 'all'
+                    ? `Will appear under ${selectedMonthLabel}`
+                    : 'Select a due date for this invoice'}
+                </p>
               </div>
               <button
                 type="button"
@@ -277,7 +453,7 @@ function PaymentTracker() {
                     <option value="">Select a student</option>
                     {students.map((s) => (
                       <option key={s.id} value={s.id}>
-                        {s.name}{!s.active ? ' (inactive)' : ''}
+                        {s.name} ({s.university}){!s.active ? ' (inactive)' : ''}
                       </option>
                     ))}
                   </select>
@@ -328,7 +504,12 @@ function PaymentTracker() {
               {formError && <p className="login-error">{formError}</p>}
 
               <div className="modal-actions">
-                <button type="button" className="cancel-button" onClick={closeCreateModal} disabled={saving}>
+                <button
+                  type="button"
+                  className="cancel-button"
+                  onClick={closeCreateModal}
+                  disabled={saving}
+                >
                   Cancel
                 </button>
                 <button type="submit" className="primary-button" disabled={saving}>

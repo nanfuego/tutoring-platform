@@ -1,5 +1,5 @@
 .tracker-page {
-  max-width: 900px;
+  max-width: 1100px;
   margin: 0 auto;
   padding: 3rem 1.5rem;
 }
@@ -15,6 +15,7 @@
   margin: 0;
 }
 
+/* ===== Summary Cards ===== */
 .tracker-summary {
   display: flex;
   gap: 1rem;
@@ -48,6 +49,57 @@
   color: var(--color-accent, #426b62);
 }
 
+.summary-value.overdue {
+  color: #a33a35;
+}
+
+/* ===== Search + Month + School Filters ===== */
+.tracker-controls {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.tracker-search {
+  flex: 1;
+  min-width: 200px;
+  max-width: 260px;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid var(--color-border, #dedbd4);
+  border-radius: 8px;
+  font-family: var(--font-body, Arial, sans-serif);
+  font-size: 0.875rem;
+  background: white;
+  color: var(--color-ink, #222);
+}
+
+.tracker-search:focus {
+  outline: 2px solid var(--color-accent, #426b62);
+  outline-offset: 1px;
+}
+
+.month-filter,
+.school-filter {
+  padding: 0.5rem 0.85rem;
+  border: 1px solid var(--color-border, #dedbd4);
+  border-radius: 8px;
+  font-family: var(--font-body, Arial, sans-serif);
+  font-size: 0.875rem;
+  background: white;
+  color: var(--color-ink, #222);
+  cursor: pointer;
+  min-width: 150px;
+}
+
+.month-filter:focus,
+.school-filter:focus {
+  outline: 2px solid var(--color-accent, #426b62);
+  outline-offset: 1px;
+}
+
+/* ===== Status Filters ===== */
 .tracker-filters {
   display: flex;
   gap: 0.5rem;
@@ -72,6 +124,7 @@
   color: white;
 }
 
+/* ===== Table ===== */
 .tracker-table-wrapper {
   width: 100%;
   overflow-x: auto;
@@ -83,6 +136,7 @@
 .tracker-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: auto;
 }
 
 .tracker-table th {
@@ -116,7 +170,8 @@
 
 .desc-cell {
   white-space: normal;
-  max-width: 240px;
+  max-width: 220px;
+  line-height: 1.4;
 }
 
 .overdue-date {
@@ -129,6 +184,7 @@
   color: #a33a35;
 }
 
+/* Action buttons */
 .mark-paid-button {
   border: 1px solid var(--color-border, #d8d5ce);
   border-radius: 8px;
@@ -150,7 +206,30 @@
   cursor: not-allowed;
 }
 
-@media (max-width: 600px) {
+.delete-button {
+  border: 1px solid #e0c4c2;
+  border-radius: 8px;
+  padding: 0.4rem 0.7rem;
+  background: #fff5f4;
+  color: #a33a35;
+  font-family: var(--font-body, Arial, sans-serif);
+  font-size: 0.75rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.delete-button:hover:not(:disabled) {
+  background: #fbe4e2;
+}
+
+.delete-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+Now the two buttons will sit i
+
+/* ===== Responsive ===== */
+@media (max-width: 700px) {
   .tracker-summary {
     flex-direction: column;
   }
@@ -159,6 +238,11 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 0.75rem;
+  }
+
+  .actions-cell {
+    flex-direction: column;
+    align-items: stretch;
   }
 }
 

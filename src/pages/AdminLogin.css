@@ -71,3 +71,14 @@
   opacity: 0.6;
   cursor: default;
 }
+.login-logo-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.login-logo {
+  max-width: 820px;   /* adjust size as you like */
+  width: 100%;
+  height: auto;
+}

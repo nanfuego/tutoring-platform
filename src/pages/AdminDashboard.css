@@ -4,13 +4,9 @@
 
 .admin-page {
   min-height: 100vh;
-
   box-sizing: border-box;
-
   padding: 2rem;
-
   background: var(--color-background, #f8f7f3);
-
   color: var(--color-ink, #222);
 }
 
@@ -21,70 +17,50 @@
 
 .admin-topbar {
   display: flex;
-
   flex-direction: column;
-
   gap: 1rem;
-
   margin-bottom: 0;
 }
 
 .admin-topbar-row {
   display: flex;
-
   align-items: center;
   justify-content: space-between;
-
   gap: 1rem;
 }
 
 .admin-heading {
   display: flex;
-
   flex-direction: column;
-
   gap: 0.15rem;
 }
 
 .admin-welcome {
   margin: 0;
-
   font-family: var(--font-display, Georgia, serif);
-
   font-size: 1.6rem;
-
   font-weight: 500;
-
   color: var(--color-ink, #222);
 }
 
 .admin-clock {
   margin: 0;
-
   font-family: var(--font-body, Arial, sans-serif);
-
   font-size: 0.8rem;
-
   color: var(--color-muted, #777);
 }
 
 .admin-title {
   margin: 0;
-
   font-family: var(--font-display, Georgia, serif);
-
   font-size: 2.1rem;
-
   font-weight: 500;
-
   line-height: 1;
 }
 
 .admin-divider {
-  margin: 1.5rem 0 2rem;
-
+  margin: 1.5rem 0 1.5rem;
   border: none;
-
   border-top: 1px solid var(--color-border, #dedbd4);
 }
 
@@ -95,9 +71,7 @@
 
 .student-action-buttons {
   display: flex;
-
   align-items: center;
-
   gap: 0.6rem;
 }
 
@@ -106,23 +80,14 @@
 
 .add-student-button {
   border: none;
-
   border-radius: 8px;
-
   padding: 0.65rem 1rem;
-
   background: var(--color-accent, #426b62);
-
   color: white;
-
   font-family: var(--font-body, Arial, sans-serif);
-
   font-size: 0.85rem;
-
   font-weight: 500;
-
   cursor: pointer;
-
   transition:
     background 0.15s ease,
     transform 0.15s ease;
@@ -141,23 +106,14 @@
 
 .delete-students-button {
   border: none;
-
   border-radius: 8px;
-
   padding: 0.65rem 1rem;
-
   background: var(--color-accent, #426b62);
-
   color: white;
-
   font-family: var(--font-body, Arial, sans-serif);
-
   font-size: 0.85rem;
-
   font-weight: 500;
-
   cursor: pointer;
-
   transition:
     background 0.15s ease,
     transform 0.15s ease;
@@ -178,27 +134,16 @@
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-
   border: none;
-
   border-radius: 8px;
-
   padding: 0.65rem 1rem;
-
   background: var(--color-accent, #426b62);
-
   color: white;
-
   font-family: var(--font-body, Arial, sans-serif);
-
   font-size: 0.85rem;
-
   font-weight: 500;
-
   text-decoration: none;
-
   cursor: pointer;
-
   transition:
     background 0.15s ease,
     transform 0.15s ease;
@@ -217,23 +162,14 @@
 
 .logout-button {
   border: none;
-
   border-radius: 8px;
-
   padding: 0.6rem 1rem;
-
   background: #b3423a;
-
   color: white;
-
   font-family: var(--font-body, Arial, sans-serif);
-
   font-size: 0.8rem;
-
   font-weight: 500;
-
   cursor: pointer;
-
   transition:
     background 0.15s ease,
     transform 0.15s ease;
@@ -249,24 +185,71 @@
 
 
 /* =========================================
+   SEARCH + STATUS FILTERS
+   ========================================= */
+
+.dashboard-controls {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.dashboard-search {
+  flex: 1;
+  min-width: 240px;
+  max-width: 360px;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid var(--color-border, #dedbd4);
+  border-radius: 8px;
+  font-family: var(--font-body, Arial, sans-serif);
+  font-size: 0.875rem;
+  background: white;
+  color: var(--color-ink, #222);
+}
+
+.dashboard-search:focus {
+  outline: 2px solid var(--color-accent, #426b62);
+  outline-offset: 1px;
+}
+
+.status-filters {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.filter-pill {
+  border: 1px solid var(--color-border, #dedbd4);
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+  background: var(--color-surface, #fff);
+  color: var(--color-muted, #777);
+  font-family: var(--font-body, Arial, sans-serif);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.filter-pill.active {
+  background: var(--color-accent, #426b62);
+  border-color: var(--color-accent, #426b62);
+  color: white;
+}
+
+
+/* =========================================
    DASHBOARD ERROR
    ========================================= */
 
 .dashboard-error {
   margin-bottom: 1.5rem;
-
   padding: 0.8rem 1rem;
-
   border: 1px solid #e1b8b5;
-
   border-radius: 8px;
-
   background: #fff3f2;
-
   color: #8f302b;
-
   font-family: var(--font-body, Arial, sans-serif);
-
   font-size: 0.85rem;
 }
 
@@ -277,9 +260,7 @@
 
 .loading-text {
   color: var(--color-muted, #777);
-
   font-family: var(--font-body, Arial, sans-serif);
-
   font-size: 0.9rem;
 }
 
@@ -290,11 +271,8 @@
 
 .university-container {
   display: grid;
-
   grid-template-columns: repeat(2, minmax(0, 1fr));
-
   gap: 1.5rem;
-
   width: 100%;
 }
 
@@ -305,13 +283,9 @@
 
 .university-card {
   min-width: 0;
-
   overflow: hidden;
-
   border: 1px solid var(--color-border, #dedbd4);
-
   border-radius: 10px;
-
   background: var(--color-surface, #ffffff);
 }
 
@@ -322,48 +296,32 @@
 
 .university-header {
   display: flex;
-
   align-items: center;
   justify-content: space-between;
-
   padding: 1rem 1.25rem;
-
   border-bottom: 1px solid var(--color-border, #dedbd4);
 }
 
 .university-header h2 {
   margin: 0;
-
   font-family: var(--font-display, Georgia, serif);
-
   font-size: 1.25rem;
-
   font-weight: 500;
 }
 
 .university-header span {
   display: flex;
-
   align-items: center;
   justify-content: center;
-
   min-width: 26px;
   height: 26px;
-
   padding: 0 0.4rem;
-
   box-sizing: border-box;
-
   border-radius: 50%;
-
   background: var(--color-accent-soft, #edf1ef);
-
   color: var(--color-accent, #426b62);
-
   font-family: var(--font-body, Arial, sans-serif);
-
   font-size: 0.75rem;
-
   font-weight: 600;
 }
 
@@ -374,51 +332,34 @@
 
 .student-table-wrapper {
   width: 100%;
-
   overflow-x: auto;
 }
 
 .student-table {
   width: 100%;
-
   border-collapse: collapse;
-
   table-layout: fixed;
 }
 
 .student-table th {
   padding: 0.75rem 1rem;
-
   border-bottom: 1px solid var(--color-border, #dedbd4);
-
   color: var(--color-muted, #777);
-
   font-family: var(--font-body, Arial, sans-serif);
-
   font-size: 0.72rem;
-
   font-weight: 500;
-
   text-align: left;
 }
 
 .student-table td {
   padding: 0.8rem 1rem;
-
   border-bottom: 1px solid var(--color-border, #dedbd4);
-
   color: var(--color-ink, #222);
-
   font-family: var(--font-body, Arial, sans-serif);
-
   font-size: 0.82rem;
-
   vertical-align: middle;
-
   overflow: hidden;
-
   text-overflow: ellipsis;
-
   white-space: nowrap;
 }
 
@@ -431,26 +372,26 @@
 }
 
 
-/* Column sizing */
+/* Column sizing (Name | Email | Subject | Phone) */
 
 .student-table th:nth-child(1),
 .student-table td:nth-child(1) {
-  width: 25%;
+  width: 26%;
 }
 
 .student-table th:nth-child(2),
 .student-table td:nth-child(2) {
-  width: 32%;
+  width: 30%;
 }
 
 .student-table th:nth-child(3),
 .student-table td:nth-child(3) {
-  width: 23%;
+  width: 22%;
 }
 
 .student-table th:nth-child(4),
 .student-table td:nth-child(4) {
-  width: 20%;
+  width: 22%;
 }
 
 
@@ -460,50 +401,38 @@
 
 .student-name-link {
   color: var(--color-ink, #222);
-
   text-decoration: none;
-
   font-weight: 600;
 }
 
 .student-name-link:hover {
   color: var(--color-accent, #426b62);
-
   text-decoration: underline;
 }
 
 
 /* =========================================
-   STATUS BADGE
+   STATUS BADGE (still used in delete modal)
    ========================================= */
 
 .status-badge {
   display: inline-flex;
-
   align-items: center;
-
   justify-content: center;
-
   padding: 0.25rem 0.55rem;
-
   border-radius: 999px;
-
   font-family: var(--font-body, Arial, sans-serif);
-
   font-size: 0.7rem;
-
   font-weight: 600;
 }
 
 .status-badge.active {
   background: #e5f1ea;
-
   color: #26734d;
 }
 
 .status-badge.inactive {
   background: #eeeeee;
-
   color: #777;
 }
 
@@ -513,15 +442,21 @@
    ========================================= */
 
 .empty-table {
-  padding: 2rem 1rem;
-
-  color: var(--color-muted, #777);
-
-  font-family: var(--font-body, Arial, sans-serif);
-
-  font-size: 0.8rem;
-
+  padding: 2.5rem 1.5rem;
   text-align: center;
+}
+
+.empty-title {
+  margin: 0 0 0.35rem;
+  font-family: var(--font-display, Georgia, serif);
+  font-size: 1rem;
+  color: var(--color-ink, #222);
+}
+
+.empty-subtitle {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-muted, #777);
 }
 
 
@@ -531,23 +466,14 @@
 
 .modal-overlay {
   position: fixed;
-
   inset: 0;
-
   z-index: 1000;
-
   display: flex;
-
   align-items: center;
-
   justify-content: center;
-
   padding: 1.5rem;
-
   box-sizing: border-box;
-
   background: rgba(0, 0, 0, 0.48);
-
   overflow-y: auto;
 }
 
@@ -558,23 +484,14 @@
 
 .add-student-modal {
   width: 100%;
-
   max-width: 720px;
-
   max-height: calc(100vh - 3rem);
-
   overflow-y: auto;
-
   box-sizing: border-box;
-
   padding: 1.5rem;
-
   border: 1px solid var(--color-border, #dedbd4);
-
   border-radius: 12px;
-
   background: var(--color-surface, #ffffff);
-
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
 }
 
@@ -585,23 +502,14 @@
 
 .delete-students-modal {
   width: 100%;
-
   max-width: 650px;
-
   max-height: calc(100vh - 3rem);
-
   overflow-y: auto;
-
   box-sizing: border-box;
-
   padding: 1.5rem;
-
   border: 1px solid var(--color-border, #dedbd4);
-
   border-radius: 12px;
-
   background: var(--color-surface, #ffffff);
-
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
 }
 
@@ -612,34 +520,24 @@
 
 .modal-header {
   display: flex;
-
   align-items: flex-start;
   justify-content: space-between;
-
   gap: 1rem;
-
   margin-bottom: 1.25rem;
 }
 
 .modal-header h2 {
   margin: 0 0 0.35rem;
-
   font-family: var(--font-display, Georgia, serif);
-
   font-size: 1.5rem;
-
   font-weight: 500;
 }
 
 .modal-header p {
   margin: 0;
-
   color: var(--color-muted, #777);
-
   font-family: var(--font-body, Arial, sans-serif);
-
   font-size: 0.8rem;
-
   line-height: 1.5;
 }
 
@@ -650,30 +548,20 @@
 
 .modal-close-button {
   flex-shrink: 0;
-
   width: 32px;
   height: 32px;
-
   padding: 0;
-
   border: none;
-
   border-radius: 50%;
-
   background: transparent;
-
   color: var(--color-muted, #777);
-
   font-size: 1.4rem;
-
   line-height: 1;
-
   cursor: pointer;
 }
 
 .modal-close-button:hover {
   background: #f0efeb;
-
   color: var(--color-ink, #222);
 }
 
@@ -684,19 +572,12 @@
 
 .modal-error {
   margin-bottom: 1rem;
-
   padding: 0.75rem 0.9rem;
-
   border: 1px solid #e1b8b5;
-
   border-radius: 8px;
-
   background: #fff3f2;
-
   color: #8f302b;
-
   font-family: var(--font-body, Arial, sans-serif);
-
   font-size: 0.8rem;
 }
 
@@ -707,352 +588,189 @@
 
 .add-student-form {
   display: flex;
-
   flex-direction: column;
-
   gap: 1.25rem;
 }
 
 .modal-form-grid {
   display: grid;
-
   grid-template-columns: 1fr 1fr;
-
   gap: 1rem;
 }
 
 .modal-form-grid label,
 .modal-canvas-grid label {
   display: flex;
-
   flex-direction: column;
-
   gap: 0.4rem;
-
-  color: var(--color-muted, #777);
-
   font-family: var(--font-body, Arial, sans-serif);
-
-  font-size: 0.75rem;
+  font-size: 0.8rem;
+  color: var(--color-muted, #777);
 }
 
 .modal-form-grid input,
 .modal-form-grid select,
 .modal-canvas-grid input {
-  width: 100%;
-
-  box-sizing: border-box;
-
-  padding: 0.65rem 0.7rem;
-
-  border: 1px solid var(--color-border, #d8d5ce);
-
-  border-radius: 7px;
-
-  outline: none;
-
-  background: #fff;
-
-  color: var(--color-ink, #222);
-
   font-family: var(--font-body, Arial, sans-serif);
-
-  font-size: 0.85rem;
+  font-size: 0.95rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--color-border, #dedbd4);
+  border-radius: 8px;
+  color: var(--color-ink, #222);
+  background: white;
 }
 
 .modal-form-grid input:focus,
 .modal-form-grid select:focus,
 .modal-canvas-grid input:focus {
-  border-color: var(--color-accent, #426b62);
-
-  box-shadow: 0 0 0 2px rgba(66, 107, 98, 0.1);
+  outline: 2px solid var(--color-accent, #426b62);
+  outline-offset: 1px;
 }
 
-
-/* =========================================
-   ACTIVE CHECKBOX
-   ========================================= */
-
 .modal-status-label {
-  justify-content: flex-start;
+  justify-content: flex-end;
 }
 
 .modal-checkbox-row {
   display: flex;
-
   align-items: center;
-
   gap: 0.5rem;
-
-  min-height: 36px;
-
   color: var(--color-ink, #222);
-
-  font-size: 0.8rem;
+  font-size: 0.9rem;
 }
-
-.modal-checkbox-row input {
-  width: 16px;
-
-  height: 16px;
-}
-
-
-/* =========================================
-   CANVAS SECTION
-   ========================================= */
 
 .modal-canvas-section {
-  padding: 1rem;
-
-  border: 1px solid var(--color-border, #dedbd4);
-
-  border-radius: 9px;
-
-  background: #faf9f6;
-}
-
-.modal-canvas-heading {
-  margin-bottom: 0.9rem;
+  border-top: 1px solid var(--color-border, #dedbd4);
+  padding-top: 1.25rem;
 }
 
 .modal-canvas-heading h3 {
   margin: 0 0 0.25rem;
-
-  color: var(--color-ink, #222);
-
   font-family: var(--font-display, Georgia, serif);
-
-  font-size: 1.05rem;
-
+  font-size: 1.1rem;
   font-weight: 500;
 }
 
 .modal-canvas-heading p {
-  margin: 0;
-
+  margin: 0 0 1rem;
   color: var(--color-muted, #777);
-
-  font-family: var(--font-body, Arial, sans-serif);
-
-  font-size: 0.72rem;
+  font-size: 0.8rem;
 }
 
 .modal-canvas-grid {
   display: grid;
-
   grid-template-columns: 1fr 1fr;
-
   gap: 1rem;
 }
 
-
-/* =========================================
-   PASSWORD
-   ========================================= */
-
 .modal-password-field {
-  position: relative;
-
   display: flex;
-
-  align-items: center;
+  gap: 0.5rem;
 }
 
 .modal-password-field input {
-  padding-right: 4rem;
+  flex: 1;
 }
 
 .show-password-button {
-  position: absolute;
-
-  right: 0.4rem;
-
-  border: none;
-
-  background: transparent;
-
-  color: var(--color-accent, #426b62);
-
-  font-family: var(--font-body, Arial, sans-serif);
-
-  font-size: 0.72rem;
-
-  font-weight: 600;
-
+  border: 1px solid var(--color-border, #dedbd4);
+  border-radius: 8px;
+  padding: 0 0.75rem;
+  background: white;
+  color: var(--color-muted, #777);
+  font-size: 0.8rem;
   cursor: pointer;
 }
 
-
-/* =========================================
-   MODAL ACTIONS
-   ========================================= */
+.show-password-button:hover {
+  background: #f5f4f1;
+}
 
 .modal-actions {
   display: flex;
-
-  align-items: center;
-
   justify-content: flex-end;
-
-  gap: 0.6rem;
-
-  padding-top: 1rem;
-
-  border-top: 1px solid var(--color-border, #dedbd4);
+  gap: 0.75rem;
+  margin-top: 0.5rem;
 }
 
 .cancel-button {
-  padding: 0.65rem 1rem;
-
-  border: 1px solid var(--color-border, #d8d5ce);
-
+  border: 1px solid var(--color-border, #dedbd4);
   border-radius: 8px;
-
+  padding: 0.6rem 1.1rem;
   background: white;
-
   color: var(--color-ink, #222);
-
   font-family: var(--font-body, Arial, sans-serif);
-
-  font-size: 0.8rem;
-
+  font-size: 0.85rem;
   cursor: pointer;
 }
 
-.cancel-button:hover {
+.cancel-button:hover:not(:disabled) {
   background: #f5f4f1;
 }
 
 .primary-button {
-  padding: 0.65rem 1rem;
-
   border: none;
-
   border-radius: 8px;
-
+  padding: 0.6rem 1.1rem;
   background: var(--color-accent, #426b62);
-
   color: white;
-
   font-family: var(--font-body, Arial, sans-serif);
-
-  font-size: 0.8rem;
-
+  font-size: 0.85rem;
   font-weight: 500;
-
   cursor: pointer;
 }
 
-.primary-button:hover {
+.primary-button:hover:not(:disabled) {
   opacity: 0.9;
 }
 
 .primary-button:disabled,
 .cancel-button:disabled {
   opacity: 0.5;
-
   cursor: not-allowed;
 }
 
 
 /* =========================================
-   DELETE MODAL - SELECT ALL
+   DELETE STUDENTS LIST
    ========================================= */
 
 .select-all-row {
   display: flex;
-
   align-items: center;
   justify-content: space-between;
-
-  padding: 0.8rem 0;
-
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--color-border, #dedbd4);
-
-  margin-bottom: 0.5rem;
 }
 
 .student-checkbox-label {
   display: flex;
-
   align-items: center;
-
-  gap: 0.65rem;
-
-  color: var(--color-ink, #222);
-
-  font-family: var(--font-body, Arial, sans-serif);
-
+  gap: 0.5rem;
   font-size: 0.85rem;
-
-  font-weight: 500;
-
-  cursor: pointer;
-}
-
-.student-checkbox-label input {
-  width: 17px;
-
-  height: 17px;
-
-  margin: 0;
-
   cursor: pointer;
 }
 
 .selected-count {
+  font-size: 0.8rem;
   color: var(--color-muted, #777);
-
-  font-family: var(--font-body, Arial, sans-serif);
-
-  font-size: 0.75rem;
 }
-
-
-/* =========================================
-   DELETE STUDENT LIST
-   ========================================= */
 
 .simple-delete-list {
-  display: flex;
-
-  flex-direction: column;
-
-  gap: 0.45rem;
-
-  max-height: 400px;
-
+  max-height: 320px;
   overflow-y: auto;
-
-  padding: 0.25rem 0;
+  margin-bottom: 1.25rem;
 }
-
-
-/* =========================================
-   DELETE STUDENT ROW
-   ========================================= */
 
 .simple-delete-row {
   display: flex;
-
-  align-items: center;
-
+  align-items: flex-start;
   gap: 0.75rem;
-
-  padding: 0.75rem 0.8rem;
-
-  border: 1px solid var(--color-border, #dedbd4);
-
+  padding: 0.75rem;
   border-radius: 8px;
-
-  background: var(--color-surface, #ffffff);
-
   cursor: pointer;
-
-  transition:
-    background 0.15s ease,
-    border-color 0.15s ease;
+  transition: background 0.15s ease;
 }
 
 .simple-delete-row:hover {
@@ -1060,82 +778,31 @@
 }
 
 .simple-delete-row.selected {
-  background: var(--color-accent-soft, #edf1ef);
-
-  border-color: var(--color-accent, #426b62);
+  background: #edf1ef;
 }
-
-
-/* Checkbox */
-
-.simple-delete-row > input[type="checkbox"] {
-  flex-shrink: 0;
-
-  width: 17px;
-
-  height: 17px;
-
-  margin: 0;
-
-  cursor: pointer;
-}
-
-
-/* =========================================
-   DELETE STUDENT INFO
-   ========================================= */
 
 .simple-student-info {
-  min-width: 0;
-
   flex: 1;
+  min-width: 0;
 }
 
 .simple-student-name {
-  margin-bottom: 0.3rem;
-
-  color: var(--color-ink, #222);
-
-  font-family: var(--font-body, Arial, sans-serif);
-
-  font-size: 0.85rem;
-
   font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
 }
 
 .simple-student-details {
   display: flex;
-
   flex-wrap: wrap;
-
-  align-items: center;
-
-  gap: 0.35rem 1rem;
-
+  gap: 0.5rem 0.75rem;
+  font-size: 0.75rem;
   color: var(--color-muted, #777);
-
-  font-family: var(--font-body, Arial, sans-serif);
-
-  font-size: 0.72rem;
-}
-
-.simple-student-details span {
-  white-space: nowrap;
 }
 
 .university-label {
   font-weight: 600;
-
   color: var(--color-accent, #426b62);
-}
-
-
-/* =========================================
-   DELETE STATUS
-   ========================================= */
-
-.delete-status {
-  font-weight: 600;
 }
 
 .delete-status.active {
@@ -1143,160 +810,69 @@
 }
 
 .delete-status.inactive {
-  color: #888;
+  color: #999;
 }
 
-
-/* =========================================
-   DELETE SELECTED BUTTON
-   ========================================= */
+.delete-empty {
+  padding: 2rem;
+  text-align: center;
+  color: var(--color-muted, #777);
+  font-size: 0.85rem;
+}
 
 .delete-selected-button {
-  padding: 0.65rem 1rem;
-
   border: none;
-
   border-radius: 8px;
-
-  background: #a33a35;
-
+  padding: 0.6rem 1.1rem;
+  background: #b3423a;
   color: white;
-
   font-family: var(--font-body, Arial, sans-serif);
-
-  font-size: 0.8rem;
-
+  font-size: 0.85rem;
   font-weight: 500;
-
   cursor: pointer;
-
-  transition:
-    background 0.15s ease,
-    opacity 0.15s ease;
 }
 
 .delete-selected-button:hover:not(:disabled) {
-  background: #8f2d28;
+  background: #963630;
 }
 
 .delete-selected-button:disabled {
-  opacity: 0.4;
-
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
 
 /* =========================================
-   DELETE EMPTY
-   ========================================= */
-
-.delete-empty {
-  padding: 2rem 1rem;
-
-  color: var(--color-muted, #777);
-
-  font-family: var(--font-body, Arial, sans-serif);
-
-  font-size: 0.85rem;
-
-  text-align: center;
-}
-
-
-/* =========================================
-   MOBILE
+   RESPONSIVE
    ========================================= */
 
 @media (max-width: 800px) {
-
-  .admin-page {
-    padding: 1.25rem;
-  }
-
-  .admin-topbar-row {
-    align-items: flex-start;
-
-    flex-direction: column;
-
-    gap: 0.75rem;
-  }
-
-  .logout-button {
-    align-self: flex-end;
-  }
-
   .university-container {
     grid-template-columns: 1fr;
   }
 
-}
-
-
-@media (max-width: 600px) {
-
-  .admin-title {
-    font-size: 1.8rem;
-  }
-
-  .student-action-buttons {
-    width: 100%;
-
+  .dashboard-controls {
     flex-direction: column;
-
     align-items: stretch;
   }
 
-  .add-student-button,
-  .delete-students-button {
-    width: 100%;
+  .dashboard-search {
+    max-width: 100%;
   }
 
-  .modal-overlay {
-    align-items: flex-start;
-
-    padding: 0.75rem;
-  }
-
-  .add-student-modal,
-  .delete-students-modal {
-    max-height: calc(100vh - 1.5rem);
-
-    padding: 1.1rem;
-  }
-
-  .modal-form-grid {
-    grid-template-columns: 1fr;
-  }
-
+  .modal-form-grid,
   .modal-canvas-grid {
     grid-template-columns: 1fr;
   }
-
-  .modal-actions {
-    flex-direction: column-reverse;
-
-    align-items: stretch;
-  }
-
-  .modal-actions button {
-    width: 100%;
-  }
-
-  .simple-student-details {
-    gap: 0.25rem 0.7rem;
-  }
-
-  .student-table {
-    min-width: 500px;
-  }
-.delete-students-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
 }
 
-.trash-icon {
-  font-size: 16px;
-  line-height: 1;
-}
+@media (max-width: 600px) {
+  .admin-topbar-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .student-action-buttons {
+    flex-wrap: wrap;
+  }
 }

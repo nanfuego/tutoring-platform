@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import './AdminLogin.css'
+import logo from '../assets/ljg-logo.png'   // ← adjust the path if needed
 
 function AdminLogin() {
   const [email, setEmail] = useState('')
@@ -32,6 +33,16 @@ function AdminLogin() {
   return (
     <div className="login-page">
       <form className="login-card" onSubmit={handleSubmit}>
+        
+        {/* ===== LOGO (centered) ===== */}
+        <div className="login-logo-wrapper">
+          <img 
+            src={logo} 
+            alt="LJG Student Management System" 
+            className="login-logo" 
+          />
+        </div>
+
         <p className="status-eyebrow">Admin</p>
         <h1 className="login-heading">Sign in</h1>
 

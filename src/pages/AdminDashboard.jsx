@@ -39,6 +39,10 @@ function AdminDashboard() {
   // Live clock
   const [currentTime, setCurrentTime] = useState(() => formatNow())
 
+  // Search + Status filter
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all') // all | active | inactive
+
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(formatNow()), 30000)
     return () => clearInterval(timer)
@@ -264,11 +268,30 @@ function AdminDashboard() {
   // FILTER STUDENTS
   // =========================================
 
-  const auhsStudents = students.filter(
+  const filteredStudents = students.filter((student) => {
+    // Search
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      const matchesSearch =
+        student.name?.toLowerCase().includes(q) ||
+        student.email?.toLowerCase().includes(q) ||
+        student.phone?.toLowerCase().includes(q) ||
+        student.subject?.toLowerCase().includes(q)
+      if (!matchesSearch) return false
+    }
+
+    // Status filter
+    if (statusFilter === 'active' && !student.active) return false
+    if (statusFilter === 'inactive' && student.active) return false
+
+    return true
+  })
+
+  const auhsStudents = filteredStudents.filter(
     (student) => student.university === 'AUHS'
   )
 
-  const pacificStudents = students.filter(
+  const pacificStudents = filteredStudents.filter(
     (student) => student.university === 'PACIFIC'
   )
 
@@ -279,32 +302,28 @@ function AdminDashboard() {
   function StudentTable({ students }) {
     return (
       <div className="student-table-wrapper">
-
         {students.length === 0 ? (
-
           <div className="empty-table">
-            No students yet.
+            <p className="empty-title">No students found</p>
+            <p className="empty-subtitle">
+              {search || statusFilter !== 'all'
+                ? 'Try changing the search or filter.'
+                : 'Add a student to get started.'}
+            </p>
           </div>
-
         ) : (
-
           <table className="student-table">
-
             <thead>
               <tr>
                 <th>Name</th>
                 <th>Email</th>
                 <th>Subject</th>
-                <th>Status</th>
+                <th>Phone</th>
               </tr>
             </thead>
-
             <tbody>
-
               {students.map((student) => (
-
                 <tr key={student.id}>
-
                   <td>
                     <Link
                       to={`/admin/students/${student.id}`}
@@ -313,39 +332,14 @@ function AdminDashboard() {
                       {student.name}
                     </Link>
                   </td>
-
-                  <td>
-                    {student.email || '—'}
-                  </td>
-
-                  <td>
-                    {student.subject || '—'}
-                  </td>
-
-                  <td>
-                    <span
-                      className={
-                        student.active
-                          ? 'status-badge active'
-                          : 'status-badge inactive'
-                      }
-                    >
-                      {student.active
-                        ? 'Active'
-                        : 'Inactive'}
-                    </span>
-                  </td>
-
+                  <td>{student.email || '—'}</td>
+                  <td>{student.subject || '—'}</td>
+                  <td>{student.phone || '—'}</td>
                 </tr>
-
               ))}
-
             </tbody>
-
           </table>
-
         )}
-
       </div>
     )
   }
@@ -412,6 +406,37 @@ function AdminDashboard() {
 
       <hr className="admin-divider" />
 
+      {/* Search + Status Filter */}
+      <div className="dashboard-controls">
+        <input
+          type="text"
+          className="dashboard-search"
+          placeholder="Search by name, email, phone, or subject..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+
+        <div className="status-filters">
+          <button
+            className={statusFilter === 'all' ? 'filter-pill active' : 'filter-pill'}
+            onClick={() => setStatusFilter('all')}
+          >
+            All
+          </button>
+          <button
+            className={statusFilter === 'active' ? 'filter-pill active' : 'filter-pill'}
+            onClick={() => setStatusFilter('active')}
+          >
+            Active
+          </button>
+          <button
+            className={statusFilter === 'inactive' ? 'filter-pill active' : 'filter-pill'}
+            onClick={() => setStatusFilter('inactive')}
+          >
+            Inactive
+          </button>
+        </div>
+      </div>
 
       {/* ERROR */}
 
