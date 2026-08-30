@@ -1,0 +1,89 @@
+.invoice-page {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+}
+
+.invoice-page .admin-welcome {
+  margin-bottom: 0.3rem;
+}
+
+.invoice-subtext {
+  font-family: var(--font-body, Arial, sans-serif);
+  font-size: 0.85rem;
+  color: var(--color-muted, #777);
+  margin: 0 0 2rem;
+  line-height: 1.5;
+}
+
+.invoice-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border, #dedbd4);
+  border-radius: 12px;
+  padding: 1.75rem;
+}
+
+.invoice-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-family: var(--font-body, Arial, sans-serif);
+  font-size: 0.8rem;
+  color: var(--color-muted, #777);
+}
+
+.invoice-form input,
+.invoice-form select {
+  font-family: var(--font-body, Arial, sans-serif);
+  font-size: 0.95rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--color-border, #dedbd4);
+  border-radius: 8px;
+  color: var(--color-ink, #222);
+  background: white;
+}
+
+.invoice-form input:focus,
+.invoice-form select:focus {
+  outline: 2px solid var(--color-accent, #426b62);
+  outline-offset: 1px;
+}
+
+.invoice-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1rem;
+}
+
+.invoice-success {
+  color: var(--color-accent, #426b62);
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.invoice-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.back-link {
+  font-family: var(--font-body, Arial, sans-serif);
+  font-size: 0.85rem;
+  color: var(--color-muted, #777);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 1.5rem;
+  display: inline-block;
+}
+
+@media (max-width: 500px) {
+  .invoice-row {
+    grid-template-columns: 1fr;
+  }
+}

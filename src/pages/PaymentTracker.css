@@ -1,0 +1,255 @@
+.tracker-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+}
+
+.tracker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.tracker-header .admin-welcome {
+  margin: 0;
+}
+
+.tracker-summary {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.summary-card {
+  flex: 1;
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border, #dedbd4);
+  border-radius: 10px;
+  padding: 1.1rem 1.4rem;
+}
+
+.summary-label {
+  margin: 0 0 0.3rem;
+  font-family: var(--font-body, Arial, sans-serif);
+  font-size: 0.78rem;
+  color: var(--color-muted, #777);
+}
+
+.summary-value {
+  margin: 0;
+  font-family: var(--font-display, Georgia, serif);
+  font-size: 1.6rem;
+  font-weight: 500;
+  color: var(--color-ink, #222);
+}
+
+.summary-value.paid {
+  color: var(--color-accent, #426b62);
+}
+
+.tracker-filters {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.filter-pill {
+  border: 1px solid var(--color-border, #dedbd4);
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+  background: var(--color-surface, #fff);
+  color: var(--color-muted, #777);
+  font-family: var(--font-body, Arial, sans-serif);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.filter-pill.active {
+  background: var(--color-accent, #426b62);
+  border-color: var(--color-accent, #426b62);
+  color: white;
+}
+
+.tracker-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--color-border, #dedbd4);
+  border-radius: 10px;
+  background: var(--color-surface, #fff);
+}
+
+.tracker-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tracker-table th {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-border, #dedbd4);
+  color: var(--color-muted, #777);
+  font-family: var(--font-body, Arial, sans-serif);
+  font-size: 0.72rem;
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.tracker-table td {
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid var(--color-border, #dedbd4);
+  color: var(--color-ink, #222);
+  font-family: var(--font-body, Arial, sans-serif);
+  font-size: 0.85rem;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.tracker-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.tracker-table tbody tr:hover {
+  background: #faf9f6;
+}
+
+.desc-cell {
+  white-space: normal;
+  max-width: 240px;
+}
+
+.overdue-date {
+  color: #a33a35;
+  font-weight: 600;
+}
+
+.status-badge.overdue {
+  background: #fbe4e2;
+  color: #a33a35;
+}
+
+.mark-paid-button {
+  border: 1px solid var(--color-border, #d8d5ce);
+  border-radius: 8px;
+  padding: 0.4rem 0.75rem;
+  background: white;
+  color: var(--color-ink, #222);
+  font-family: var(--font-body, Arial, sans-serif);
+  font-size: 0.75rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.mark-paid-button:hover:not(:disabled) {
+  background: #f5f4f1;
+}
+
+.mark-paid-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+  .tracker-summary {
+    flex-direction: column;
+  }
+
+  .tracker-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+}
+
+/* =========================================
+   CREATE INVOICE MODAL
+   ========================================= */
+
+.invoice-modal {
+  width: 100%;
+  max-width: 480px;
+  max-height: calc(100vh - 3rem);
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 1.5rem;
+  border: 1px solid var(--color-border, #dedbd4);
+  border-radius: 12px;
+  background: var(--color-surface, #ffffff);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.invoice-modal .modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.invoice-modal .modal-header h2 {
+  margin: 0 0 0.25rem;
+  font-family: var(--font-display, Georgia, serif);
+  font-size: 1.3rem;
+  font-weight: 500;
+}
+
+.invoice-modal .modal-header p {
+  margin: 0;
+  color: var(--color-muted, #777);
+  font-family: var(--font-body, Arial, sans-serif);
+  font-size: 0.78rem;
+}
+
+.modal-close-button {
+  border: none;
+  background: transparent;
+  font-size: 1.4rem;
+  line-height: 1;
+  color: var(--color-muted, #777);
+  cursor: pointer;
+  padding: 0;
+}
+
+.invoice-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.invoice-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-family: var(--font-body, Arial, sans-serif);
+  font-size: 0.8rem;
+  color: var(--color-muted, #777);
+}
+
+.invoice-form input,
+.invoice-form select {
+  font-family: var(--font-body, Arial, sans-serif);
+  font-size: 0.95rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--color-border, #dedbd4);
+  border-radius: 8px;
+  color: var(--color-ink, #222);
+  background: white;
+}
+
+.invoice-form input:focus,
+.invoice-form select:focus {
+  outline: 2px solid var(--color-accent, #426b62);
+  outline-offset: 1px;
+}
+
+.invoice-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 420px) {
+  .invoice-row {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,783 @@
+.detail-page {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 5rem;
+
+  color: var(--color-ink, #222);
+}
+
+
+/* =========================================
+   BACK LINK
+   ========================================= */
+
+.back-link {
+  display: inline-block;
+
+  margin-bottom: 1.5rem;
+
+  color: var(--color-muted, #777);
+
+  font-family: var(--font-body, Arial, sans-serif);
+
+  font-size: 0.85rem;
+
+  text-decoration: none;
+}
+
+.back-link:hover {
+  color: var(--color-ink, #222);
+
+  text-decoration: underline;
+}
+
+
+/* =========================================
+   HEADER
+   ========================================= */
+
+.detail-header {
+  margin-bottom: 1.5rem;
+}
+
+.detail-header h1 {
+  margin: 0 0 0.35rem;
+
+  font-family: var(--font-display, Georgia, serif);
+
+  font-size: 2rem;
+
+  font-weight: 500;
+}
+
+.detail-header p {
+  margin: 0;
+
+  color: var(--color-muted, #777);
+
+  font-family: var(--font-body, Arial, sans-serif);
+
+  font-size: 0.85rem;
+}
+
+
+/* =========================================
+   ERROR
+   ========================================= */
+
+.detail-error {
+  margin-bottom: 1.5rem;
+
+  padding: 0.8rem 1rem;
+
+  border: 1px solid #e1b8b5;
+
+  border-radius: 8px;
+
+  background: #fff3f2;
+
+  color: #8f302b;
+
+  font-family: var(--font-body, Arial, sans-serif);
+
+  font-size: 0.8rem;
+}
+
+
+/* =========================================
+   STUDENT FORM
+   ========================================= */
+
+.detail-form {
+  padding: 1.5rem;
+
+  margin-bottom: 2.5rem;
+
+  border: 1px solid var(--color-border, #dedbd4);
+
+  border-radius: 10px;
+
+  background: var(--color-surface, #ffffff);
+}
+
+
+/* =========================================
+   FORM SECTION TITLE
+   ========================================= */
+
+.form-section-title {
+  margin-bottom: 1.25rem;
+}
+
+.form-section-title h2 {
+  margin: 0 0 0.3rem;
+
+  font-family: var(--font-display, Georgia, serif);
+
+  font-size: 1.25rem;
+
+  font-weight: 500;
+}
+
+.form-section-title p {
+  margin: 0;
+
+  color: var(--color-muted, #777);
+
+  font-family: var(--font-body, Arial, sans-serif);
+
+  font-size: 0.75rem;
+}
+
+
+/* =========================================
+   DETAIL GRID
+   ========================================= */
+
+.detail-grid {
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  gap: 1rem;
+
+  margin-bottom: 1.25rem;
+}
+
+.detail-grid label {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 0.4rem;
+
+  color: var(--color-muted, #777);
+
+  font-family: var(--font-body, Arial, sans-serif);
+
+  font-size: 0.75rem;
+}
+
+.detail-grid input,
+.detail-grid select {
+  width: 100%;
+
+  box-sizing: border-box;
+
+  padding: 0.65rem 0.7rem;
+
+  border: 1px solid var(--color-border, #d8d5ce);
+
+  border-radius: 7px;
+
+  outline: none;
+
+  background: #fff;
+
+  color: var(--color-ink, #222);
+
+  font-family: var(--font-body, Arial, sans-serif);
+
+  font-size: 0.85rem;
+}
+
+.detail-grid input:focus,
+.detail-grid select:focus {
+  border-color: var(--color-accent, #426b62);
+
+  box-shadow:
+    0 0 0 2px rgba(66, 107, 98, 0.1);
+}
+
+
+/* =========================================
+   ACTIVE
+   ========================================= */
+
+.active-field {
+  justify-content: flex-start;
+}
+
+.active-checkbox {
+  display: flex;
+
+  align-items: center;
+
+  gap: 0.5rem;
+
+  min-height: 36px;
+
+  color: var(--color-ink, #222);
+
+  font-size: 0.8rem;
+}
+
+.active-checkbox input {
+  width: 17px;
+
+  height: 17px;
+
+  margin: 0;
+}
+
+
+/* =========================================
+   STATUS PAGE LINK
+   ========================================= */
+
+.status-link-preview {
+  display: flex;
+
+  align-items: center;
+
+  flex-wrap: wrap;
+
+  gap: 0.35rem;
+
+  margin-bottom: 1.5rem;
+
+  padding: 0.75rem;
+
+  border-radius: 7px;
+
+  background: var(--color-accent-soft, #edf1ef);
+
+  color: var(--color-muted, #777);
+
+  font-family: var(--font-body, Arial, sans-serif);
+
+  font-size: 0.75rem;
+}
+
+.status-link-preview a {
+  color: var(--color-accent, #426b62);
+
+  font-weight: 500;
+
+  text-decoration: none;
+}
+
+.status-link-preview a:hover {
+  text-decoration: underline;
+}
+
+
+/* =========================================
+   CREDENTIAL SECTIONS
+   ========================================= */
+
+.credentials-section {
+  margin-top: 1.25rem;
+
+  padding: 1.1rem;
+
+  border: 1px solid var(--color-border, #dedbd4);
+
+  border-radius: 9px;
+
+  background: #faf9f6;
+}
+
+
+/* =========================================
+   CREDENTIAL HEADING
+   ========================================= */
+
+.credentials-heading {
+  margin-bottom: 0.9rem;
+}
+
+.credentials-heading h2 {
+  margin: 0 0 0.25rem;
+
+  font-family: var(--font-display, Georgia, serif);
+
+  font-size: 1.1rem;
+
+  font-weight: 500;
+}
+
+.credentials-heading p {
+  margin: 0;
+
+  color: var(--color-muted, #777);
+
+  font-family: var(--font-body, Arial, sans-serif);
+
+  font-size: 0.72rem;
+}
+
+
+/* =========================================
+   CREDENTIAL GRID
+   ========================================= */
+
+.credentials-grid {
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  gap: 1rem;
+}
+
+.credentials-grid label {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 0.4rem;
+
+  color: var(--color-muted, #777);
+
+  font-family: var(--font-body, Arial, sans-serif);
+
+  font-size: 0.75rem;
+}
+
+.credentials-grid input {
+  width: 100%;
+
+  box-sizing: border-box;
+
+  padding: 0.65rem 0.7rem;
+
+  border: 1px solid var(--color-border, #d8d5ce);
+
+  border-radius: 7px;
+
+  outline: none;
+
+  background: #fff;
+
+  color: var(--color-ink, #222);
+
+  font-family: var(--font-body, Arial, sans-serif);
+
+  font-size: 0.85rem;
+}
+
+.credentials-grid input:focus {
+  border-color: var(--color-accent, #426b62);
+
+  box-shadow:
+    0 0 0 2px rgba(66, 107, 98, 0.1);
+}
+
+
+/* =========================================
+   PASSWORD FIELD
+   ========================================= */
+
+.password-field {
+  position: relative;
+
+  display: flex;
+
+  align-items: center;
+}
+
+.password-field input {
+  padding-right: 4rem;
+}
+
+.show-password-button {
+  position: absolute;
+
+  right: 0.45rem;
+
+  padding: 0.25rem;
+
+  border: none;
+
+  background: transparent;
+
+  color: var(--color-accent, #426b62);
+
+  font-family: var(--font-body, Arial, sans-serif);
+
+  font-size: 0.72rem;
+
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+.show-password-button:hover {
+  text-decoration: underline;
+}
+
+
+/* =========================================
+   SAVE
+   ========================================= */
+
+.save-row {
+  display: flex;
+
+  align-items: center;
+
+  gap: 1rem;
+
+  margin-top: 1.5rem;
+
+  padding-top: 1.25rem;
+
+  border-top: 1px solid var(--color-border, #dedbd4);
+}
+
+.save-button {
+  padding: 0.65rem 1rem;
+
+  border: none;
+
+  border-radius: 8px;
+
+  background: var(--color-accent, #426b62);
+
+  color: white;
+
+  font-family: var(--font-body, Arial, sans-serif);
+
+  font-size: 0.8rem;
+
+  font-weight: 500;
+
+  cursor: pointer;
+}
+
+.save-button:hover {
+  opacity: 0.9;
+}
+
+.save-button:disabled {
+  opacity: 0.5;
+
+  cursor: not-allowed;
+}
+
+.saved-msg {
+  color: var(--color-accent, #426b62);
+
+  font-family: var(--font-body, Arial, sans-serif);
+
+  font-size: 0.8rem;
+
+  font-weight: 500;
+}
+
+
+/* =========================================
+   NOTES
+   ========================================= */
+
+.notes-section {
+  margin-top: 2rem;
+}
+
+
+/* =========================================
+   NOTES HEADING
+   ========================================= */
+
+.section-heading {
+  display: flex;
+
+  align-items: flex-start;
+
+  justify-content: space-between;
+
+  gap: 1rem;
+
+  margin-bottom: 1rem;
+}
+
+.section-heading h2 {
+  margin: 0 0 0.3rem;
+
+  font-family: var(--font-display, Georgia, serif);
+
+  font-size: 1.35rem;
+
+  font-weight: 500;
+}
+
+.section-heading p {
+  margin: 0;
+
+  max-width: 600px;
+
+  color: var(--color-muted, #777);
+
+  font-family: var(--font-body, Arial, sans-serif);
+
+  font-size: 0.75rem;
+
+  line-height: 1.5;
+}
+
+.note-count {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  min-width: 28px;
+
+  height: 28px;
+
+  padding: 0 0.4rem;
+
+  box-sizing: border-box;
+
+  border-radius: 50%;
+
+  background: var(--color-accent-soft, #edf1ef);
+
+  color: var(--color-accent, #426b62);
+
+  font-family: var(--font-body, Arial, sans-serif);
+
+  font-size: 0.75rem;
+
+  font-weight: 600;
+}
+
+
+/* =========================================
+   NOTE FORM
+   ========================================= */
+
+.note-form {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 0.7rem;
+
+  margin-bottom: 1.5rem;
+}
+
+.note-form textarea {
+  width: 100%;
+
+  box-sizing: border-box;
+
+  padding: 0.75rem;
+
+  border: 1px solid var(--color-border, #d8d5ce);
+
+  border-radius: 8px;
+
+  outline: none;
+
+  resize: vertical;
+
+  background: #fff;
+
+  color: var(--color-ink, #222);
+
+  font-family: var(--font-body, Arial, sans-serif);
+
+  font-size: 0.85rem;
+
+  line-height: 1.5;
+}
+
+.note-form textarea:focus {
+  border-color: var(--color-accent, #426b62);
+
+  box-shadow:
+    0 0 0 2px rgba(66, 107, 98, 0.1);
+}
+
+.note-form-actions {
+  display: flex;
+
+  justify-content: flex-start;
+}
+
+.add-note-button {
+  padding: 0.6rem 0.9rem;
+
+  border: none;
+
+  border-radius: 8px;
+
+  background: var(--color-accent, #426b62);
+
+  color: white;
+
+  font-family: var(--font-body, Arial, sans-serif);
+
+  font-size: 0.8rem;
+
+  font-weight: 500;
+
+  cursor: pointer;
+}
+
+.add-note-button:hover {
+  opacity: 0.9;
+}
+
+.add-note-button:disabled {
+  opacity: 0.45;
+
+  cursor: not-allowed;
+}
+
+
+/* =========================================
+   NOTES LIST
+   ========================================= */
+
+.note-list {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 0.6rem;
+
+  margin: 0;
+
+  padding: 0;
+
+  list-style: none;
+}
+
+.note-item {
+  padding: 1rem 1.1rem;
+
+  border: 1px solid var(--color-border, #dedbd4);
+
+  border-radius: 8px;
+
+  background: var(--color-surface, #ffffff);
+}
+
+.note-content {
+  margin-bottom: 0.7rem;
+
+  color: var(--color-ink, #222);
+
+  font-family: var(--font-body, Arial, sans-serif);
+
+  font-size: 0.85rem;
+
+  line-height: 1.55;
+
+  white-space: pre-wrap;
+}
+
+
+/* =========================================
+   NOTE FOOTER
+   ========================================= */
+
+.note-footer {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 1rem;
+}
+
+.note-date {
+  color: var(--color-muted, #888);
+
+  font-family: var(--font-body, Arial, sans-serif);
+
+  font-size: 0.7rem;
+}
+
+.delete-note-button {
+  padding: 0;
+
+  border: none;
+
+  background: transparent;
+
+  color: #9a3a35;
+
+  font-family: var(--font-body, Arial, sans-serif);
+
+  font-size: 0.7rem;
+
+  cursor: pointer;
+}
+
+.delete-note-button:hover {
+  text-decoration: underline;
+}
+
+
+/* =========================================
+   NO NOTES
+   ========================================= */
+
+.no-notes {
+  padding: 2rem 1rem;
+
+  border: 1px dashed var(--color-border, #d8d5ce);
+
+  border-radius: 8px;
+
+  color: var(--color-muted, #777);
+
+  font-family: var(--font-body, Arial, sans-serif);
+
+  font-size: 0.8rem;
+
+  text-align: center;
+}
+
+
+/* =========================================
+   LOADING
+   ========================================= */
+
+.loading-text {
+  color: var(--color-muted, #777);
+
+  font-family: var(--font-body, Arial, sans-serif);
+
+  font-size: 0.85rem;
+}
+
+
+/* =========================================
+   MOBILE
+   ========================================= */
+
+@media (max-width: 650px) {
+
+  .detail-page {
+    padding: 2rem 1rem 4rem;
+  }
+
+  .detail-form {
+    padding: 1rem;
+  }
+
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .credentials-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .save-row {
+    flex-direction: column;
+
+    align-items: flex-start;
+  }
+
+  .section-heading {
+    align-items: center;
+  }
+
+}
