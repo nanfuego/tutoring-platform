@@ -64,6 +64,8 @@ function ActivityTracker() {
     code: '',
     week: '1',
     university: 'AUHS',
+    startDate: '',
+    endDate: '',
   })
 
   const [savingActivity, setSavingActivity] =
@@ -196,11 +198,61 @@ function ActivityTracker() {
       setAllSemesterStudents(semesterStudentsData)
 
       if (activeSemester) {
+        const semesterReqIds = new Set(
+          allRequirementsData
+            .filter(
+              (r) =>
+                r.semester_id === activeSemester.id ||
+                (r.semester_id == null && r.student_id == null)
+            )
+            .map((r) => r.id)
+        )
+
         const assignedIds = new Set(
           semesterStudentsData
             .filter((row) => row.semester_id === activeSemester.id)
             .map((row) => row.student_id)
         )
+
+        // Students with checklist progress for this semester but not enrolled yet
+        const activityStudentIds = new Set(
+          activityData
+            .filter((item) => semesterReqIds.has(item.requirement_id))
+            .map((item) => item.student_id)
+        )
+
+        const missingEnrollIds = [...activityStudentIds].filter(
+          (id) => !assignedIds.has(id)
+        )
+
+        // Auto-enroll students who already have semester activity records
+        if (missingEnrollIds.length > 0) {
+          const rows = missingEnrollIds.map((studentId) => ({
+            semester_id: activeSemester.id,
+            student_id: studentId,
+          }))
+          const { data: enrolledRows, error: enrollError } =
+            await supabase
+              .from('semester_students')
+              .insert(rows)
+              .select()
+
+          if (!enrollError) {
+            const inserted = enrolledRows || rows
+            inserted.forEach((row) => assignedIds.add(row.student_id))
+            setAllSemesterStudents((current) => [
+              ...current,
+              ...inserted,
+            ])
+          } else {
+            // Still show them in the UI even if enroll write fails
+            missingEnrollIds.forEach((id) => assignedIds.add(id))
+            console.warn(
+              'Could not auto-enroll students into semester:',
+              enrollError.message
+            )
+          }
+        }
 
         setStudents(
           allStudentsData.filter((s) => assignedIds.has(s.id))
@@ -413,6 +465,21 @@ function ActivityTracker() {
     setShowAssignActivity(false)
   }
 
+  function selectAssignStudent(studentId) {
+    setAssignStudentId(studentId)
+    const activityIdsForSchool = new Set(
+      assignableActivities.map((a) => a.id)
+    )
+    const current = studentActivity
+      .filter(
+        (item) =>
+          item.student_id === studentId &&
+          activityIdsForSchool.has(item.requirement_id)
+      )
+      .map((item) => item.requirement_id)
+    setAssignSelectedActivityIds(current)
+  }
+
   function toggleAssignActivityId(id) {
     setAssignSelectedActivityIds((current) =>
       current.includes(id)
@@ -429,24 +496,22 @@ function ActivityTracker() {
       return
     }
 
-    if (assignSelectedActivityIds.length === 0) {
-      setError('Please select at least one activity.')
-      return
-    }
-
     setAssignSaving(true)
     setError('')
 
     try {
-      // Ensure checklist rows exist for selected activities (start incomplete)
-      const existing = studentActivity.filter(
+      const schoolActivityIds = assignableActivities.map((a) => a.id)
+      const schoolIdSet = new Set(schoolActivityIds)
+
+      const existingForStudent = studentActivity.filter(
         (item) =>
           item.student_id === assignStudentId &&
-          assignSelectedActivityIds.includes(item.requirement_id)
+          schoolIdSet.has(item.requirement_id)
       )
       const existingIds = new Set(
-        existing.map((item) => item.requirement_id)
+        existingForStudent.map((item) => item.requirement_id)
       )
+      const selectedSet = new Set(assignSelectedActivityIds)
 
       const toInsert = assignSelectedActivityIds
         .filter((id) => !existingIds.has(id))
@@ -455,6 +520,10 @@ function ActivityTracker() {
           requirement_id: requirementId,
           completed: false,
         }))
+
+      const toRemove = [...existingIds].filter(
+        (id) => !selectedSet.has(id)
+      )
 
       if (toInsert.length > 0) {
         const { data, error: insertError } = await supabase
@@ -470,14 +539,100 @@ function ActivityTracker() {
         ])
       }
 
-      setShowAssignActivity(false)
-      setAssignSelectedActivityIds([])
-      setAssignStudentId('')
+      if (toRemove.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('student_activity')
+          .delete()
+          .eq('student_id', assignStudentId)
+          .in('requirement_id', toRemove)
+
+        if (deleteError) throw deleteError
+
+        setStudentActivity((current) =>
+          current.filter(
+            (item) =>
+              !(
+                item.student_id === assignStudentId &&
+                toRemove.includes(item.requirement_id)
+              )
+          )
+        )
+      }
+
+      // Student Progress list membership is driven only by assigned activities:
+      // - has any activity for this school → enroll + show on table
+      // - all unchecked → unenroll + remove from table
+      if (currentSemester?.id) {
+        const hasAnyAssigned = assignSelectedActivityIds.length > 0
+        const already = allSemesterStudents.some(
+          (row) =>
+            row.semester_id === currentSemester.id &&
+            row.student_id === assignStudentId
+        )
+
+        if (hasAnyAssigned && !already) {
+          const { data: ssData, error: ssError } = await supabase
+            .from('semester_students')
+            .insert({
+              semester_id: currentSemester.id,
+              student_id: assignStudentId,
+            })
+            .select()
+
+          if (!ssError) {
+            const inserted = ssData || [
+              {
+                semester_id: currentSemester.id,
+                student_id: assignStudentId,
+              },
+            ]
+            setAllSemesterStudents((current) => [
+              ...current,
+              ...inserted,
+            ])
+            const student = allStudents.find(
+              (s) => s.id === assignStudentId
+            )
+            if (student) {
+              setStudents((current) => {
+                if (current.some((s) => s.id === student.id)) {
+                  return current
+                }
+                return [...current, student].sort((a, b) =>
+                  (a.name || '').localeCompare(b.name || '')
+                )
+              })
+            }
+          }
+        }
+
+        if (!hasAnyAssigned && already) {
+          const { error: unenrollError } = await supabase
+            .from('semester_students')
+            .delete()
+            .eq('semester_id', currentSemester.id)
+            .eq('student_id', assignStudentId)
+
+          if (!unenrollError) {
+            setAllSemesterStudents((current) =>
+              current.filter(
+                (row) =>
+                  !(
+                    row.semester_id === currentSemester.id &&
+                    row.student_id === assignStudentId
+                  )
+              )
+            )
+            setStudents((current) =>
+              current.filter((s) => s.id !== assignStudentId)
+            )
+          }
+        }
+      }
     } catch (err) {
       console.error('Assign activity error:', err)
       setError(
-        err.message ||
-          'Unable to assign activities. If university column is missing, run the SQL migration first.'
+        err.message || 'Unable to update student activities.'
       )
     } finally {
       setAssignSaving(false)
@@ -919,6 +1074,8 @@ function ActivityTracker() {
       code: '',
       week: '1',
       university: defaultSchool,
+      startDate: '',
+      endDate: '',
     })
     setEditingActivity(null)
     setShowActivityForm(false)
@@ -939,6 +1096,8 @@ function ActivityTracker() {
       code: '',
       week: '1',
       university: value === 'shared' || value === 'all' ? '' : value,
+      startDate: '',
+      endDate: '',
     }))
   }
 
@@ -972,6 +1131,8 @@ function ActivityTracker() {
         manageSchoolFilter !== 'shared'
           ? manageSchoolFilter
           : 'AUHS',
+      startDate: '',
+      endDate: '',
     })
   }
 
@@ -1005,6 +1166,10 @@ function ActivityTracker() {
         ),
       university:
         requirement.university || '',
+      startDate:
+        requirement.start_date || '',
+      endDate:
+        requirement.end_date || '',
     })
 
     setShowActivityForm(true)
@@ -1064,6 +1229,10 @@ function ActivityTracker() {
 
       const universityValue =
         activityForm.university?.trim() || null
+      const startDateValue =
+        activityForm.startDate?.trim() || null
+      const endDateValue =
+        activityForm.endDate?.trim() || null
 
       if (editingActivity) {
         const {
@@ -1079,6 +1248,8 @@ function ActivityTracker() {
               `ACT-${Date.now()}`,
             week,
             university: universityValue,
+            start_date: startDateValue,
+            end_date: endDateValue,
           })
           .eq(
             'id',
@@ -1123,6 +1294,8 @@ function ActivityTracker() {
           sort_order:
             requirements.length,
           university: universityValue,
+          start_date: startDateValue,
+          end_date: endDateValue,
         }
 
         if (currentSemester?.id) {
@@ -1166,6 +1339,8 @@ function ActivityTracker() {
             : manageSchoolFilter === 'all'
               ? 'AUHS'
               : manageSchoolFilter,
+        startDate: '',
+        endDate: '',
       })
     } catch (err) {
       console.error(
@@ -1175,7 +1350,7 @@ function ActivityTracker() {
 
       setError(
         err.message ||
-          'Unable to save activity. If school tagging fails, add the university column in Supabase.'
+          'Unable to save activity. If school/date columns are missing, run the SQL migration in Supabase.'
       )
     } finally {
       setSavingActivity(false)
@@ -1572,7 +1747,7 @@ function ActivityTracker() {
 
           <button
             type="button"
-            className="activity-secondary-button"
+            className="activity-primary-button"
             onClick={openAssignActivity}
           >
             Assign Activity
@@ -1753,30 +1928,8 @@ function ActivityTracker() {
           ))}
         </select>
 
-        <select
-          className="activity-filter-select"
-          value={clinicFilter}
-          onChange={(event) =>
-            setClinicFilter(
-              event.target.value
-            )
-          }
-        >
 
-          <option value="all">
-            All Clinics
-          </option>
 
-          {clinics.map((clinic) => (
-            <option
-              key={clinic}
-              value={clinic}
-            >
-              {clinic}
-            </option>
-          ))}
-
-        </select>
 
 
         <div className="activity-filter-count">
@@ -1877,18 +2030,10 @@ function ActivityTracker() {
 
                 <tr>
 
-                  <th>
-                    STUDENT
-                  </th>
-
-                  <th>
-                    PROGRAM
-                  </th>
-
-                  <th>
-                    PROGRESS
-                  </th>
-
+                  <th>STUDENT</th>
+                  <th>PROGRAM</th>
+                  <th>SCHOOL</th>
+                  <th>PROGRESS</th>
                   <th className="activity-action-column">
                     ACTION
                   </th>
@@ -1962,30 +2107,18 @@ function ActivityTracker() {
 
 
                         {/* PROGRAM */}
-
                         <td>
-
-                          <div className="program-school">
-
-                            <strong>
-                              {
-                                student.program ||
-                                'General'
-                              }
-                            </strong>
-
-                            <span>
-                              {
-                                student.university ||
-                                student.clinic ||
-                                '—'
-                              }
-                            </span>
-
-                          </div>
-
+                          <span className="dash-cell-text">
+                            {student.program || '—'}
+                          </span>
                         </td>
 
+                        {/* SCHOOL */}
+                        <td>
+                          <span className="dash-cell-text">
+                            {student.university || '—'}
+                          </span>
+                        </td>
 
                         {/* PROGRESS */}
 
@@ -2464,6 +2597,36 @@ function ActivityTracker() {
 
             </div>
 
+            {/* ACTIVITY DATE RANGES */}
+            {selectedStudentGroups.some(
+              (group) =>
+                group.items.some(
+                  (item) => item.start_date || item.end_date
+                )
+            ) && (
+              <div className="checklist-date-summary">
+                {selectedStudentGroups.flatMap((group) =>
+                  group.items
+                    .filter(
+                      (item) => item.start_date || item.end_date
+                    )
+                    .map((item) => (
+                      <div
+                        key={item.id}
+                        className="checklist-date-chip"
+                      >
+                        <strong>{item.label}</strong>
+                        <span>
+                          {item.start_date || '—'}
+                          {' → '}
+                          {item.end_date || '—'}
+                        </span>
+                      </div>
+                    ))
+                )}
+              </div>
+            )}
+
 
             {/* PROGRESS */}
 
@@ -2627,6 +2790,17 @@ function ActivityTracker() {
                                       }
                                     </strong>
 
+                                    {(requirement.start_date ||
+                                      requirement.end_date) && (
+                                      <small className="check-item-dates">
+                                        {requirement.start_date ||
+                                          '—'}
+                                        {' → '}
+                                        {requirement.end_date ||
+                                          '—'}
+                                      </small>
+                                    )}
+
                                     {requirement.code && (
                                       <small>
                                         {
@@ -2743,41 +2917,13 @@ function ActivityTracker() {
 
             <div className="manage-simple-body">
 
-              {/* Step 1 — School */}
-              <section className="manage-simple-card">
-                <label className="manage-simple-field">
-                  <span>1. Select the school</span>
-                  <select
-                    value={
-                      manageSchoolFilter === 'all'
-                        ? 'AUHS'
-                        : manageSchoolFilter
-                    }
-                    onChange={(event) =>
-                      handleManageSchoolChange(
-                        event.target.value
-                      )
-                    }
-                  >
-                    {schools.map((school) => (
-                      <option key={school} value={school}>
-                        {school}
-                      </option>
-                    ))}
-                    <option value="shared">
-                      Shared (all schools)
-                    </option>
-                  </select>
-                </label>
-              </section>
-
-              {/* Step 2 — Add activity */}
+              {/* Add / edit activity */}
               <section className="manage-simple-card">
                 <div className="manage-simple-card-title">
                   <strong>
                     {editingActivity
-                      ? '2. Edit activity'
-                      : '2. Add activity'}
+                      ? 'Edit activity'
+                      : 'Add activity'}
                   </strong>
                   {editingActivity && (
                     <button
@@ -2795,6 +2941,8 @@ function ActivityTracker() {
                               : manageSchoolFilter === 'all'
                                 ? 'AUHS'
                                 : manageSchoolFilter,
+                          startDate: '',
+                          endDate: '',
                         })
                       }}
                     >
@@ -2807,6 +2955,32 @@ function ActivityTracker() {
                   className="manage-simple-form"
                   onSubmit={saveActivity}
                 >
+                  <label className="manage-simple-field">
+                    <span>School</span>
+                    <select
+                      value={
+                        manageSchoolFilter === 'all'
+                          ? 'AUHS'
+                          : manageSchoolFilter
+                      }
+                      onChange={(event) =>
+                        handleManageSchoolChange(
+                          event.target.value
+                        )
+                      }
+                      disabled={savingActivity}
+                    >
+                      {schools.map((school) => (
+                        <option key={school} value={school}>
+                          {school}
+                        </option>
+                      ))}
+                      <option value="shared">
+                        Shared (all schools)
+                      </option>
+                    </select>
+                  </label>
+
                   <label className="manage-simple-field manage-simple-field-grow">
                     <span>Activity name</span>
                     <input
@@ -2851,6 +3025,36 @@ function ActivityTracker() {
                     </select>
                   </label>
 
+                  <label className="manage-simple-field">
+                    <span>Start date</span>
+                    <input
+                      type="date"
+                      value={activityForm.startDate}
+                      disabled={savingActivity}
+                      onChange={(event) =>
+                        setActivityForm((current) => ({
+                          ...current,
+                          startDate: event.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+
+                  <label className="manage-simple-field">
+                    <span>End date</span>
+                    <input
+                      type="date"
+                      value={activityForm.endDate}
+                      disabled={savingActivity}
+                      onChange={(event) =>
+                        setActivityForm((current) => ({
+                          ...current,
+                          endDate: event.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+
                   <button
                     type="submit"
                     className="activity-primary-button manage-simple-save"
@@ -2869,7 +3073,7 @@ function ActivityTracker() {
               <section className="manage-simple-card manage-simple-list-card">
                 <div className="manage-simple-card-title">
                   <strong>
-                    3. Activities for{' '}
+                    Activities for{' '}
                     {manageSchoolFilter === 'shared'
                       ? 'all schools'
                       : manageSchoolFilter === 'all'
@@ -2978,6 +3182,9 @@ function ActivityTracker() {
                                     {requirement.university
                                       ? ` · ${requirement.university}`
                                       : ' · Shared'}
+                                    {(requirement.start_date ||
+                                      requirement.end_date) &&
+                                      ` · ${requirement.start_date || '—'} → ${requirement.end_date || '—'}`}
                                   </span>
                                 </div>
                                 <div className="manage-simple-item-actions">
@@ -3000,6 +3207,12 @@ function ActivityTracker() {
                                         ),
                                         university:
                                           requirement.university ||
+                                          '',
+                                        startDate:
+                                          requirement.start_date ||
+                                          '',
+                                        endDate:
+                                          requirement.end_date ||
                                           '',
                                       })
                                     }}
@@ -3470,11 +3683,10 @@ function ActivityTracker() {
 
 
       {/* ======================================================
-          ASSIGN ACTIVITY TO STUDENT
+          ASSIGN ACTIVITY TO STUDENT (student editor)
       ======================================================= */}
 
       {showAssignActivity && (
-
         <div
           className="activity-modal-overlay"
           onMouseDown={(event) => {
@@ -3484,7 +3696,7 @@ function ActivityTracker() {
           }}
         >
           <div
-            className="semester-rollover-modal"
+            className="assign-activity-modal"
             onMouseDown={(event) => event.stopPropagation()}
           >
             <div className="modal-header">
@@ -3494,9 +3706,10 @@ function ActivityTracker() {
                 </span>
                 <h2>Assign Activity</h2>
                 <p>
-                  Filter by school, pick a student,
-                  then choose activities for their
-                  checklist.
+                  Choose a school, pick a student, then check or
+                  uncheck activities. Students appear on Student
+                  Progress only when they have at least one
+                  activity assigned.
                 </p>
               </div>
               <button
@@ -3510,11 +3723,11 @@ function ActivityTracker() {
             </div>
 
             <form
-              className="semester-rollover-form"
+              className="assign-activity-body"
               onSubmit={submitAssignActivity}
             >
-              <div className="semester-form-grid">
-                <label className="semester-field">
+              <div className="assign-toolbar">
+                <label className="assign-field">
                   <span>School</span>
                   <select
                     value={assignSchool}
@@ -3522,6 +3735,7 @@ function ActivityTracker() {
                       setAssignSchool(event.target.value)
                       setAssignStudentId('')
                       setAssignSelectedActivityIds([])
+                      setAssignStudentSearch('')
                     }}
                     disabled={assignSaving}
                   >
@@ -3532,8 +3746,7 @@ function ActivityTracker() {
                     ))}
                   </select>
                 </label>
-
-                <label className="semester-field">
+                <label className="assign-field assign-field-grow">
                   <span>Search student</span>
                   <input
                     type="search"
@@ -3541,102 +3754,139 @@ function ActivityTracker() {
                     onChange={(event) =>
                       setAssignStudentSearch(event.target.value)
                     }
-                    placeholder="Name or email..."
+                    placeholder="Name, email, or program..."
                     disabled={assignSaving}
                   />
                 </label>
               </div>
 
-              <div className="semester-multi-section">
-                <div className="semester-multi-header">
-                  <strong>Student</strong>
-                  <span>
-                    {assignStudentOptions.length} in {assignSchool}
-                  </span>
-                </div>
-                <div className="semester-select-list">
-                  {assignStudentOptions.length === 0 ? (
-                    <p className="semester-empty-hint">
-                      No students found for this school.
-                    </p>
-                  ) : (
-                    assignStudentOptions.map((student) => (
-                      <label
-                        key={student.id}
-                        className={`semester-select-row${
+              <div className="assign-split">
+                {/* Left: students */}
+                <section className="assign-panel">
+                  <div className="assign-panel-header">
+                    <strong>Students</strong>
+                    <span>
+                      {assignStudentOptions.length} in{' '}
+                      {assignSchool}
+                    </span>
+                  </div>
+                  <div className="assign-panel-list">
+                    {assignStudentOptions.length === 0 ? (
+                      <p className="semester-empty-hint">
+                        No students found for this school.
+                      </p>
+                    ) : (
+                      assignStudentOptions.map((student) => {
+                        const active =
                           assignStudentId === student.id
-                            ? ' is-selected'
-                            : ''
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="assign-student"
-                          checked={assignStudentId === student.id}
-                          disabled={assignSaving}
-                          onChange={() =>
-                            setAssignStudentId(student.id)
-                          }
-                        />
-                        <span className="semester-select-name">
-                          {student.name}
-                        </span>
-                        <span className="semester-select-meta">
-                          {student.program || student.email || ''}
-                        </span>
-                      </label>
-                    ))
-                  )}
-                </div>
-              </div>
+                        return (
+                          <button
+                            key={student.id}
+                            type="button"
+                            className={`assign-student-row${
+                              active ? ' is-active' : ''
+                            }`}
+                            disabled={assignSaving}
+                            onClick={() =>
+                              selectAssignStudent(student.id)
+                            }
+                          >
+                            <span className="assign-student-avatar">
+                              {student.name
+                                ?.charAt(0)
+                                ?.toUpperCase() || '?'}
+                            </span>
+                            <span className="assign-student-info">
+                              <strong>{student.name}</strong>
+                              <small>
+                                {student.program ||
+                                  student.email ||
+                                  '—'}
+                              </small>
+                            </span>
+                          </button>
+                        )
+                      })
+                    )}
+                  </div>
+                </section>
 
-              <div className="semester-multi-section">
-                <div className="semester-multi-header">
-                  <strong>
-                    Activities for {assignSchool}
-                  </strong>
-                  <span>
-                    {assignSelectedActivityIds.length} selected
-                  </span>
-                </div>
-                <div className="semester-select-list">
-                  {assignableActivities.length === 0 ? (
+                {/* Right: activities for selected student */}
+                <section className="assign-panel assign-panel-activities">
+                  <div className="assign-panel-header">
+                    <strong>
+                      {assignStudentId
+                        ? `Activities · ${
+                            allStudents.find(
+                              (s) => s.id === assignStudentId
+                            )?.name || 'Student'
+                          }`
+                        : 'Activities'}
+                    </strong>
+                    <span>
+                      {assignStudentId
+                        ? `${assignSelectedActivityIds.length} assigned`
+                        : 'Select a student'}
+                    </span>
+                  </div>
+
+                  {!assignStudentId ? (
+                    <p className="assign-placeholder">
+                      Select a student on the left to view and
+                      edit their activities.
+                    </p>
+                  ) : assignableActivities.length === 0 ? (
                     <p className="semester-empty-hint">
-                      No activities for this school yet.
+                      No activities for {assignSchool} yet.
                       Create them in Manage Activity first.
                     </p>
                   ) : (
-                    assignableActivities.map((activity) => {
-                      const checked =
-                        assignSelectedActivityIds.includes(
-                          activity.id
+                    <div className="assign-panel-list">
+                      {assignableActivities
+                        .slice()
+                        .sort(
+                          (a, b) =>
+                            (a.week ?? 0) - (b.week ?? 0) ||
+                            (a.sort_order ?? 0) -
+                              (b.sort_order ?? 0)
                         )
-                      return (
-                        <label
-                          key={activity.id}
-                          className={`semester-select-row${
-                            checked ? ' is-selected' : ''
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            disabled={assignSaving}
-                            onChange={() =>
-                              toggleAssignActivityId(activity.id)
-                            }
-                          />
-                          <span className="semester-select-name">
-                            {activity.label}
-                          </span>
-                          <span className="semester-select-meta">
-                            Week {activity.week ?? '—'}
-                          </span>
-                        </label>
-                      )
-                    })
+                        .map((activity) => {
+                          const checked =
+                            assignSelectedActivityIds.includes(
+                              activity.id
+                            )
+                          return (
+                            <label
+                              key={activity.id}
+                              className={`assign-activity-row${
+                                checked ? ' is-selected' : ''
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                disabled={assignSaving}
+                                onChange={() =>
+                                  toggleAssignActivityId(
+                                    activity.id
+                                  )
+                                }
+                              />
+                              <span className="assign-activity-text">
+                                <strong>{activity.label}</strong>
+                                <small>
+                                  Week {activity.week ?? '—'}
+                                  {(activity.start_date ||
+                                    activity.end_date) &&
+                                    ` · ${activity.start_date || '—'} → ${activity.end_date || '—'}`}
+                                </small>
+                              </span>
+                            </label>
+                          )
+                        })}
+                    </div>
                   )}
-                </div>
+                </section>
               </div>
 
               <div className="modal-footer semester-rollover-footer">
@@ -3646,16 +3896,14 @@ function ActivityTracker() {
                   disabled={assignSaving}
                   onClick={closeAssignActivity}
                 >
-                  Cancel
+                  Close
                 </button>
                 <button
                   type="submit"
                   className="activity-primary-button"
-                  disabled={assignSaving}
+                  disabled={assignSaving || !assignStudentId}
                 >
-                  {assignSaving
-                    ? 'Assigning...'
-                    : 'Assign Activities'}
+                  {assignSaving ? 'Saving...' : 'Save changes'}
                 </button>
               </div>
             </form>

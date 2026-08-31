@@ -418,6 +418,8 @@ function AdminDashboard() {
       return
     }
 
+    // Students stay on the Dashboard only until activities are assigned
+    // in Activity Tracker → Assign Activity.
     setStudents((current) =>
       [...current, data].sort((a, b) =>
         (a.name || '').localeCompare(b.name || '')
@@ -886,7 +888,8 @@ function AdminDashboard() {
                   <tr>
                     <th>Student</th>
                     <th>Phone</th>
-                    <th>School / Program</th>
+                    <th>School</th>
+                    <th>Program</th>
                     <th>Final Grade</th>
                     <th>Semester</th>
                     <th>Current Activity</th>
@@ -938,14 +941,15 @@ function AdminDashboard() {
                         </td>
 
                         <td>
-                          <div className="program-cell">
-                            <span className="program-name">
-                              {student.university || '—'}
-                            </span>
-                            <span className="program-sub">
-                              {student.program || 'General'}
-                            </span>
-                          </div>
+                          <span className="dash-cell-text">
+                            {student.university || '—'}
+                          </span>
+                        </td>
+
+                        <td>
+                          <span className="dash-cell-text">
+                            {student.program || '—'}
+                          </span>
                         </td>
 
                         <td>
@@ -1199,13 +1203,8 @@ function AdminDashboard() {
                 </label>
 
                 <label>
-                  Program / Course
+                  Program
                   <input type="text" name="program" value={form.program} onChange={handleChange} placeholder="Program or course" />
-                </label>
-
-                <label>
-                  Subject
-                  <input type="text" name="subject" value={form.subject} onChange={handleChange} placeholder="Subject" />
                 </label>
 
                 <label>
@@ -1581,22 +1580,6 @@ function AdminDashboard() {
                       <input
                         name="program"
                         value={profileForm.program}
-                        onChange={handleProfileChange}
-                      />
-                    </label>
-                    <label>
-                      <span>Subject</span>
-                      <input
-                        name="subject"
-                        value={profileForm.subject}
-                        onChange={handleProfileChange}
-                      />
-                    </label>
-                    <label>
-                      <span>Clinic</span>
-                      <input
-                        name="clinic"
-                        value={profileForm.clinic}
                         onChange={handleProfileChange}
                       />
                     </label>

@@ -282,13 +282,15 @@ function StudentDetail() {
             <p className="student-email">{student.email || 'No email address'}</p>
             <div className="student-meta">
               {student.university && <span>{student.university}</span>}
-              {student.program && <span>{student.program}</span>}
-              {student.subject && <span>{student.subject}</span>}
+              {student.final_grade && (
+                <span className="hero-final-grade">
+                  Grade: {student.final_grade}
+                </span>
+              )}
             </div>
           </div>
         </div>
         <div className="student-hero-actions">
-          {student.slug && <a href={`/status/${student.slug}`} target="_blank" rel="noreferrer" className="secondary-button">View Status Page</a>}
           <button
             type="button"
             className={`contract-complete-button${isCompleted ? ' is-completed' : ''}`}
@@ -303,73 +305,206 @@ function StudentDetail() {
 
       {error && <div className="detail-error"><strong>Something went wrong:</strong> {error}</div>}
 
-      <section className="quick-stats">
-        <div className="stat-card"><span className="stat-label">Outstanding</span><strong className="stat-value">{paymentSummaryText.outstanding}</strong><span className="stat-detail">Unpaid invoices</span></div>
-        <div className="stat-card"><span className="stat-label">Collected</span><strong className="stat-value">{paymentSummaryText.paid}</strong><span className="stat-detail">Paid invoices</span></div>
-        <div className="stat-card"><span className="stat-label">Activity</span><strong className="stat-value">{activityProgress.total > 0 ? `${activityProgress.percentage}%` : '—'}</strong><span className="stat-detail">{activityProgress.total > 0 ? `${activityProgress.completed} of ${activityProgress.total} completed` : 'No requirements'}</span></div>
-        <div className="stat-card"><span className="stat-label">Notes</span><strong className="stat-value">{notes.length}</strong><span className="stat-detail">Monitoring notes</span></div>
+      <section className="quick-stats quick-stats-compact">
+        <div className="stat-card"><span className="stat-label">Outstanding</span><strong className="stat-value">{paymentSummaryText.outstanding}</strong></div>
+        <div className="stat-card"><span className="stat-label">Collected</span><strong className="stat-value">{paymentSummaryText.paid}</strong></div>
+        <div className="stat-card"><span className="stat-label">Activity</span><strong className="stat-value">{activityProgress.total > 0 ? `${activityProgress.percentage}%` : '—'}</strong></div>
+        <div className="stat-card"><span className="stat-label">Notes</span><strong className="stat-value">{notes.length}</strong></div>
       </section>
 
-      <section className="quick-actions">
-        <div><h2>Quick Actions</h2><p>Jump directly to this student's main management areas.</p></div>
-        <div className="quick-action-buttons">
-          <Link to="/admin/payments" className="action-button"><span className="action-icon">💳</span><span><strong>Payments</strong><small>View invoices</small></span></Link>
-          <button type="button" className="action-button" onClick={() => setShowActivityModal(true)}><span className="action-icon">📊</span><span><strong>Activity</strong><small>View checklist</small></span></button>
-          {student.slug && <a href={`/status/${student.slug}`} target="_blank" rel="noreferrer" className="action-button"><span className="action-icon">🔗</span><span><strong>Status Page</strong><small>Open student page</small></span></a>}
+      <form id="student-detail-form" className="student-detail-form student-detail-form-compact" onSubmit={handleSave}>
+        <div className="detail-top-grid">
+          <section className="detail-card detail-card-compact">
+            <div className="card-header">
+              <div>
+                <h2>Student Information</h2>
+              </div>
+            </div>
+            <div className="detail-grid detail-grid-compact">
+              <label><span>Name</span><input type="text" name="name" value={student.name || ''} onChange={handleChange} required /></label>
+              <label><span>Email</span><input type="email" name="email" value={student.email || ''} onChange={handleChange} /></label>
+              <label><span>Phone</span><input type="text" name="phone" value={student.phone || ''} onChange={handleChange} /></label>
+              <label>
+                <span>University</span>
+                <select name="university" value={student.university || ''} onChange={handleChange}>
+                  <option value="">Select University</option>
+                  <option value="AUHS">AUHS</option>
+                  <option value="PACIFIC">PACIFIC</option>
+                </select>
+              </label>
+              <label className="final-grade-field">
+                <span>Final Grade</span>
+                <input
+                  type="text"
+                  name="final_grade"
+                  value={student.final_grade || ''}
+                  onChange={handleChange}
+                  placeholder="e.g. A, 92%, Pass"
+                />
+              </label>
+              <label><span>Status Page Slug</span><input type="text" name="slug" value={student.slug || ''} onChange={handleChange} /></label>
+            </div>
+            {student.slug && (
+              <div className="status-preview">
+                <span>Student Status Page</span>
+                <a
+                  href={`/status/${student.slug}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  /status/{student.slug}
+                </a>
+              </div>
+            )}
+          </section>
+
+          <section className="detail-card detail-card-compact">
+            <div className="card-header">
+              <div>
+                <h2>Learning Systems</h2>
+              </div>
+            </div>
+            <div className="learning-systems-block">
+              <div className="learning-system-group">
+                <h3>Canvas</h3>
+                <div className="credentials-grid credentials-grid-compact">
+                  <label>
+                    <span>Username</span>
+                    <input type="text" name="canvas_un" value={student.canvas_un || ''} onChange={handleChange} autoComplete="off" />
+                  </label>
+                  <label>
+                    <span>Password</span>
+                    <div className="password-field">
+                      <input
+                        type={showCanvasPassword ? 'text' : 'password'}
+                        name="canvas_pw"
+                        value={student.canvas_pw || ''}
+                        onChange={handleChange}
+                        autoComplete="off"
+                      />
+                      <button
+                        type="button"
+                        className="show-password-button"
+                        onClick={() => setShowCanvasPassword((current) => !current)}
+                      >
+                        {showCanvasPassword ? 'Hide' : 'Show'}
+                      </button>
+                    </div>
+                  </label>
+                </div>
+              </div>
+              <div className="learning-system-group">
+                <h3>CORELMS</h3>
+                <div className="credentials-grid credentials-grid-compact">
+                  <label>
+                    <span>Username</span>
+                    <input type="text" name="corelms_un" value={student.corelms_un || ''} onChange={handleChange} autoComplete="off" />
+                  </label>
+                  <label>
+                    <span>Password</span>
+                    <div className="password-field">
+                      <input
+                        type={showCorelmsPassword ? 'text' : 'password'}
+                        name="corelms_pw"
+                        value={student.corelms_pw || ''}
+                        onChange={handleChange}
+                        autoComplete="off"
+                      />
+                      <button
+                        type="button"
+                        className="show-password-button"
+                        onClick={() => setShowCorelmsPassword((current) => !current)}
+                      >
+                        {showCorelmsPassword ? 'Hide' : 'Show'}
+                      </button>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
-      </section>
 
-      <form id="student-detail-form" className="student-detail-form" onSubmit={handleSave}>
-        <section className="detail-card">
-          <div className="card-header"><div><h2>Student Information</h2><p>Basic information and profile details.</p></div></div>
-          <div className="detail-grid">
-            <label><span>Name</span><input type="text" name="name" value={student.name || ''} onChange={handleChange} required /></label>
-            <label><span>Email</span><input type="email" name="email" value={student.email || ''} onChange={handleChange} /></label>
-            <label><span>University</span><select name="university" value={student.university || ''} onChange={handleChange}><option value="">Select University</option><option value="AUHS">AUHS</option><option value="PACIFIC">PACIFIC</option></select></label>
-            <label><span>Subject</span><input type="text" name="subject" value={student.subject || ''} onChange={handleChange} /></label>
-            <label><span>Program / Course</span><input type="text" name="program" value={student.program || ''} onChange={handleChange} /></label>
-            <label><span>Phone</span><input type="text" name="phone" value={student.phone || ''} onChange={handleChange} /></label>
-            <label><span>Final Grade</span><input type="text" name="final_grade" value={student.final_grade || ''} onChange={handleChange} placeholder="e.g. A, 92%, Pass" /></label>
-            <label><span>Status Page Slug</span><input type="text" name="slug" value={student.slug || ''} onChange={handleChange} /></label>
+        <section className="detail-card detail-card-compact payment-card">
+          <div className="card-header">
+            <div>
+              <h2>Payments</h2>
+              <p>Summary and history for this student.</p>
+            </div>
           </div>
-          {student.slug && <div className="status-preview"><span>Student Status Page</span><a href={`/status/${student.slug}`} target="_blank" rel="noreferrer">/status/{student.slug}</a></div>}
-        </section>
-
-        <section className="detail-card payment-card">
-          <div className="card-header"><div><h2>Payment Summary</h2><p>Payment information for this student.</p></div><Link to="/admin/payments" className="card-link">Open Payment Tracker →</Link></div>
-          <div className="payment-summary-grid">
+          <div className="payment-summary-grid payment-summary-grid-compact">
             <div className="payment-summary-item"><span>Outstanding</span><strong>{paymentSummaryText.outstanding}</strong></div>
             <div className="payment-summary-item"><span>Collected</span><strong className="paid-amount">{paymentSummaryText.paid}</strong></div>
             <div className="payment-summary-item"><span>Overdue</span><strong className="overdue-amount">{paymentSummaryText.overdue}</strong></div>
             <div className="payment-summary-item"><span>Invoices</span><strong>{payments.length}</strong></div>
           </div>
-          <div className="payment-details">
-            <div><span>Last Payment</span><strong>{lastPaidPayment ? formatShortDate(lastPaidPayment.paid_at || lastPaidPayment.updated_at || lastPaidPayment.invoice_date) : 'No payments yet'}</strong></div>
-            <div><span>Next Due</span><strong>{nextPayment ? formatShortDate(nextPayment.due_date) : 'No upcoming payment'}</strong></div>
+
+          <div className="payment-history">
+            <div className="payment-history-header">
+              <strong>Payment history</strong>
+              <span>
+                {payments.length}{' '}
+                {payments.length === 1 ? 'record' : 'records'}
+              </span>
+            </div>
+            {payments.length === 0 ? (
+              <p className="payment-history-empty">No payment records yet.</p>
+            ) : (
+              <div className="payment-history-table-wrap">
+                <table className="payment-history-table">
+                  <thead>
+                    <tr>
+                      <th>Description</th>
+                      <th>Amount</th>
+                      <th>Invoice</th>
+                      <th>Due</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {payments.map((payment) => {
+                      const overdue =
+                        payment.status !== 'paid' &&
+                        payment.due_date &&
+                        new Date(payment.due_date) <
+                          new Date(new Date().toDateString())
+                      return (
+                        <tr key={payment.id}>
+                          <td title={payment.description || undefined}>
+                            {payment.description || '—'}
+                          </td>
+                          <td className="payment-history-amount">
+                            {formatMoney(payment.amount, payment.currency)}
+                          </td>
+                          <td>{formatShortDate(payment.invoice_date)}</td>
+                          <td className={overdue ? 'overdue-amount' : ''}>
+                            {formatShortDate(payment.due_date)}
+                          </td>
+                          <td>
+                            <span
+                              className={`payment-history-status ${
+                                payment.status === 'paid'
+                                  ? 'paid'
+                                  : overdue
+                                    ? 'overdue'
+                                    : 'pending'
+                              }`}
+                            >
+                              {payment.status === 'paid'
+                                ? 'Paid'
+                                : overdue
+                                  ? 'Overdue'
+                                  : 'Pending'}
+                            </span>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-        </section>
-
-        <div className="two-column-grid">
-          <section className="detail-card">
-            <div className="card-header"><div><h2>Canvas</h2><p>Canvas login information.</p></div><span className="system-badge">Learning System</span></div>
-            <div className="credentials-grid">
-              <label><span>Username</span><input type="text" name="canvas_un" value={student.canvas_un || ''} onChange={handleChange} autoComplete="off" /></label>
-              <label><span>Password</span><div className="password-field"><input type={showCanvasPassword ? 'text' : 'password'} name="canvas_pw" value={student.canvas_pw || ''} onChange={handleChange} autoComplete="off" /><button type="button" className="show-password-button" onClick={() => setShowCanvasPassword(current => !current)}>{showCanvasPassword ? 'Hide' : 'Show'}</button></div></label>
-            </div>
-          </section>
-
-          <section className="detail-card">
-            <div className="card-header"><div><h2>CORELMS</h2><p>CORELMS login information.</p></div><span className="system-badge">Learning System</span></div>
-            <div className="credentials-grid">
-              <label><span>Username</span><input type="text" name="corelms_un" value={student.corelms_un || ''} onChange={handleChange} autoComplete="off" /></label>
-              <label><span>Password</span><div className="password-field"><input type={showCorelmsPassword ? 'text' : 'password'} name="corelms_pw" value={student.corelms_pw || ''} onChange={handleChange} autoComplete="off" /><button type="button" className="show-password-button" onClick={() => setShowCorelmsPassword(current => !current)}>{showCorelmsPassword ? 'Hide' : 'Show'}</button></div></label>
-            </div>
-          </section>
-        </div>
-
-        <section className="detail-card activity-card">
-          <div className="card-header"><div><h2>Activity Progress</h2><p>Progress from the Activity Tracker checklist.</p></div><button type="button" className="card-link activity-card-link-button" onClick={() => setShowActivityModal(true)}>Open Checklist →</button></div>
-          {activityProgress.total === 0 ? <div className="activity-empty">No activity requirements have been configured yet.</div> : <div className="activity-progress"><div className="activity-progress-header"><strong>{activityProgress.completed} of {activityProgress.total} completed</strong><span>{activityProgress.percentage}%</span></div><div className="progress-track"><div className="progress-fill" style={{ width: `${activityProgress.percentage}%` }} /></div></div>}
         </section>
 
         {savedMessage && (
