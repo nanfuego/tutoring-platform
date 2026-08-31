@@ -127,10 +127,7 @@ function ActivityTracker() {
   }
 
   return (
-    <div className="activity-page">
-      <button className="back-link" onClick={() => navigate('/admin')}>
-        ← Back to Dashboard
-      </button>
+    <div className="activity-tracker-page">
 
       <div className="activity-header">
         <h1 className="admin-welcome">Student Progress</h1>

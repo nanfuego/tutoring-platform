@@ -1,0 +1,100 @@
+/*
+  AdminDashboard visual normalization.
+  The existing dashboard keeps all of its Supabase/business logic.
+  This file makes its page canvas and controls use the same language
+  as Student Progress and Payment Management.
+*/
+
+.admin-dashboard-frame{position:relative}
+.admin-dashboard-frame > .admin-page{
+  min-height:0;
+  padding:0;
+  background:#f8f7f3;
+  color:#222;
+}
+
+/* The shared shell owns the dashboard header on the other routes.
+   On /admin, the existing Dashboard header remains visible so the
+   Add/Delete Student manager continues to work. */
+.admin-dashboard-frame .admin-topbar{
+  max-width:1400px;
+  margin:0 auto;
+  gap:1rem;
+}
+
+.admin-dashboard-frame .admin-welcome{
+  font-size:1.6rem;
+  font-weight:500;
+}
+
+.admin-dashboard-frame .student-action-buttons{
+  gap:.35rem;
+}
+
+.admin-dashboard-frame .manager-button,
+.admin-dashboard-frame .nav-button{
+  border:none;
+  border-radius:8px;
+  padding:.6rem .9rem;
+  background:transparent;
+  color:#777;
+  font-family:var(--font-body,Arial,sans-serif);
+  font-size:.85rem;
+  font-weight:500;
+  text-decoration:none;
+  cursor:pointer;
+}
+
+.admin-dashboard-frame .manager-button:hover,
+.admin-dashboard-frame .nav-button:hover{
+  background:#edf1ef;
+  color:#426b62;
+}
+
+.admin-dashboard-frame .dashboard-filter-row{
+  max-width:1400px;
+  margin:0 auto;
+}
+
+.admin-dashboard-frame .students-card{
+  max-width:1400px;
+  margin:0 auto;
+}
+
+.admin-dashboard-frame .dashboard-controls input,
+.admin-dashboard-frame .dashboard-controls select{
+  border-color:#dedbd4;
+  border-radius:8px;
+  background:#fff;
+}
+
+.admin-dashboard-frame .dashboard-status-tab{
+  border-color:#dedbd4;
+  border-radius:8px;
+  background:#fff;
+  color:#777;
+}
+
+.admin-dashboard-frame .dashboard-status-tab.active{
+  border-color:#426b62;
+  background:#edf1ef;
+  color:#426b62;
+}
+
+.admin-dashboard-frame-dashboard{
+  position:absolute;
+  top:7.55rem;
+  left:0;
+  z-index:20;
+  display:none;
+  border-radius:8px;
+  padding:.6rem .9rem;
+  color:#777;
+  text-decoration:none;
+  font:500 .85rem var(--font-body,Arial,sans-serif);
+}
+
+@media(max-width:760px){
+  .admin-dashboard-frame .admin-page{padding:0}
+  .admin-dashboard-frame .dashboard-controls{gap:.5rem}
+}

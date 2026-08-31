@@ -1,0 +1,689 @@
+/* =========================================================
+   UNIVERSAL ADMIN DESIGN
+   The AdminDashboard visual language is now the shared shell.
+   ========================================================= */
+
+.universal-admin-page {
+  --ua-bg: #f8f7f3;
+  --ua-surface: #ffffff;
+  --ua-ink: #222;
+  --ua-muted: #777;
+  --ua-border: #dedbd4;
+  --ua-accent: #426b62;
+  --ua-accent-soft: #edf1ef;
+  --ua-danger: #b3423a;
+
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 2rem;
+  background: var(--ua-bg);
+  color: var(--ua-ink);
+}
+
+.universal-admin-header,
+.universal-admin-content {
+  width: min(1400px, 100%);
+  margin: 0 auto;
+}
+
+.universal-admin-header {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.universal-admin-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.universal-admin-welcome {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.6rem;
+  font-weight: 500;
+  color: var(--ua-ink);
+}
+
+.universal-admin-clock {
+  margin: .15rem 0 0;
+  font-family: Arial, sans-serif;
+  font-size: .8rem;
+  color: var(--ua-muted);
+}
+
+.universal-admin-logout {
+  border: none;
+  border-radius: 8px;
+  padding: .6rem 1rem;
+  background: var(--ua-danger);
+  color: #fff;
+  font: 500 .8rem Arial, sans-serif;
+  cursor: pointer;
+}
+
+.universal-admin-logout:hover {
+  background: #963630;
+}
+
+.universal-admin-nav {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  min-height: 42px;
+  flex-wrap: wrap;
+}
+
+.universal-admin-nav-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  min-height: 38px;
+  box-sizing: border-box;
+  padding: .6rem .9rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ua-muted);
+  font: 500 .85rem Arial, sans-serif;
+  text-decoration: none;
+  cursor: pointer;
+  transition: .15s ease;
+}
+
+.universal-admin-nav-link:hover,
+.universal-admin-nav-link.active {
+  background: var(--ua-accent-soft);
+  color: var(--ua-accent);
+}
+
+.universal-admin-nav-link.active {
+  font-weight: 600;
+}
+
+.universal-admin-nav-link .caret {
+  font-size: .72rem;
+}
+
+.universal-admin-divider {
+  width: 1px;
+  height: 24px;
+  margin: 0 .2rem;
+  background: var(--ua-border);
+}
+
+.universal-admin-manager {
+  position: relative;
+}
+
+.universal-admin-manager-menu {
+  position: absolute;
+  z-index: 5000;
+  top: calc(100% + 5px);
+  left: 0;
+  width: 205px;
+  padding: .4rem;
+  border: 1px solid var(--ua-border);
+  border-radius: 9px;
+  background: #fff;
+  box-shadow: 0 15px 35px rgba(0,0,0,.12);
+}
+
+.universal-admin-manager-menu button {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  width: 100%;
+  padding: .7rem .75rem;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ua-ink);
+  font: 500 .8rem Arial, sans-serif;
+  text-align: left;
+  cursor: pointer;
+}
+
+.universal-admin-manager-menu button:hover {
+  background: var(--ua-accent-soft);
+  color: var(--ua-accent);
+}
+
+.menu-symbol {
+  width: 20px;
+  color: var(--ua-accent);
+  font-size: 1rem;
+  text-align: center;
+}
+
+.danger-symbol {
+  color: var(--ua-danger);
+}
+
+.universal-admin-content {
+  padding-top: 1.5rem;
+}
+
+/* Hide the old AdminDashboard chrome because AdminShell now owns it.
+   Its student table, filters and existing business logic remain intact. */
+.universal-admin-content > .admin-page {
+  min-height: auto;
+  padding: 0;
+  background: transparent;
+}
+
+.universal-admin-content > .admin-page .admin-topbar {
+  display: none;
+}
+
+/* Normalize the page wrappers underneath the shared header. */
+.universal-admin-content > .activity-page,
+.universal-admin-content > .tracker-page,
+.universal-admin-content > .student-detail-page,
+.universal-admin-content > .student-detail {
+  max-width: none;
+  margin: 0;
+  padding-top: 0;
+  background: transparent;
+}
+
+/* =========================================================
+   GLOBAL MODALS
+   These work from Student Manager regardless of active panel.
+   ========================================================= */
+
+.universal-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+  background: rgba(28, 32, 30, .52);
+  backdrop-filter: blur(4px);
+}
+
+.universal-modal {
+  width: min(900px, calc(100vw - 48px));
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  box-sizing: border-box;
+  border: 1px solid var(--ua-border);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 28px 80px rgba(0,0,0,.22);
+}
+
+.add-modal {
+  padding: 0;
+}
+
+.delete-modal {
+  width: min(720px, calc(100vw - 48px));
+  padding: 0;
+}
+
+.universal-modal-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 24px 26px 20px;
+  border-bottom: 1px solid #e8e6e1;
+}
+
+.universal-modal-kicker {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--ua-accent);
+  font: 650 .62rem Arial, sans-serif;
+  letter-spacing: .12em;
+}
+
+.universal-modal-kicker.danger-kicker {
+  color: var(--ua-danger);
+}
+
+.universal-modal-header h2 {
+  margin: 0 0 6px;
+  font: 500 1.55rem Georgia, "Times New Roman", serif;
+}
+
+.universal-modal-header p {
+  max-width: 650px;
+  margin: 0;
+  color: var(--ua-muted);
+  font: .8rem/1.5 Arial, sans-serif;
+}
+
+.universal-modal-close {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--ua-border);
+  border-radius: 8px;
+  background: #fafaf8;
+  color: #66706b;
+  font-size: 23px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.universal-modal-close:hover {
+  background: #efefeb;
+}
+
+.universal-modal-error {
+  margin: 16px 26px 0;
+  padding: 10px 12px;
+  border: 1px solid #e2b6b2;
+  border-radius: 8px;
+  background: #fff3f2;
+  color: #8f302b;
+  font: .78rem/1.45 Arial, sans-serif;
+}
+
+.universal-form-section {
+  padding: 22px 26px;
+  border-bottom: 1px solid #eceae5;
+}
+
+.universal-section-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.universal-section-title > span {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--ua-accent-soft);
+  color: var(--ua-accent);
+  font: 700 .68rem Arial, sans-serif;
+}
+
+.universal-section-title h3 {
+  margin: 0 0 3px;
+  font: 500 1.05rem Georgia, "Times New Roman", serif;
+}
+
+.universal-section-title p {
+  margin: 0;
+  color: var(--ua-muted);
+  font: .72rem/1.45 Arial, sans-serif;
+}
+
+.universal-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.universal-form-grid label,
+.credential-card label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #69716d;
+  font: 500 .7rem Arial, sans-serif;
+}
+
+.universal-form-grid label.full {
+  grid-column: 1 / -1;
+}
+
+.universal-form-grid input,
+.universal-form-grid select,
+.credential-card input,
+.delete-toolbar input {
+  width: 100%;
+  min-height: 38px;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid #dcded9;
+  border-radius: 7px;
+  outline: none;
+  background: #fff;
+  color: var(--ua-ink);
+  font: .82rem Arial, sans-serif;
+}
+
+.universal-form-grid input:focus,
+.universal-form-grid select:focus,
+.credential-card input:focus,
+.delete-toolbar input:focus {
+  border-color: #8ea8a0;
+  box-shadow: 0 0 0 3px rgba(66,107,98,.07);
+}
+
+.credential-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.credential-card {
+  padding: 16px;
+  border: 1px solid #e0e1dd;
+  border-radius: 10px;
+  background: #fafbf9;
+}
+
+.credential-card-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.credential-card-heading strong {
+  font: 500 1rem Georgia, "Times New Roman", serif;
+  color: var(--ua-ink);
+}
+
+.credential-card-heading span {
+  color: var(--ua-muted);
+  font: .62rem Arial, sans-serif;
+}
+
+.credential-card label + label {
+  margin-top: 11px;
+}
+
+.credential-password {
+  display: flex;
+  gap: 6px;
+}
+
+.credential-password input {
+  flex: 1;
+}
+
+.credential-password button {
+  min-width: 55px;
+  border: 1px solid #dcded9;
+  border-radius: 7px;
+  background: #fff;
+  color: #68716c;
+  font: .7rem Arial, sans-serif;
+  cursor: pointer;
+}
+
+.universal-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  padding: 16px 26px;
+  background: #fafaf8;
+}
+
+.primary-button,
+.secondary-button,
+.danger-button {
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 7px;
+  font: 600 .75rem Arial, sans-serif;
+  cursor: pointer;
+}
+
+.primary-button {
+  border: 1px solid var(--ua-accent);
+  background: var(--ua-accent);
+  color: #fff;
+}
+
+.primary-button:hover {
+  background: #365b53;
+}
+
+.secondary-button {
+  border: 1px solid #d8d9d5;
+  background: #fff;
+  color: #5e6762;
+}
+
+.secondary-button:hover {
+  background: #f1f1ed;
+}
+
+.danger-button {
+  border: 1px solid var(--ua-danger);
+  background: var(--ua-danger);
+  color: #fff;
+}
+
+.danger-button:hover {
+  background: #963630;
+}
+
+.primary-button:disabled,
+.secondary-button:disabled,
+.danger-button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+/* Delete modal */
+.delete-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 26px;
+  border-bottom: 1px solid #eceae5;
+}
+
+.delete-toolbar input {
+  flex: 1;
+}
+
+.delete-toolbar > span {
+  flex: 0 0 auto;
+  color: var(--ua-muted);
+  font: .7rem Arial, sans-serif;
+}
+
+.delete-list {
+  max-height: 430px;
+  overflow-y: auto;
+  padding: 8px 12px;
+}
+
+.delete-select-all,
+.delete-student-row {
+  width: 100%;
+  box-sizing: border-box;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.delete-select-all {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #eceae5;
+  background: transparent;
+  color: var(--ua-muted);
+  font: 600 .7rem Arial, sans-serif;
+}
+
+.delete-student-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  background: transparent;
+}
+
+.delete-student-row:hover,
+.delete-student-row.selected {
+  background: var(--ua-accent-soft);
+}
+
+.delete-checkbox {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  box-sizing: border-box;
+  border: 1px solid #b7beb9;
+  border-radius: 5px;
+  background: #fff;
+  color: #fff;
+  font: 700 .75rem Arial, sans-serif;
+}
+
+.delete-checkbox.checked {
+  border-color: var(--ua-accent);
+  background: var(--ua-accent);
+}
+
+.delete-student-info {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.delete-student-info strong {
+  overflow: hidden;
+  color: var(--ua-ink);
+  font: 600 .8rem Arial, sans-serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.delete-student-info span {
+  overflow: hidden;
+  color: var(--ua-muted);
+  font: .68rem Arial, sans-serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.delete-active-state {
+  flex: 0 0 auto;
+  padding: 4px 7px;
+  border-radius: 999px;
+  font: 600 .6rem Arial, sans-serif;
+}
+
+.delete-active-state.active {
+  background: #edf5ef;
+  color: #39704b;
+}
+
+.delete-active-state.inactive {
+  background: #f0f0ed;
+  color: #7a807c;
+}
+
+.delete-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--ua-muted);
+  font: .78rem Arial, sans-serif;
+}
+
+@media (max-width: 760px) {
+  .universal-admin-page {
+    padding: 1.25rem;
+  }
+
+  .universal-admin-nav {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+
+  .universal-admin-nav-link {
+    flex: 0 0 auto;
+    font-size: .78rem;
+  }
+
+  .universal-form-grid,
+  .credential-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .universal-form-grid label.full {
+    grid-column: auto;
+  }
+
+  .universal-modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .universal-modal,
+  .delete-modal {
+    width: 100%;
+    max-width: none;
+    max-height: 94vh;
+    border-radius: 14px 14px 0 0;
+  }
+
+  .universal-modal-header,
+  .universal-form-section {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .universal-modal-footer {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .delete-toolbar {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .universal-admin-page {
+    padding: 1rem;
+  }
+
+  .universal-admin-welcome {
+    font-size: 1.3rem;
+  }
+
+  .universal-admin-header-row {
+    align-items: flex-start;
+  }
+
+  .universal-admin-logout {
+    padding: .5rem .75rem;
+  }
+
+  .universal-modal-header h2 {
+    font-size: 1.35rem;
+  }
+
+  .universal-modal-header p {
+    font-size: .72rem;
+  }
+
+  .universal-form-section {
+    padding-top: 18px;
+    padding-bottom: 18px;
+  }
+
+  .delete-active-state {
+    display: none;
+  }
+}

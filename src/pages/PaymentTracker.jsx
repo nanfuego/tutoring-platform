@@ -266,11 +266,7 @@ function PaymentTracker() {
   const selectedStudent = students.find((s) => s.id === studentId)
 
   return (
-    <div className="tracker-page">
-      <button className="back-link" onClick={() => navigate('/admin')}>
-        ← Back to students
-      </button>
-
+    <div className="payment-tracker-page">
       <div className="tracker-header">
         <h1 className="admin-welcome">Payments</h1>
         <button className="create-invoice-button" onClick={openCreateModal}>

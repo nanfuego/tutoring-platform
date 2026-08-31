@@ -1,6 +1,7 @@
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../supabaseClient'
+import { useStudentActivity } from '../hooks/useStudentActivity'
 import './StudentDetail.css'
 import './StudentDetail.activity-modal.css'
 
@@ -32,8 +33,6 @@ function StudentDetail() {
   const [student, setStudent] = useState(null)
   const [notes, setNotes] = useState([])
   const [payments, setPayments] = useState([])
-  const [activity, setActivity] = useState([])
-  const [requirements, setRequirements] = useState([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [addingNote, setAddingNote] = useState(false)
@@ -44,6 +43,21 @@ function StudentDetail() {
   const [showCorelmsPassword, setShowCorelmsPassword] = useState(false)
   const [newNote, setNewNote] = useState('')
   const [showActivityModal, setShowActivityModal] = useState(false)
+
+  // Checklist state/logic now lives in one shared place — see
+  // src/hooks/useStudentActivity.js. StudentActivityModal.jsx uses the same
+  // hook, so a fix here fixes both UIs instead of drifting independently.
+  const {
+    requirements,
+    loading: activityLoading,
+    error: activityError,
+    progress: activityProgress,
+    requirementsByWeek: activityRequirementsByWeek,
+    getActivity: getStudentActivity,
+    toggleRequirement: toggleStudentActivity,
+    updateNote: updateStudentActivityNote,
+  } = useStudentActivity(id)
+
   const [savingActivityId, setSavingActivityId] = useState(null)
 
   useEffect(() => { loadStudentData() }, [id])
@@ -51,14 +65,11 @@ function StudentDetail() {
   async function loadStudentData() {
     setLoading(true)
     setError('')
-    const [studentResult, notesResult, paymentsResult, activityResult, requirementsResult] =
-      await Promise.all([
-        supabase.from('students').select('*').eq('id', id).single(),
-        supabase.from('notes').select('*').eq('student_id', id).order('created_at', { ascending: false }),
-        supabase.from('payments').select('*').eq('student_id', id).order('due_date', { ascending: false }),
-        supabase.from('student_activity').select('*').eq('student_id', id),
-        supabase.from('activity_requirements').select('*').order('sort_order'),
-      ])
+    const [studentResult, notesResult, paymentsResult] = await Promise.all([
+      supabase.from('students').select('*').eq('id', id).single(),
+      supabase.from('notes').select('*').eq('student_id', id).order('created_at', { ascending: false }),
+      supabase.from('payments').select('*').eq('student_id', id).order('due_date', { ascending: false }),
+    ])
 
     if (studentResult.error) {
       console.error('Error loading student:', studentResult.error)
@@ -69,14 +80,10 @@ function StudentDetail() {
 
     if (notesResult.error) console.error('Error loading notes:', notesResult.error)
     if (paymentsResult.error) console.error('Error loading payments:', paymentsResult.error)
-    if (activityResult.error) console.error('Error loading activity:', activityResult.error)
-    if (requirementsResult.error) console.error('Error loading activity requirements:', requirementsResult.error)
 
     setStudent(studentResult.data)
     setNotes(notesResult.data || [])
     setPayments(paymentsResult.data || [])
-    setActivity(activityResult.data || [])
-    setRequirements(requirementsResult.data || [])
     setLoading(false)
   }
 
@@ -178,6 +185,12 @@ function StudentDetail() {
     setNotes(current => current.filter(note => note.id !== noteId))
   }
 
+  async function handleToggleActivity(requirementId) {
+    setSavingActivityId(requirementId)
+    await toggleStudentActivity(requirementId)
+    setSavingActivityId(null)
+  }
+
   const paymentSummary = useMemo(() => {
     const currencies = {}
     payments.forEach(payment => {
@@ -217,104 +230,6 @@ function StudentDetail() {
       .sort((a, b) => new Date(a.due_date) - new Date(b.due_date))[0] || null
   }, [payments])
 
-  const activityProgress = useMemo(() => {
-    const total = requirements.length
-    const completed = activity.filter(item => item.completed).length
-    return { total, completed, percentage: total > 0 ? Math.round((completed / total) * 100) : 0 }
-  }, [activity, requirements])
-
-  const activityRequirementsByWeek = useMemo(() => {
-    const groups = {}
-    requirements.forEach(requirement => {
-      const week = requirement.week ?? 0
-      if (!groups[week]) groups[week] = []
-      groups[week].push(requirement)
-    })
-    return Object.entries(groups)
-      .sort(([a], [b]) => Number(a) - Number(b))
-      .map(([week, items]) => ({
-        week: Number(week),
-        label: week === '0' || week === 0 ? 'General' : `Week ${week}`,
-        items,
-      }))
-  }, [requirements])
-
-  function getStudentActivity(requirementId) {
-    return activity.find(item => item.requirement_id === requirementId)
-  }
-
-  async function toggleStudentActivity(requirementId) {
-    const existing = getStudentActivity(requirementId)
-    const currentCompleted = existing?.completed || false
-    setSavingActivityId(requirementId)
-    setError('')
-
-    if (existing) {
-      const { error: updateError } = await supabase
-        .from('student_activity')
-        .update({ completed: !currentCompleted, updated_at: new Date().toISOString() })
-        .eq('id', existing.id)
-
-      if (updateError) {
-        console.error('Error updating activity:', updateError)
-        setError(updateError.message)
-      } else {
-        setActivity(current => current.map(item =>
-          item.id === existing.id ? { ...item, completed: !currentCompleted } : item
-        ))
-      }
-    } else {
-      const { data, error: insertError } = await supabase
-        .from('student_activity')
-        .insert({ student_id: id, requirement_id: requirementId, completed: true })
-        .select()
-        .single()
-
-      if (insertError) {
-        console.error('Error creating activity:', insertError)
-        setError(insertError.message)
-      } else if (data) {
-        setActivity(current => [...current, data])
-      }
-    }
-
-    setSavingActivityId(null)
-  }
-
-  async function updateStudentActivityNote(requirementId, note) {
-    const existing = getStudentActivity(requirementId)
-
-    if (existing) {
-      const { error: updateError } = await supabase
-        .from('student_activity')
-        .update({ note, updated_at: new Date().toISOString() })
-        .eq('id', existing.id)
-
-      if (updateError) {
-        console.error('Error saving activity note:', updateError)
-        setError(updateError.message)
-        return
-      }
-
-      setActivity(current => current.map(item =>
-        item.id === existing.id ? { ...item, note } : item
-      ))
-    } else if (note.trim()) {
-      const { data, error: insertError } = await supabase
-        .from('student_activity')
-        .insert({ student_id: id, requirement_id: requirementId, completed: false, note })
-        .select()
-        .single()
-
-      if (insertError) {
-        console.error('Error creating activity note:', insertError)
-        setError(insertError.message)
-      } else if (data) {
-        setActivity(current => [...current, data])
-      }
-    }
-  }
-
   const isCompleted = !Boolean(student?.active)
 
   if (loading) return <div className="detail-page"><div className="detail-loading"><div className="loading-spinner" /><p>Loading student...</p></div></div>
@@ -323,8 +238,7 @@ function StudentDetail() {
 
   return (
     <div className="detail-page">
-      <div className="detail-topbar"><Link to="/admin" className="back-link">← Back to Dashboard</Link></div>
-
+     
       <header className="student-hero">
         <div className="student-hero-main">
           <div className="student-avatar">{(student.name || '?').trim().charAt(0).toUpperCase()}</div>
@@ -479,10 +393,12 @@ function StudentDetail() {
               </div>
             </div>
 
-            {error && <div className="student-detail-activity-error">{error}</div>}
+            {activityError && <div className="student-detail-activity-error">{activityError}</div>}
 
             <div className="student-detail-activity-body">
-              {requirements.length === 0 ? (
+              {activityLoading ? (
+                <div className="student-detail-activity-empty">Loading checklist...</div>
+              ) : requirements.length === 0 ? (
                 <div className="student-detail-activity-empty">
                   No activity requirements have been configured yet.
                 </div>
@@ -506,7 +422,7 @@ function StudentDetail() {
                                 type="checkbox"
                                 checked={completed}
                                 disabled={savingActivityId === requirement.id}
-                                onChange={() => toggleStudentActivity(requirement.id)}
+                                onChange={() => handleToggleActivity(requirement.id)}
                               />
                               <span className={completed ? 'done' : ''}>{requirement.label}</span>
                             </label>

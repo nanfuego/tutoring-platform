@@ -5,50 +5,57 @@ import AdminDashboard from './pages/AdminDashboard'
 import StudentDetail from './pages/StudentDetail'
 import PaymentTracker from './pages/PaymentTracker'
 import ActivityTracker from './pages/ActivityTracker'
+import AdminShell from './components/AdminShell'
 import ProtectedRoute from './components/ProtectedRoute'
+
+function AdminPage({ children }) {
+  return (
+    <ProtectedRoute>
+      <AdminShell>{children}</AdminShell>
+    </ProtectedRoute>
+  )
+}
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<h1>Tutoring Platform</h1>} />
-
       <Route path="/status/:slug" element={<StudentStatus />} />
-
       <Route path="/admin/login" element={<AdminLogin />} />
 
       <Route
         path="/admin"
         element={
-          <ProtectedRoute>
+          <AdminPage>
             <AdminDashboard />
-          </ProtectedRoute>
+          </AdminPage>
         }
       />
 
       <Route
         path="/admin/students/:id"
         element={
-          <ProtectedRoute>
+          <AdminPage>
             <StudentDetail />
-          </ProtectedRoute>
+          </AdminPage>
         }
       />
 
       <Route
         path="/admin/activity"
         element={
-          <ProtectedRoute>
+          <AdminPage>
             <ActivityTracker />
-          </ProtectedRoute>
+          </AdminPage>
         }
       />
 
       <Route
         path="/admin/payments"
         element={
-          <ProtectedRoute>
+          <AdminPage>
             <PaymentTracker />
-          </ProtectedRoute>
+          </AdminPage>
         }
       />
     </Routes>
@@ -56,4 +63,3 @@ function App() {
 }
 
 export default App
-

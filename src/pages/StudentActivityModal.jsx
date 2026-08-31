@@ -1,274 +1,56 @@
-import { useEffect, useMemo, useState } from 'react'
-import { supabase } from '../supabaseClient'
+import { useState } from 'react'
+import { useStudentActivity } from '../hooks/useStudentActivity'
 import './StudentActivityModal.css'
 
 function StudentActivityModal({ student, onClose }) {
-  const [requirements, setRequirements] = useState([])
-  const [activity, setActivity] = useState([])
-  const [loading, setLoading] = useState(true)
+  const {
+    requirements,
+    loading,
+    error,
+    progress,
+    requirementsByWeek,
+    weekOptions,
+    getActivity,
+    toggleRequirement,
+    updateNote,
+    addActivity,
+    deleteActivity,
+  } = useStudentActivity(student?.id)
+
   const [savingId, setSavingId] = useState(null)
-  const [error, setError] = useState('')
+  const [deletingId, setDeletingId] = useState(null)
 
   // Add-activity form (per-student custom items)
   const [showAddForm, setShowAddForm] = useState(false)
   const [newLabel, setNewLabel] = useState('')
   const [newWeek, setNewWeek] = useState('0')
   const [adding, setAdding] = useState(false)
-  const [deletingId, setDeletingId] = useState(null)
 
-  useEffect(() => {
-    if (!student?.id) return
-
-    let cancelled = false
-
-    async function loadChecklist() {
-      setLoading(true)
-      setError('')
-
-      const [requirementsRes, activityRes] = await Promise.all([
-        supabase
-          .from('activity_requirements')
-          .select('*')
-          .or(`student_id.is.null,student_id.eq.${student.id}`)
-          .order('sort_order'),
-        supabase
-          .from('student_activity')
-          .select('*')
-          .eq('student_id', student.id),
-      ])
-
-      if (cancelled) return
-
-      if (requirementsRes.error) {
-        console.error('Error loading activity requirements:', requirementsRes.error)
-        setError(requirementsRes.error.message)
-      } else if (activityRes.error) {
-        console.error('Error loading student activity:', activityRes.error)
-        setError(activityRes.error.message)
-      }
-
-      setRequirements(requirementsRes.data || [])
-      setActivity(activityRes.data || [])
-      setLoading(false)
-    }
-
-    loadChecklist()
-
-    return () => {
-      cancelled = true
-    }
-  }, [student?.id])
-
-  const completedCount = useMemo(
-    () => activity.filter((item) => item.completed).length,
-    [activity]
-  )
-
-  const progressPercent =
-    requirements.length > 0
-      ? Math.round((completedCount / requirements.length) * 100)
-      : 0
-
-  const requirementsByWeek = useMemo(() => {
-    const groups = {}
-
-    requirements.forEach((requirement) => {
-      const week = requirement.week ?? 0
-      if (!groups[week]) groups[week] = []
-      groups[week].push(requirement)
-    })
-
-    return Object.entries(groups)
-      .sort(([a], [b]) => Number(a) - Number(b))
-      .map(([week, items]) => ({
-        week: Number(week),
-        label: week === '0' || week === 0 ? 'General' : `Week ${week}`,
-        items,
-      }))
-  }, [requirements])
-
-  function getActivity(requirementId) {
-    return activity.find(
-      (item) =>
-        item.student_id === student.id &&
-        item.requirement_id === requirementId
-    )
-  }
-
-  async function toggleRequirement(requirementId) {
-    const existing = getActivity(requirementId)
-    const currentCompleted = existing?.completed || false
-
+  async function handleToggle(requirementId) {
     setSavingId(requirementId)
-    setError('')
-
-    if (existing) {
-      const { error: updateError } = await supabase
-        .from('student_activity')
-        .update({
-          completed: !currentCompleted,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', existing.id)
-
-      if (updateError) {
-        console.error('Error updating activity:', updateError)
-        setError(updateError.message)
-      } else {
-        setActivity((current) =>
-          current.map((item) =>
-            item.id === existing.id
-              ? { ...item, completed: !currentCompleted }
-              : item
-          )
-        )
-      }
-    } else {
-      const { data, error: insertError } = await supabase
-        .from('student_activity')
-        .insert({
-          student_id: student.id,
-          requirement_id: requirementId,
-          completed: true,
-        })
-        .select()
-        .single()
-
-      if (insertError) {
-        console.error('Error creating activity:', insertError)
-        setError(insertError.message)
-      } else if (data) {
-        setActivity((current) => [...current, data])
-      }
-    }
-
+    await toggleRequirement(requirementId)
     setSavingId(null)
   }
 
-  async function updateNote(requirementId, note) {
-    const existing = getActivity(requirementId)
-
-    if (existing) {
-      const { error: updateError } = await supabase
-        .from('student_activity')
-        .update({
-          note,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', existing.id)
-
-      if (updateError) {
-        console.error('Error saving activity note:', updateError)
-        setError(updateError.message)
-        return
-      }
-
-      setActivity((current) =>
-        current.map((item) =>
-          item.id === existing.id ? { ...item, note } : item
-        )
-      )
-    } else if (note.trim()) {
-      const { data, error: insertError } = await supabase
-        .from('student_activity')
-        .insert({
-          student_id: student.id,
-          requirement_id: requirementId,
-          completed: false,
-          note,
-        })
-        .select()
-        .single()
-
-      if (insertError) {
-        console.error('Error creating activity note:', insertError)
-        setError(insertError.message)
-      } else if (data) {
-        setActivity((current) => [...current, data])
-      }
-    }
-  }
-
-  // Weeks already in use, so the add-activity form can offer them
-  // alongside "General" instead of forcing a brand new group every time.
-  const weekOptions = useMemo(() => {
-    const weeks = new Set(requirements.map((r) => Number(r.week ?? 0)))
-    weeks.add(0)
-    return Array.from(weeks).sort((a, b) => a - b)
-  }, [requirements])
-
-  async function addActivity(event) {
+  async function handleAddActivity(event) {
     event.preventDefault()
     if (!newLabel.trim()) return
 
     setAdding(true)
-    setError('')
-
-    const maxSortOrder = requirements.reduce(
-      (max, r) => Math.max(max, r.sort_order ?? 0),
-      0
-    )
-
-    const { data, error: insertError } = await supabase
-      .from('activity_requirements')
-      .insert({
-        label: newLabel.trim(),
-        week: Number(newWeek),
-        student_id: student.id,
-        sort_order: maxSortOrder + 1,
-      })
-      .select()
-      .single()
-
+    await addActivity(newLabel, newWeek)
     setAdding(false)
-
-    if (insertError) {
-      console.error('Error adding custom activity:', insertError)
-      setError(insertError.message)
-      return
-    }
-
-    if (data) {
-      setRequirements((current) => [...current, data])
-      setNewLabel('')
-      setNewWeek('0')
-      setShowAddForm(false)
-    }
+    setNewLabel('')
+    setNewWeek('0')
+    setShowAddForm(false)
   }
 
-  async function deleteActivity(requirement) {
+  async function handleDelete(requirement) {
     if (!window.confirm(`Remove "${requirement.label}" for ${student.name}?`)) {
       return
     }
-
     setDeletingId(requirement.id)
-    setError('')
-
-    // Clear any saved progress for this item first in case the DB
-    // foreign key isn't set to cascade on delete.
-    await supabase
-      .from('student_activity')
-      .delete()
-      .eq('requirement_id', requirement.id)
-      .eq('student_id', student.id)
-
-    const { error: deleteError } = await supabase
-      .from('activity_requirements')
-      .delete()
-      .eq('id', requirement.id)
-
+    await deleteActivity(requirement)
     setDeletingId(null)
-
-    if (deleteError) {
-      console.error('Error deleting custom activity:', deleteError)
-      setError(deleteError.message)
-      return
-    }
-
-    setRequirements((current) => current.filter((r) => r.id !== requirement.id))
-    setActivity((current) =>
-      current.filter((item) => item.requirement_id !== requirement.id)
-    )
   }
 
   return (
@@ -308,15 +90,15 @@ function StudentActivityModal({ student, onClose }) {
         <div className="student-activity-summary">
           <div>
             <span className="student-activity-summary-label">Progress</span>
-            <strong>{progressPercent}%</strong>
+            <strong>{progress.percentage}%</strong>
           </div>
 
           <div className="student-activity-summary-count">
-            {completedCount} of {requirements.length} completed
+            {progress.completed} of {progress.total} completed
           </div>
 
           <div className="student-activity-summary-bar">
-            <span style={{ width: `${progressPercent}%` }} />
+            <span style={{ width: `${progress.percentage}%` }} />
           </div>
         </div>
 
@@ -332,9 +114,7 @@ function StudentActivityModal({ student, onClose }) {
           ) : (
             requirementsByWeek.map((group) => (
               <section key={group.week} className="student-activity-week">
-                <div className="student-activity-week-title">
-                  {group.label}
-                </div>
+                <div className="student-activity-week-title">{group.label}</div>
 
                 <div className="student-activity-list">
                   {group.items.map((requirement) => {
@@ -357,9 +137,7 @@ function StudentActivityModal({ student, onClose }) {
                             type="checkbox"
                             checked={completed}
                             disabled={savingId === requirement.id}
-                            onChange={() =>
-                              toggleRequirement(requirement.id)
-                            }
+                            onChange={() => handleToggle(requirement.id)}
                           />
                           <span
                             className={
@@ -371,9 +149,7 @@ function StudentActivityModal({ student, onClose }) {
                             {requirement.label}
                           </span>
                           {isCustom && (
-                            <span className="student-activity-custom-tag">
-                              Custom
-                            </span>
+                            <span className="student-activity-custom-tag">Custom</span>
                           )}
                         </label>
 
@@ -385,10 +161,7 @@ function StudentActivityModal({ student, onClose }) {
                             defaultValue={note}
                             onBlur={(event) => {
                               if (event.target.value !== note) {
-                                updateNote(
-                                  requirement.id,
-                                  event.target.value
-                                )
+                                updateNote(requirement.id, event.target.value)
                               }
                             }}
                           />
@@ -397,7 +170,7 @@ function StudentActivityModal({ student, onClose }) {
                             <button
                               type="button"
                               className="student-activity-delete"
-                              onClick={() => deleteActivity(requirement)}
+                              onClick={() => handleDelete(requirement)}
                               disabled={deletingId === requirement.id}
                               aria-label={`Remove ${requirement.label}`}
                               title="Remove this custom activity"
@@ -415,7 +188,7 @@ function StudentActivityModal({ student, onClose }) {
           )}
 
           {showAddForm ? (
-            <form className="student-activity-add-form" onSubmit={addActivity}>
+            <form className="student-activity-add-form" onSubmit={handleAddActivity}>
               <div className="student-activity-add-row">
                 <input
                   type="text"
@@ -476,11 +249,7 @@ function StudentActivityModal({ student, onClose }) {
         </div>
 
         <div className="student-activity-modal-footer">
-          <button
-            type="button"
-            className="student-activity-done-button"
-            onClick={onClose}
-          >
+          <button type="button" className="student-activity-done-button" onClick={onClose}>
             Done
           </button>
         </div>
