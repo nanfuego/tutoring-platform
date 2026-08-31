@@ -1,0 +1,621 @@
+/*
+====================================================================
+UNIVERSAL ADMIN DESIGN SYSTEM
+====================================================================
+
+Use this file as the single visual authority for the admin area.
+
+Design source of truth:
+- Fraunces headings
+- Inter body/UI
+- #FAF9F6 page canvas
+- #FFFFFF surfaces
+- #23241F primary text
+- #6B6A63 muted text
+- #E5E3DC borders
+- #3E6259 accent
+- #E7EDE9 accent-soft
+
+This intentionally scopes everything to .universal-admin-page so
+student-facing pages such as StudentStatus are not changed.
+*/
+
+.universal-admin-page {
+  --admin-bg: #FAF9F6;
+  --admin-surface: #FFFFFF;
+  --admin-ink: #23241F;
+  --admin-muted: #6B6A63;
+  --admin-border: #E5E3DC;
+  --admin-accent: #3E6259;
+  --admin-accent-soft: #E7EDE9;
+  --admin-danger: #A33A35;
+  --admin-danger-soft: #FBE4E2;
+  --admin-hover: #F5F4F1;
+  --admin-radius: 8px;
+  --admin-radius-card: 10px;
+  --admin-shadow: 0 16px 45px rgba(35, 36, 31, .12);
+
+  min-height: 100vh;
+  background: var(--admin-bg);
+  color: var(--admin-ink);
+  font-family: var(--font-body), Inter, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ================================================================
+   UNIVERSAL TYPOGRAPHY
+   Fixes the "Payment" label / "Student Progress" label mismatch.
+   Every admin UI label uses Inter. Display headings use Fraunces.
+   ================================================================ */
+
+.universal-admin-page button,
+.universal-admin-page input,
+.universal-admin-page select,
+.universal-admin-page textarea,
+.universal-admin-page table,
+.universal-admin-page th,
+.universal-admin-page td,
+.universal-admin-page label,
+.universal-admin-page span,
+.universal-admin-page small,
+.universal-admin-page p {
+  font-family: var(--font-body), Inter, sans-serif;
+}
+
+.universal-admin-page h1,
+.universal-admin-page h2,
+.universal-admin-page h3,
+.universal-admin-page h4,
+.universal-admin-page h5,
+.universal-admin-page h6,
+.universal-admin-page .admin-welcome,
+.universal-admin-page .detail-header h1,
+.universal-admin-page .detail-header h2,
+.universal-admin-page .section-heading h2,
+.universal-admin-page .form-section-title h2,
+.universal-admin-page .credentials-heading h2,
+.universal-admin-page .students-card-header h2,
+.universal-admin-page .empty-title,
+.universal-admin-page .summary-value,
+.universal-admin-page .invoice-modal-header h2,
+.universal-admin-page .invoice-section-heading strong {
+  font-family: var(--font-display), Fraunces, Georgia, serif;
+}
+
+/* UI labels must never inherit a page-specific serif font. */
+.universal-admin-page .summary-label,
+.universal-admin-page .summary-card label,
+.universal-admin-page .tracker-controls label,
+.universal-admin-page .activity-controls label,
+.universal-admin-page .payment-label,
+.universal-admin-page .status-label,
+.universal-admin-page .invoice-field > span,
+.universal-admin-page .invoice-section-heading span,
+.universal-admin-page .clinic-badge,
+.universal-admin-page .filter-pill,
+.universal-admin-page th {
+  font-family: var(--font-body), Inter, sans-serif !important;
+  font-weight: 500;
+  letter-spacing: normal;
+}
+
+/* ================================================================
+   CANVAS / PAGE WRAPPERS
+   ================================================================ */
+
+.universal-admin-page .admin-page,
+.universal-admin-page .activity-page,
+.universal-admin-page .tracker-page,
+.universal-admin-page .detail-page,
+.universal-admin-page .student-detail-page {
+  min-height: auto;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--admin-ink);
+}
+
+.universal-admin-content {
+  width: min(1400px, 100%);
+  margin: 0 auto;
+  padding-top: 1.5rem;
+}
+
+/* Old page headers are suppressed because AdminShell owns the header. */
+.universal-admin-content .admin-topbar,
+.universal-admin-content .activity-header .admin-welcome,
+.universal-admin-content .tracker-header .admin-welcome {
+  /* Header elements that duplicate the shared shell should not create
+     a second visual identity. */
+}
+
+/* ================================================================
+   SHARED CONTENT HEADINGS
+   ================================================================ */
+
+.universal-admin-content .activity-header,
+.universal-admin-content .tracker-header,
+.universal-admin-content .detail-header {
+  margin-bottom: 1.5rem;
+}
+
+.universal-admin-content .activity-header h1,
+.universal-admin-content .tracker-header h1,
+.universal-admin-content .detail-header h1,
+.universal-admin-content .activity-header h2,
+.universal-admin-content .tracker-header h2,
+.universal-admin-content .detail-header h2 {
+  margin: 0 0 .35rem;
+  color: var(--admin-ink);
+  font-family: var(--font-display), Fraunces, Georgia, serif;
+  font-weight: 500;
+}
+
+.universal-admin-content .activity-header p,
+.universal-admin-content .tracker-header p,
+.universal-admin-content .detail-header p {
+  margin: 0;
+  color: var(--admin-muted);
+  font-family: var(--font-body), Inter, sans-serif;
+}
+
+/* ================================================================
+   SUMMARY CARDS — IDENTICAL ACROSS DASHBOARD / PROGRESS / PAYMENTS
+   ================================================================ */
+
+.universal-admin-page .activity-summary,
+.universal-admin-page .tracker-summary,
+.universal-admin-page .dashboard-summary,
+.universal-admin-page .summary-grid {
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.universal-admin-page .summary-card {
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-card);
+  padding: 1.1rem 1.4rem;
+  box-shadow: none;
+}
+
+.universal-admin-page .summary-label {
+  margin: 0 0 .3rem;
+  color: var(--admin-muted);
+  font-size: .72rem !important;
+  line-height: 1.35;
+}
+
+.universal-admin-page .summary-value {
+  margin: 0;
+  color: var(--admin-ink);
+  font-size: 1.6rem !important;
+  font-weight: 500;
+  line-height: 1.15;
+}
+
+.universal-admin-page .summary-value.accent,
+.universal-admin-page .summary-value.paid {
+  color: var(--admin-accent);
+}
+
+.universal-admin-page .summary-value.muted {
+  color: var(--admin-muted);
+}
+
+.universal-admin-page .summary-value.overdue {
+  color: var(--admin-danger);
+}
+
+/* ================================================================
+   SEARCH / SELECT CONTROLS — ONE SPEC
+   ================================================================ */
+
+.universal-admin-page .activity-controls,
+.universal-admin-page .tracker-controls,
+.universal-admin-page .dashboard-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .75rem;
+  margin-bottom: 1.25rem;
+}
+
+.universal-admin-page .activity-search,
+.universal-admin-page .tracker-search,
+.universal-admin-page .dashboard-search,
+.universal-admin-page .clinic-filter,
+.universal-admin-page .month-filter,
+.universal-admin-page .school-filter {
+  min-height: 38px;
+  box-sizing: border-box;
+  padding: .55rem .85rem;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius);
+  outline: none;
+  background: var(--admin-surface);
+  color: var(--admin-ink);
+  font-family: var(--font-body), Inter, sans-serif !important;
+  font-size: .78rem !important;
+}
+
+.universal-admin-page .activity-search:focus,
+.universal-admin-page .tracker-search:focus,
+.universal-admin-page .dashboard-search:focus,
+.universal-admin-page .clinic-filter:focus,
+.universal-admin-page .month-filter:focus,
+.universal-admin-page .school-filter:focus,
+.universal-admin-page input:focus,
+.universal-admin-page select:focus,
+.universal-admin-page textarea:focus {
+  border-color: #8EAAA1;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(62, 98, 89, .08);
+}
+
+/* ================================================================
+   FILTER PILLS — SAME EVERYWHERE
+   ================================================================ */
+
+.universal-admin-page .filter-pill {
+  min-height: 34px;
+  padding: .45rem .85rem;
+  border: 1px solid var(--admin-border);
+  border-radius: 999px;
+  background: var(--admin-surface);
+  color: var(--admin-muted);
+  font-size: .72rem !important;
+  cursor: pointer;
+}
+
+.universal-admin-page .filter-pill:hover {
+  background: var(--admin-hover);
+  color: var(--admin-ink);
+}
+
+.universal-admin-page .filter-pill.active {
+  border-color: var(--admin-accent);
+  background: var(--admin-accent);
+  color: #fff;
+}
+
+/* ================================================================
+   TABLES — SAME TYPOGRAPHY / PADDING / HOVER
+   ================================================================ */
+
+.universal-admin-page .activity-table-wrapper,
+.universal-admin-page .tracker-table-wrapper,
+.universal-admin-page .students-card {
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-card);
+  background: var(--admin-surface);
+  box-shadow: none;
+}
+
+.universal-admin-page .activity-table-wrapper,
+.universal-admin-page .tracker-table-wrapper {
+  overflow-x: auto;
+}
+
+.universal-admin-page .activity-table,
+.universal-admin-page .tracker-table,
+.universal-admin-page .student-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.universal-admin-page .activity-table th,
+.universal-admin-page .tracker-table th,
+.universal-admin-page .student-table th {
+  padding: .75rem 1rem;
+  border-bottom: 1px solid var(--admin-border);
+  background: var(--admin-surface);
+  color: var(--admin-muted);
+  font-family: var(--font-body), Inter, sans-serif !important;
+  font-size: .66rem !important;
+  font-weight: 600 !important;
+  letter-spacing: .02em;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.universal-admin-page .activity-table td,
+.universal-admin-page .tracker-table td,
+.universal-admin-page .student-table td {
+  padding: .8rem 1rem;
+  border-bottom: 1px solid var(--admin-border);
+  color: var(--admin-ink);
+  font-family: var(--font-body), Inter, sans-serif !important;
+  font-size: .78rem !important;
+  vertical-align: middle;
+}
+
+.universal-admin-page .activity-table tbody tr:last-child td,
+.universal-admin-page .tracker-table tbody tr:last-child td,
+.universal-admin-page .student-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.universal-admin-page .activity-table tbody tr:hover,
+.universal-admin-page .tracker-table tbody tr:hover,
+.universal-admin-page .student-table tbody tr:hover {
+  background: var(--admin-hover);
+}
+
+/* ================================================================
+   BADGES / STATUS
+   ================================================================ */
+
+.universal-admin-page .clinic-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: .2rem .55rem;
+  border-radius: 999px;
+  background: #F3F2EF;
+  color: var(--admin-muted);
+  font-size: .67rem !important;
+}
+
+.universal-admin-page .status-badge {
+  font-family: var(--font-body), Inter, sans-serif !important;
+  font-size: .67rem !important;
+}
+
+.universal-admin-page .status-badge.overdue {
+  background: var(--admin-danger-soft);
+  color: var(--admin-danger);
+}
+
+.universal-admin-page .muted-cell {
+  color: var(--admin-muted);
+}
+
+/* ================================================================
+   PROGRESS BARS — ONE SPEC
+   ================================================================ */
+
+.universal-admin-page .progress-cell {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  min-width: 150px;
+}
+
+.universal-admin-page .progress-bar {
+  flex: 1;
+  max-width: 110px;
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #EAE8E3;
+}
+
+.universal-admin-page .progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--admin-accent);
+}
+
+.universal-admin-page .progress-fill.not-started {
+  background: #D8D5CE;
+}
+
+.universal-admin-page .progress-fill.complete {
+  background: var(--admin-accent);
+}
+
+.universal-admin-page .progress-text {
+  color: var(--admin-muted);
+  font-family: var(--font-body), Inter, sans-serif !important;
+  font-size: .68rem !important;
+  white-space: nowrap;
+}
+
+/* ================================================================
+   STANDARD BUTTONS
+   ================================================================ */
+
+.universal-admin-page .add-student-button,
+.universal-admin-page .delete-students-button,
+.universal-admin-page .create-invoice-button,
+.universal-admin-page .save-button,
+.universal-admin-page .add-note-button,
+.universal-admin-page .primary-button {
+  min-height: 38px;
+  box-sizing: border-box;
+  padding: .6rem .9rem;
+  border: 1px solid var(--admin-accent);
+  border-radius: var(--admin-radius);
+  background: var(--admin-accent);
+  color: #fff;
+  font-family: var(--font-body), Inter, sans-serif !important;
+  font-size: .72rem !important;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.universal-admin-page .add-student-button:hover,
+.universal-admin-page .delete-students-button:hover,
+.universal-admin-page .create-invoice-button:hover,
+.universal-admin-page .save-button:hover,
+.universal-admin-page .add-note-button:hover,
+.universal-admin-page .primary-button:hover {
+  background: #34564E;
+}
+
+.universal-admin-page .mark-paid-button,
+.universal-admin-page .view-checklist-btn,
+.universal-admin-page .cancel-button,
+.universal-admin-page .secondary-button,
+.universal-admin-page .show-password-button {
+  min-height: 36px;
+  box-sizing: border-box;
+  padding: .5rem .75rem;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius);
+  background: var(--admin-surface);
+  color: var(--admin-ink);
+  font-family: var(--font-body), Inter, sans-serif !important;
+  font-size: .7rem !important;
+  cursor: pointer;
+}
+
+.universal-admin-page .mark-paid-button:hover,
+.universal-admin-page .view-checklist-btn:hover,
+.universal-admin-page .cancel-button:hover,
+.universal-admin-page .secondary-button:hover,
+.universal-admin-page .show-password-button:hover {
+  background: var(--admin-hover);
+}
+
+/* ================================================================
+   DETAIL PAGE — SAME CARD LANGUAGE
+   ================================================================ */
+
+.universal-admin-page .detail-form,
+.universal-admin-page .note-item {
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-card);
+  background: var(--admin-surface);
+  box-shadow: none;
+}
+
+.universal-admin-page .detail-form {
+  padding: 1.5rem;
+}
+
+.universal-admin-page .credentials-section {
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius);
+  background: var(--admin-hover);
+}
+
+.universal-admin-page .detail-grid input,
+.universal-admin-page .detail-grid select,
+.universal-admin-page .credentials-grid input {
+  min-height: 38px;
+  border-color: var(--admin-border);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--admin-ink);
+  font-family: var(--font-body), Inter, sans-serif !important;
+  font-size: .78rem !important;
+}
+
+/* ================================================================
+   MODALS — SAME LANGUAGE AS THE PANELS
+   ================================================================ */
+
+.universal-admin-page .modal-overlay,
+.universal-modal-overlay {
+  background: rgba(35, 36, 31, .46);
+  backdrop-filter: blur(4px);
+}
+
+.universal-admin-page .add-student-modal,
+.universal-admin-page .delete-students-modal,
+.universal-admin-page .invoice-modal,
+.universal-admin-page .invoice-modal-modern,
+.universal-modal {
+  border: 1px solid var(--admin-border);
+  border-radius: 12px;
+  background: var(--admin-surface);
+  box-shadow: var(--admin-shadow);
+}
+
+.universal-admin-page .modal-header h2,
+.universal-admin-page .invoice-modal-header h2,
+.universal-modal h2 {
+  font-family: var(--font-display), Fraunces, Georgia, serif !important;
+  font-weight: 500;
+  color: var(--admin-ink);
+}
+
+.universal-admin-page .modal-header p,
+.universal-admin-page .invoice-modal-header p,
+.universal-modal p {
+  color: var(--admin-muted);
+  font-family: var(--font-body), Inter, sans-serif !important;
+}
+
+.universal-admin-page .modal-form-grid input,
+.universal-admin-page .modal-form-grid select,
+.universal-admin-page .modal-canvas-grid input,
+.universal-admin-page .invoice-field input,
+.universal-admin-page .invoice-field select,
+.universal-admin-page .invoice-field textarea {
+  border-color: var(--admin-border);
+  border-radius: 7px;
+  color: var(--admin-ink);
+  font-family: var(--font-body), Inter, sans-serif !important;
+  font-size: .78rem !important;
+}
+
+/* ================================================================
+   EMPTY / LOADING
+   ================================================================ */
+
+.universal-admin-page .empty-state,
+.universal-admin-page .empty-table,
+.universal-admin-page .no-notes {
+  color: var(--admin-muted);
+}
+
+.universal-admin-page .empty-title {
+  color: var(--admin-ink);
+  font-family: var(--font-display), Fraunces, Georgia, serif !important;
+}
+
+.universal-admin-page .empty-subtitle,
+.universal-admin-page .loading-text {
+  color: var(--admin-muted);
+  font-family: var(--font-body), Inter, sans-serif !important;
+}
+
+/* ================================================================
+   MOBILE
+   ================================================================ */
+
+@media (max-width: 760px) {
+  .universal-admin-content {
+    padding-top: 1rem;
+  }
+
+  .universal-admin-page .activity-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .universal-admin-page .tracker-summary {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .universal-admin-page .activity-summary,
+  .universal-admin-page .tracker-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .universal-admin-page .activity-controls,
+  .universal-admin-page .tracker-controls,
+  .universal-admin-page .dashboard-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .universal-admin-page .activity-search,
+  .universal-admin-page .tracker-search,
+  .universal-admin-page .dashboard-search,
+  .universal-admin-page .clinic-filter,
+  .universal-admin-page .month-filter,
+  .universal-admin-page .school-filter {
+    width: 100%;
+    max-width: none;
+  }
+}

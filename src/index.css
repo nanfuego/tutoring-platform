@@ -2,12 +2,14 @@
 
 :root {
   --color-bg: #FAF9F6;
+  --color-background: #FAF9F6;
   --color-surface: #FFFFFF;
   --color-ink: #23241F;
   --color-muted: #6B6A63;
   --color-border: #E5E3DC;
   --color-accent: #3E6259;
   --color-accent-soft: #E7EDE9;
+
   --color-status-not-started: #9A968C;
   --color-status-in-progress: #B8863A;
   --color-status-delivered: #3E6259;
@@ -20,14 +22,130 @@
   box-sizing: border-box;
 }
 
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
 body {
   margin: 0;
   background: var(--color-bg);
   color: var(--color-ink);
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
 }
 
 a {
   color: var(--color-accent);
+}
+/* =========================================================
+   UNIVERSAL PAGE HEADER
+   Used by Dashboard, Student Progress and Payment Management
+   ========================================================= */
+
+.page-header {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin: 0 0 28px;
+}
+
+.page-header-main {
+  min-width: 0;
+}
+
+.page-eyebrow {
+  margin: 0 0 7px;
+
+  font-size: 11px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+
+  color: #6b7280;
+}
+
+.page-title {
+  margin: 0;
+
+  font-size: 30px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+
+  color: #111827;
+}
+
+.page-description {
+  margin: 8px 0 0;
+
+  max-width: 720px;
+
+  font-size: 14px;
+  line-height: 1.55;
+
+  color: #6b7280;
+}
+
+.page-header-actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+
+/* =========================================================
+   UNIVERSAL CONTENT CONTAINER
+   ========================================================= */
+
+.admin-panel-content {
+  width: 100%;
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 700px) {
+  .page-header {
+    flex-direction: column;
+    gap: 18px;
+    margin-bottom: 22px;
+  }
+
+  .page-header-actions {
+    width: 100%;
+  }
+
+  .page-header-actions > button {
+    width: 100%;
+  }
+
+  .page-eyebrow {
+    font-size: 10px;
+    letter-spacing: 0.13em;
+  }
+
+  .page-title {
+    font-size: 25px;
+  }
+
+  .page-description {
+    font-size: 13px;
+    line-height: 1.5;
+  }
 }

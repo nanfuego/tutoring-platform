@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../supabaseClient'
 import './AdminShell.css'
+import './UniversalAdminTheme.css'
 
 function formatNow() {
   const now = new Date()

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useEffect, useMemo, useState, useRef } from 'react'
 import { supabase } from '../supabaseClient'
+import PageHeader from '../components/PageHeader'
 import './AdminDashboard.css'
 import './AdminDashboard.redesign.css'
 
@@ -601,6 +602,17 @@ function AdminDashboard() {
       )}
 
       {/* Search + School Filter + Status Tabs */}
+      <div className="page-header">
+  <div className="page-header-content">
+    <div className="page-eyebrow">STUDENT MANAGEMENT</div>
+
+    <h1 className="page-title">Dashboard</h1>
+
+    <p className="page-description">
+      Monitor students, activity progress, and overall platform activity.
+    </p>
+  </div>
+</div>
       <div className="dashboard-filter-row">
         <div className="dashboard-controls">
         <input
