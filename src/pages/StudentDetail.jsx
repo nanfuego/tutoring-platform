@@ -367,7 +367,7 @@ function StudentDetail() {
 
       <form id="student-detail-form" className="student-detail-form" onSubmit={handleSave}>
         <section className="detail-card">
-          <div className="card-header"><div><h2>Student Information</h2><p>Basic information and tutoring status.</p></div></div>
+          <div className="card-header"><div><h2>Student Information</h2><p>Basic information and contract status.</p></div></div>
           <div className="detail-grid">
             <label><span>Name</span><input type="text" name="name" value={student.name || ''} onChange={handleChange} required /></label>
             <label><span>Email</span><input type="email" name="email" value={student.email || ''} onChange={handleChange} /></label>
@@ -378,8 +378,8 @@ function StudentDetail() {
             <label><span>Status Page Slug</span><input type="text" name="slug" value={student.slug || ''} onChange={handleChange} /></label>
           </div>
           <div className="completion-panel">
-            <div><strong>Tutoring Status</strong><p>Mark this student as completed when the tutoring relationship has finished.</p></div>
-            <label className="completion-toggle"><input type="checkbox" checked={isCompleted} onChange={handleCompletedChange} /><span className="toggle-box">{isCompleted ? '✓' : ''}</span><span className="toggle-label">Tutoring completed</span></label>
+            <div><strong>Contract Status</strong><p>Mark this student as completed when the contract relationship has finished.</p></div>
+            <label className="completion-toggle"><input type="checkbox" checked={isCompleted} onChange={handleCompletedChange} /><span className="toggle-box">{isCompleted ? '✓' : ''}</span><span className="toggle-label">Contract completed</span></label>
           </div>
           {student.slug && <div className="status-preview"><span>Student Status Page</span><a href={`/status/${student.slug}`} target="_blank" rel="noreferrer">/status/{student.slug}</a></div>}
         </section>
@@ -540,7 +540,7 @@ function StudentDetail() {
       )}
 
       <section className="danger-zone">
-        <div><h2>Delete Student</h2><p>Permanently remove this student from the tutoring platform.</p></div>
+        <div><h2>Delete Student</h2><p>Permanently remove this student from the tracking platform.</p></div>
         <button type="button" className="delete-student-button" onClick={handleDeleteStudent} disabled={deletingStudent}>{deletingStudent ? 'Deleting...' : 'Delete Student'}</button>
       </section>
     </div>

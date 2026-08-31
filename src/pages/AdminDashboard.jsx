@@ -52,7 +52,7 @@ function AdminDashboard() {
   // Dashboard data used by the redesigned summary table.
   const [payments, setPayments] = useState([])
   const [activity, setActivity] = useState([])
-  const [activityRequirementCount, setActivityRequirementCount] = useState(0)
+  const [activityRequirements, setActivityRequirements] = useState([])
 
   // Add Student modal
   const [showAddStudent, setShowAddStudent] = useState(false)
@@ -152,7 +152,7 @@ function AdminDashboard() {
       await Promise.all([
         supabase.from('students').select('*').order('name'),
         supabase.from('payments').select('student_id, status, due_date'),
-        supabase.from('activity_requirements').select('id'),
+        supabase.from('activity_requirements').select('id, student_id'),
         supabase.from('student_activity').select('student_id, completed'),
       ])
 
@@ -179,7 +179,7 @@ function AdminDashboard() {
     setStudents(studentsRes.data || [])
     setPayments(paymentsRes.data || [])
     setActivity(activityRes.data || [])
-    setActivityRequirementCount((requirementsRes.data || []).length)
+    setActivityRequirements(requirementsRes.data || [])
     setLoading(false)
   }
 
@@ -375,7 +375,11 @@ function AdminDashboard() {
     return students.reduce((map, student) => {
       const studentActivity = activityByStudent[student.id] || []
       const completed = studentActivity.filter((item) => item.completed).length
-      const total = activityRequirementCount
+      // Total requirements for this student = shared/cohort-wide items
+      // (student_id is null) plus any custom items added just for them.
+      const total = activityRequirements.filter(
+        (r) => !r.student_id || r.student_id === student.id
+      ).length
       const progress = total
         ? Math.min(100, Math.round((completed / total) * 100))
         : 0
@@ -388,7 +392,7 @@ function AdminDashboard() {
 
       return map
     }, {})
-  }, [students, payments, activity, activityRequirementCount])
+  }, [students, payments, activity, activityRequirements])
 
   const baseFilteredStudents = useMemo(() => {
     return students.filter((student) => {
@@ -721,10 +725,10 @@ function AdminDashboard() {
                         <td>
                           <div className="status-payment-cell">
                             <span
-                              className={`student-active-badge ${student.active ? 'active' : 'inactive'}`}
+                              className={`student-active-badge ${metric.status === 'completed' ? 'active' : 'inactive'}`}
                             >
                               <span className="status-dot" />
-                              {student.active ? 'Active' : 'Inactive'}
+                              {metric.status === 'completed' ? 'Completed' : 'In Progress'}
                             </span>
                             {metric.paymentState !== 'none' && (
                               <>

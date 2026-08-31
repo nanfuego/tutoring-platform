@@ -9,6 +9,13 @@ function StudentActivityModal({ student, onClose }) {
   const [savingId, setSavingId] = useState(null)
   const [error, setError] = useState('')
 
+  // Add-activity form (per-student custom items)
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [newLabel, setNewLabel] = useState('')
+  const [newWeek, setNewWeek] = useState('0')
+  const [adding, setAdding] = useState(false)
+  const [deletingId, setDeletingId] = useState(null)
+
   useEffect(() => {
     if (!student?.id) return
 
@@ -22,6 +29,7 @@ function StudentActivityModal({ student, onClose }) {
         supabase
           .from('activity_requirements')
           .select('*')
+          .or(`student_id.is.null,student_id.eq.${student.id}`)
           .order('sort_order'),
         supabase
           .from('student_activity')
@@ -181,6 +189,88 @@ function StudentActivityModal({ student, onClose }) {
     }
   }
 
+  // Weeks already in use, so the add-activity form can offer them
+  // alongside "General" instead of forcing a brand new group every time.
+  const weekOptions = useMemo(() => {
+    const weeks = new Set(requirements.map((r) => Number(r.week ?? 0)))
+    weeks.add(0)
+    return Array.from(weeks).sort((a, b) => a - b)
+  }, [requirements])
+
+  async function addActivity(event) {
+    event.preventDefault()
+    if (!newLabel.trim()) return
+
+    setAdding(true)
+    setError('')
+
+    const maxSortOrder = requirements.reduce(
+      (max, r) => Math.max(max, r.sort_order ?? 0),
+      0
+    )
+
+    const { data, error: insertError } = await supabase
+      .from('activity_requirements')
+      .insert({
+        label: newLabel.trim(),
+        week: Number(newWeek),
+        student_id: student.id,
+        sort_order: maxSortOrder + 1,
+      })
+      .select()
+      .single()
+
+    setAdding(false)
+
+    if (insertError) {
+      console.error('Error adding custom activity:', insertError)
+      setError(insertError.message)
+      return
+    }
+
+    if (data) {
+      setRequirements((current) => [...current, data])
+      setNewLabel('')
+      setNewWeek('0')
+      setShowAddForm(false)
+    }
+  }
+
+  async function deleteActivity(requirement) {
+    if (!window.confirm(`Remove "${requirement.label}" for ${student.name}?`)) {
+      return
+    }
+
+    setDeletingId(requirement.id)
+    setError('')
+
+    // Clear any saved progress for this item first in case the DB
+    // foreign key isn't set to cascade on delete.
+    await supabase
+      .from('student_activity')
+      .delete()
+      .eq('requirement_id', requirement.id)
+      .eq('student_id', student.id)
+
+    const { error: deleteError } = await supabase
+      .from('activity_requirements')
+      .delete()
+      .eq('id', requirement.id)
+
+    setDeletingId(null)
+
+    if (deleteError) {
+      console.error('Error deleting custom activity:', deleteError)
+      setError(deleteError.message)
+      return
+    }
+
+    setRequirements((current) => current.filter((r) => r.id !== requirement.id))
+    setActivity((current) =>
+      current.filter((item) => item.requirement_id !== requirement.id)
+    )
+  }
+
   return (
     <div
       className="student-activity-modal-overlay"
@@ -251,6 +341,7 @@ function StudentActivityModal({ student, onClose }) {
                     const item = getActivity(requirement.id)
                     const completed = item?.completed || false
                     const note = item?.note || ''
+                    const isCustom = Boolean(requirement.student_id)
 
                     return (
                       <div
@@ -279,28 +370,108 @@ function StudentActivityModal({ student, onClose }) {
                           >
                             {requirement.label}
                           </span>
+                          {isCustom && (
+                            <span className="student-activity-custom-tag">
+                              Custom
+                            </span>
+                          )}
                         </label>
 
-                        <input
-                          type="text"
-                          className="student-activity-note"
-                          placeholder="Add note..."
-                          defaultValue={note}
-                          onBlur={(event) => {
-                            if (event.target.value !== note) {
-                              updateNote(
-                                requirement.id,
-                                event.target.value
-                              )
-                            }
-                          }}
-                        />
+                        <div className="student-activity-item-actions">
+                          <input
+                            type="text"
+                            className="student-activity-note"
+                            placeholder="Add note..."
+                            defaultValue={note}
+                            onBlur={(event) => {
+                              if (event.target.value !== note) {
+                                updateNote(
+                                  requirement.id,
+                                  event.target.value
+                                )
+                              }
+                            }}
+                          />
+
+                          {isCustom && (
+                            <button
+                              type="button"
+                              className="student-activity-delete"
+                              onClick={() => deleteActivity(requirement)}
+                              disabled={deletingId === requirement.id}
+                              aria-label={`Remove ${requirement.label}`}
+                              title="Remove this custom activity"
+                            >
+                              {deletingId === requirement.id ? '...' : '×'}
+                            </button>
+                          )}
+                        </div>
                       </div>
                     )
                   })}
                 </div>
               </section>
             ))
+          )}
+
+          {showAddForm ? (
+            <form className="student-activity-add-form" onSubmit={addActivity}>
+              <div className="student-activity-add-row">
+                <input
+                  type="text"
+                  className="student-activity-add-input"
+                  placeholder="Activity label, e.g. Extra case study"
+                  value={newLabel}
+                  onChange={(e) => setNewLabel(e.target.value)}
+                  autoFocus
+                />
+
+                <select
+                  className="student-activity-add-week"
+                  value={newWeek}
+                  onChange={(e) => setNewWeek(e.target.value)}
+                >
+                  {weekOptions.map((w) => (
+                    <option key={w} value={w}>
+                      {w === 0 ? 'General' : `Week ${w}`}
+                    </option>
+                  ))}
+                  <option value={String(Math.max(...weekOptions, 0) + 1)}>
+                    New week ({Math.max(...weekOptions, 0) + 1})
+                  </option>
+                </select>
+              </div>
+
+              <div className="student-activity-add-actions">
+                <button
+                  type="button"
+                  className="student-activity-add-cancel"
+                  onClick={() => {
+                    setShowAddForm(false)
+                    setNewLabel('')
+                    setNewWeek('0')
+                  }}
+                  disabled={adding}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="student-activity-add-save"
+                  disabled={adding || !newLabel.trim()}
+                >
+                  {adding ? 'Adding...' : 'Add activity'}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <button
+              type="button"
+              className="student-activity-add-trigger"
+              onClick={() => setShowAddForm(true)}
+            >
+              + Add activity for {student.name?.split(' ')[0] || 'this student'}
+            </button>
           )}
         </div>
 

@@ -1,7 +1,18 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
+import StudentActivityModal from './StudentActivityModal'
 import './ActivityTracker.css'
+
+function initials(name = '') {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
+}
 
 function ActivityTracker() {
   const navigate = useNavigate()
@@ -16,7 +27,6 @@ function ActivityTracker() {
 
   // Checklist modal
   const [selectedStudent, setSelectedStudent] = useState(null)
-  const [savingId, setSavingId] = useState(null) // requirement_id being saved
 
   useEffect(() => {
     loadData()
@@ -46,16 +56,23 @@ function ActivityTracker() {
     return Array.from(set).sort()
   }, [students])
 
-  // Progress per student
+  // Progress per student. Each student's total includes the shared,
+  // cohort-wide requirements (student_id is null) plus any custom
+  // activities added just for them (student_id === s.id).
   const progressMap = useMemo(() => {
     const map = {}
-    const total = requirements.length || 1
 
     students.forEach((s) => {
+      const applicable = requirements.filter(
+        (r) => !r.student_id || r.student_id === s.id
+      )
       const completed = activity.filter(
-        (a) => a.student_id === s.id && a.completed
+        (a) =>
+          a.student_id === s.id &&
+          a.completed &&
+          applicable.some((r) => r.id === a.requirement_id)
       ).length
-      map[s.id] = { completed, total }
+      map[s.id] = { completed, total: applicable.length }
     })
 
     return map
@@ -75,105 +92,29 @@ function ActivityTracker() {
     })
   }, [students, search, clinicFilter])
 
-  // Group requirements by week for the modal
-  const requirementsByWeek = useMemo(() => {
-    const groups = {}
-    requirements.forEach((r) => {
-      const week = r.week ?? 0
-      if (!groups[week]) groups[week] = []
-      groups[week].push(r)
+  // Summary stats across the currently filtered set
+  const summary = useMemo(() => {
+    const total = requirements.length || 1
+
+    const percentages = filteredStudents.map((s) => {
+      const prog = progressMap[s.id] || { completed: 0, total }
+      return prog.total > 0 ? (prog.completed / prog.total) * 100 : 0
     })
-    return Object.entries(groups)
-      .sort(([a], [b]) => Number(a) - Number(b))
-      .map(([week, items]) => ({
-        week: Number(week),
-        label: week === '0' || week === 0 ? 'General' : `Week ${week}`,
-        items,
-      }))
-  }, [requirements])
 
-  function getActivity(studentId, requirementId) {
-    return activity.find(
-      (a) => a.student_id === studentId && a.requirement_id === requirementId
-    )
-  }
+    const avgCompletion = percentages.length
+      ? Math.round(percentages.reduce((sum, p) => sum + p, 0) / percentages.length)
+      : 0
 
-  async function toggleRequirement(studentId, requirementId, currentCompleted) {
-    setSavingId(requirementId)
+    const fullyCompleted = percentages.filter((p) => p >= 100).length
+    const notStarted = percentages.filter((p) => p === 0).length
 
-    const existing = getActivity(studentId, requirementId)
-
-    if (existing) {
-      // Update
-      const { error } = await supabase
-        .from('student_activity')
-        .update({
-          completed: !currentCompleted,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', existing.id)
-
-      if (!error) {
-        setActivity((prev) =>
-          prev.map((a) =>
-            a.id === existing.id
-              ? { ...a, completed: !currentCompleted }
-              : a
-          )
-        )
-      }
-    } else {
-      // Insert
-      const { data, error } = await supabase
-        .from('student_activity')
-        .insert({
-          student_id: studentId,
-          requirement_id: requirementId,
-          completed: true,
-        })
-        .select()
-        .single()
-
-      if (!error && data) {
-        setActivity((prev) => [...prev, data])
-      }
+    return {
+      totalStudents: filteredStudents.length,
+      avgCompletion,
+      fullyCompleted,
+      notStarted,
     }
-
-    setSavingId(null)
-  }
-
-  async function updateNote(studentId, requirementId, note) {
-    const existing = getActivity(studentId, requirementId)
-
-    if (existing) {
-      await supabase
-        .from('student_activity')
-        .update({ note, updated_at: new Date().toISOString() })
-        .eq('id', existing.id)
-
-      setActivity((prev) =>
-        prev.map((a) =>
-          a.id === existing.id ? { ...a, note } : a
-        )
-      )
-    } else if (note.trim()) {
-      // Create row with note even if not completed
-      const { data } = await supabase
-        .from('student_activity')
-        .insert({
-          student_id: studentId,
-          requirement_id: requirementId,
-          completed: false,
-          note,
-        })
-        .select()
-        .single()
-
-      if (data) {
-        setActivity((prev) => [...prev, data])
-      }
-    }
-  }
+  }, [filteredStudents, progressMap, requirements])
 
   function openChecklist(student) {
     setSelectedStudent(student)
@@ -181,6 +122,8 @@ function ActivityTracker() {
 
   function closeChecklist() {
     setSelectedStudent(null)
+    // Refresh progress bars in case checkboxes changed while the modal was open
+    loadData()
   }
 
   return (
@@ -191,6 +134,25 @@ function ActivityTracker() {
 
       <div className="activity-header">
         <h1 className="admin-welcome">Student Progress</h1>
+      </div>
+
+      <div className="activity-summary">
+        <div className="summary-card">
+          <p className="summary-label">Students</p>
+          <p className="summary-value">{summary.totalStudents}</p>
+        </div>
+        <div className="summary-card">
+          <p className="summary-label">Avg. Completion</p>
+          <p className="summary-value accent">{summary.avgCompletion}%</p>
+        </div>
+        <div className="summary-card">
+          <p className="summary-label">Fully Completed</p>
+          <p className="summary-value">{summary.fullyCompleted}</p>
+        </div>
+        <div className="summary-card">
+          <p className="summary-label">Not Started</p>
+          <p className="summary-value muted">{summary.notStarted}</p>
+        </div>
       </div>
 
       {/* Controls */}
@@ -243,21 +205,34 @@ function ActivityTracker() {
               {filteredStudents.map((s) => {
                 const prog = progressMap[s.id] || { completed: 0, total: requirements.length }
                 const pct = prog.total > 0 ? Math.round((prog.completed / prog.total) * 100) : 0
+                const progressState =
+                  pct >= 100 ? 'complete' : pct === 0 ? 'not-started' : 'in-progress'
 
                 return (
                   <tr key={s.id}>
-                    <td className="student-name-cell">{s.name}</td>
-                    <td>{s.clinic || '—'}</td>
+                    <td className="student-name-cell">
+                      <div className="student-identity">
+                        <span className="student-avatar">{initials(s.name)}</span>
+                        <span>{s.name}</span>
+                      </div>
+                    </td>
+                    <td>
+                      {s.clinic ? (
+                        <span className="clinic-badge">{s.clinic}</span>
+                      ) : (
+                        <span className="muted-cell">—</span>
+                      )}
+                    </td>
                     <td>
                       <div className="progress-cell">
                         <div className="progress-bar">
                           <div
-                            className="progress-fill"
+                            className={`progress-fill ${progressState}`}
                             style={{ width: `${pct}%` }}
                           />
                         </div>
                         <span className="progress-text">
-                          {prog.completed}/{prog.total}
+                          {prog.completed}/{prog.total} · {pct}%
                         </span>
                       </div>
                     </td>
@@ -279,93 +254,10 @@ function ActivityTracker() {
 
       {/* Checklist Modal */}
       {selectedStudent && (
-        <div
-          className="modal-overlay"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) closeChecklist()
-          }}
-        >
-          <div
-            className="checklist-modal"
-            onMouseDown={(e) => e.stopPropagation()}
-          >
-            <div className="modal-header">
-              <div>
-                <h2>{selectedStudent.name}</h2>
-                <p>
-                  {selectedStudent.clinic || 'No clinic assigned'}
-                  {selectedStudent.university ? ` · ${selectedStudent.university}` : ''}
-                </p>
-              </div>
-              <button
-                type="button"
-                className="modal-close-button"
-                onClick={closeChecklist}
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="checklist-body">
-              {requirements.length === 0 ? (
-                <p className="empty-subtitle">
-                  No requirements set up yet. Add items to the activity_requirements table.
-                </p>
-              ) : (
-                requirementsByWeek.map((group) => (
-                  <div key={group.week} className="week-group">
-                    <h3 className="week-title">{group.label}</h3>
-                    <div className="requirement-list">
-                      {group.items.map((req) => {
-                        const act = getActivity(selectedStudent.id, req.id)
-                        const completed = act?.completed || false
-                        const note = act?.note || ''
-
-                        return (
-                          <div key={req.id} className="requirement-row">
-                            <label className="requirement-check">
-                              <input
-                                type="checkbox"
-                                checked={completed}
-                                disabled={savingId === req.id}
-                                onChange={() =>
-                                  toggleRequirement(
-                                    selectedStudent.id,
-                                    req.id,
-                                    completed
-                                  )
-                                }
-                              />
-                              <span className={completed ? 'done' : ''}>
-                                {req.label}
-                              </span>
-                            </label>
-
-                            <input
-                              type="text"
-                              className="requirement-note"
-                              placeholder="Note..."
-                              defaultValue={note}
-                              onBlur={(e) => {
-                                if (e.target.value !== note) {
-                                  updateNote(
-                                    selectedStudent.id,
-                                    req.id,
-                                    e.target.value
-                                  )
-                                }
-                              }}
-                            />
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
+        <StudentActivityModal
+          student={selectedStudent}
+          onClose={closeChecklist}
+        />
       )}
     </div>
   )

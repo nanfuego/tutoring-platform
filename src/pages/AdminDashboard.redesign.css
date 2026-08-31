@@ -1868,3 +1868,180 @@
   .contact-modal-tabs button { flex: 0 0 auto; }
   .student-action-menu { max-width: calc(100vw - 24px); }
 }
+
+/* =========================================================
+   NARROW / SIMPLE PASS — match Activity Tracker's compact scale
+   Loaded last, so these override both earlier passes above.
+   Only page width, table density, and control sizing change;
+   colors and functionality are untouched.
+   ========================================================= */
+
+.admin-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 3rem;
+}
+
+.admin-divider {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.admin-welcome {
+  font-size: 1.8rem;
+  letter-spacing: normal;
+}
+
+.admin-clock {
+  font-size: 0.8rem;
+}
+
+.logout-button {
+  min-height: 38px;
+  padding: 0 1rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+}
+
+.manager-button,
+.nav-button {
+  min-height: 38px;
+  padding: 0 0.9rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.dashboard-controls {
+  grid-template-columns: minmax(200px, 260px) 150px 1fr;
+  gap: 0.75rem;
+}
+
+.dashboard-search,
+.school-filter {
+  height: 38px;
+  padding: 0 0.85rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.dashboard-status-tabs {
+  gap: 0.5rem;
+  min-height: 38px;
+}
+
+.dashboard-status-tab {
+  height: 38px;
+  min-width: auto;
+  padding: 0 0.75rem;
+  border-radius: 8px;
+  font-size: 0.78rem;
+}
+
+.dashboard-status-count {
+  min-width: 22px;
+  height: 22px;
+  font-size: 0.7rem;
+}
+
+.students-card {
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+.student-table {
+  min-width: 640px;
+}
+
+.student-table th {
+  height: auto;
+  padding: 0.75rem 1rem;
+  font-size: 0.72rem;
+}
+
+.student-table td {
+  height: auto;
+  padding: 0.8rem 1rem;
+  font-size: 0.85rem;
+}
+
+.student-row-link {
+  gap: 0.65rem;
+}
+
+.student-avatar {
+  flex-basis: 32px;
+  width: 32px;
+  height: 32px;
+  font-size: 0.72rem;
+}
+
+.student-name {
+  font-size: 0.9rem;
+}
+
+.student-email {
+  font-size: 0.75rem;
+}
+
+.program-name {
+  font-size: 0.82rem;
+  font-weight: 400;
+}
+
+.student-active-badge,
+.payment-badge {
+  min-height: 26px;
+  padding: 0 0.55rem;
+  border-radius: 6px;
+  font-size: 0.68rem;
+}
+
+.activity-cell {
+  max-width: 170px;
+}
+
+.activity-meter-row {
+  gap: 0.6rem;
+}
+
+.activity-progress.activity-segments {
+  width: 100px;
+  height: 10px;
+  max-width: 100px;
+}
+
+.activity-segments span {
+  height: 10px;
+}
+
+.activity-value {
+  font-size: 0.78rem;
+}
+
+@media (max-width: 900px) {
+  .dashboard-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-status-tabs {
+    grid-column: 1;
+    justify-content: flex-start;
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-page {
+    padding: 1.5rem 1rem 2.5rem;
+  }
+
+  .admin-divider {
+    margin-left: -1rem;
+    margin-right: -1rem;
+  }
+
+  .student-table {
+    min-width: 560px;
+  }
+}
