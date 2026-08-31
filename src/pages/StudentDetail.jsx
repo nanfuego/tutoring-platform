@@ -92,8 +92,39 @@ function StudentDetail() {
     setStudent(current => ({ ...current, [name]: value }))
   }
 
-  function handleCompletedChange(event) {
-    setStudent(current => ({ ...current, active: !event.target.checked }))
+  async function toggleContractComplete() {
+    if (!student || saving) return
+
+    // active=true → in progress; active=false → contract completed
+    const currentlyCompleted = !Boolean(student.active)
+    const nextActive = currentlyCompleted // reactivate if completed; else mark complete
+
+    setSaving(true)
+    setError('')
+    setSavedMessage('')
+
+    const { data, error: updateError } = await supabase
+      .from('students')
+      .update({ active: nextActive })
+      .eq('id', id)
+      .select()
+      .single()
+
+    setSaving(false)
+
+    if (updateError) {
+      console.error('Error updating contract status:', updateError)
+      setError(updateError.message)
+      return
+    }
+
+    setStudent(data)
+    setSavedMessage(
+      nextActive
+        ? 'Student marked as in progress.'
+        : 'Contract marked as completed.'
+    )
+    setTimeout(() => setSavedMessage(''), 2500)
   }
 
   async function handleSave(event) {
@@ -110,6 +141,7 @@ function StudentDetail() {
       program: student.program || null,
       phone: student.phone || null,
       subject: student.subject || null,
+      final_grade: student.final_grade || null,
       slug: student.slug || null,
       active: Boolean(student.active),
       canvas_un: student.canvas_un || null,
@@ -257,6 +289,14 @@ function StudentDetail() {
         </div>
         <div className="student-hero-actions">
           {student.slug && <a href={`/status/${student.slug}`} target="_blank" rel="noreferrer" className="secondary-button">View Status Page</a>}
+          <button
+            type="button"
+            className={`contract-complete-button${isCompleted ? ' is-completed' : ''}`}
+            onClick={toggleContractComplete}
+            disabled={saving}
+          >
+            {isCompleted ? 'Mark In Progress' : 'Mark Contract Complete'}
+          </button>
           <button type="submit" form="student-detail-form" className="primary-button" disabled={saving}>{saving ? 'Saving...' : 'Save Changes'}</button>
         </div>
       </header>
@@ -281,7 +321,7 @@ function StudentDetail() {
 
       <form id="student-detail-form" className="student-detail-form" onSubmit={handleSave}>
         <section className="detail-card">
-          <div className="card-header"><div><h2>Student Information</h2><p>Basic information and contract status.</p></div></div>
+          <div className="card-header"><div><h2>Student Information</h2><p>Basic information and profile details.</p></div></div>
           <div className="detail-grid">
             <label><span>Name</span><input type="text" name="name" value={student.name || ''} onChange={handleChange} required /></label>
             <label><span>Email</span><input type="email" name="email" value={student.email || ''} onChange={handleChange} /></label>
@@ -289,11 +329,8 @@ function StudentDetail() {
             <label><span>Subject</span><input type="text" name="subject" value={student.subject || ''} onChange={handleChange} /></label>
             <label><span>Program / Course</span><input type="text" name="program" value={student.program || ''} onChange={handleChange} /></label>
             <label><span>Phone</span><input type="text" name="phone" value={student.phone || ''} onChange={handleChange} /></label>
+            <label><span>Final Grade</span><input type="text" name="final_grade" value={student.final_grade || ''} onChange={handleChange} placeholder="e.g. A, 92%, Pass" /></label>
             <label><span>Status Page Slug</span><input type="text" name="slug" value={student.slug || ''} onChange={handleChange} /></label>
-          </div>
-          <div className="completion-panel">
-            <div><strong>Contract Status</strong><p>Mark this student as completed when the contract relationship has finished.</p></div>
-            <label className="completion-toggle"><input type="checkbox" checked={isCompleted} onChange={handleCompletedChange} /><span className="toggle-box">{isCompleted ? '✓' : ''}</span><span className="toggle-label">Contract completed</span></label>
           </div>
           {student.slug && <div className="status-preview"><span>Student Status Page</span><a href={`/status/${student.slug}`} target="_blank" rel="noreferrer">/status/{student.slug}</a></div>}
         </section>
@@ -335,7 +372,11 @@ function StudentDetail() {
           {activityProgress.total === 0 ? <div className="activity-empty">No activity requirements have been configured yet.</div> : <div className="activity-progress"><div className="activity-progress-header"><strong>{activityProgress.completed} of {activityProgress.total} completed</strong><span>{activityProgress.percentage}%</span></div><div className="progress-track"><div className="progress-fill" style={{ width: `${activityProgress.percentage}%` }} /></div></div>}
         </section>
 
-        <div className="save-bar"><div>{savedMessage && <span className="saved-message">✓ {savedMessage}</span>}</div><button type="submit" className="primary-button save-main-button" disabled={saving}>{saving ? 'Saving...' : 'Save Changes'}</button></div>
+        {savedMessage && (
+          <div className="save-bar save-bar-message-only">
+            <span className="saved-message">✓ {savedMessage}</span>
+          </div>
+        )}
       </form>
 
       <section className="detail-card notes-card">

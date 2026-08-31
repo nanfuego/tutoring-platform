@@ -54,6 +54,14 @@ function AdminDashboard() {
   const [payments, setPayments] = useState([])
   const [activity, setActivity] = useState([])
   const [activityRequirements, setActivityRequirements] = useState([])
+  const [activeSemester, setActiveSemester] = useState(null)
+  const [semesterStudentIds, setSemesterStudentIds] = useState([])
+
+  // Student profile modal (dashboard quick view / edit)
+  const [profileStudent, setProfileStudent] = useState(null)
+  const [profileForm, setProfileForm] = useState(null)
+  const [profileSaving, setProfileSaving] = useState(false)
+  const [profileMessage, setProfileMessage] = useState('')
 
   // Add Student modal
   const [showAddStudent, setShowAddStudent] = useState(false)
@@ -149,13 +157,30 @@ function AdminDashboard() {
   async function fetchStudents() {
     setLoading(true)
 
-    const [studentsRes, paymentsRes, requirementsRes, activityRes] =
-      await Promise.all([
-        supabase.from('students').select('*').order('name'),
-        supabase.from('payments').select('student_id, status, due_date'),
-        supabase.from('activity_requirements').select('id, student_id'),
-        supabase.from('student_activity').select('student_id, completed'),
-      ])
+    const [
+      studentsRes,
+      paymentsRes,
+      requirementsRes,
+      activityRes,
+      semesterRes,
+      semesterStudentsRes,
+    ] = await Promise.all([
+      supabase.from('students').select('*').order('name'),
+      supabase.from('payments').select('student_id, status, due_date'),
+      supabase
+        .from('activity_requirements')
+        .select('id, student_id, semester_id, label, week'),
+      supabase
+        .from('student_activity')
+        .select('student_id, completed, requirement_id'),
+      supabase
+        .from('semesters')
+        .select('*')
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1),
+      supabase.from('semester_students').select('semester_id, student_id'),
+    ])
 
     if (studentsRes.error) {
       console.error('Error loading students:', studentsRes.error)
@@ -177,11 +202,127 @@ function AdminDashboard() {
       console.warn('Unable to load activity progress:', activityRes.error.message)
     }
 
+    const semester = semesterRes.data?.[0] || null
+    const ssRows = semesterStudentsRes.data || []
+
     setStudents(studentsRes.data || [])
     setPayments(paymentsRes.data || [])
     setActivity(activityRes.data || [])
     setActivityRequirements(requirementsRes.data || [])
+    setActiveSemester(semester)
+    setSemesterStudentIds(
+      semester
+        ? ssRows
+            .filter((row) => row.semester_id === semester.id)
+            .map((row) => row.student_id)
+        : []
+    )
     setLoading(false)
+  }
+
+  function openProfileModal(student) {
+    setOpenActionMenu(null)
+    setActionMenuPosition(null)
+    setProfileMessage('')
+    setProfileStudent(student)
+    setProfileForm({
+      name: student.name || '',
+      email: student.email || '',
+      phone: student.phone || '',
+      university: student.university || '',
+      program: student.program || '',
+      subject: student.subject || '',
+      final_grade: student.final_grade || '',
+      clinic: student.clinic || '',
+      active: student.active !== false,
+    })
+  }
+
+  function closeProfileModal() {
+    if (profileSaving) return
+    setProfileStudent(null)
+    setProfileForm(null)
+    setProfileMessage('')
+  }
+
+  function handleProfileChange(event) {
+    const { name, value, type, checked } = event.target
+    setProfileForm((current) => ({
+      ...current,
+      [name]: type === 'checkbox' ? checked : value,
+    }))
+  }
+
+  async function handleProfileSave(event) {
+    event.preventDefault()
+    if (!profileStudent || !profileForm) return
+
+    setProfileSaving(true)
+    setProfileMessage('')
+    setError('')
+
+    const updates = {
+      name: profileForm.name.trim(),
+      email: profileForm.email.trim() || null,
+      phone: profileForm.phone.trim() || null,
+      university: profileForm.university || null,
+      program: profileForm.program.trim() || null,
+      subject: profileForm.subject.trim() || null,
+      final_grade: profileForm.final_grade.trim() || null,
+      clinic: profileForm.clinic.trim() || null,
+      active: profileForm.active,
+    }
+
+    const { data, error: updateError } = await supabase
+      .from('students')
+      .update(updates)
+      .eq('id', profileStudent.id)
+      .select()
+      .single()
+
+    setProfileSaving(false)
+
+    if (updateError) {
+      // Graceful fallback if final_grade column is not migrated yet
+      if (
+        updateError.message?.includes('final_grade') ||
+        updateError.code === 'PGRST204'
+      ) {
+        const { final_grade, ...withoutGrade } = updates
+        const retry = await supabase
+          .from('students')
+          .update(withoutGrade)
+          .eq('id', profileStudent.id)
+          .select()
+          .single()
+
+        if (retry.error) {
+          setError(retry.error.message)
+          return
+        }
+
+        setStudents((current) =>
+          current.map((s) =>
+            s.id === profileStudent.id ? retry.data : s
+          )
+        )
+        setProfileStudent(retry.data)
+        setProfileMessage(
+          'Saved (add a final_grade column in Supabase to store grades).'
+        )
+        return
+      }
+
+      setError(updateError.message)
+      return
+    }
+
+    setStudents((current) =>
+      current.map((s) => (s.id === profileStudent.id ? data : s))
+    )
+    setProfileStudent(data)
+    setProfileMessage('Changes saved.')
+    setTimeout(() => setProfileMessage(''), 2500)
   }
 
   async function handleLogout() {
@@ -358,6 +499,7 @@ function AdminDashboard() {
   const studentMetrics = useMemo(() => {
     const paymentsByStudent = {}
     const activityByStudent = {}
+    const semesterSet = new Set(semesterStudentIds)
 
     payments.forEach((payment) => {
       if (!paymentsByStudent[payment.student_id]) {
@@ -373,27 +515,67 @@ function AdminDashboard() {
       activityByStudent[item.student_id].push(item)
     })
 
+    // Prefer current-semester requirements when an active semester exists
+    const relevantRequirements = activeSemester
+      ? activityRequirements.filter(
+          (r) =>
+            r.semester_id === activeSemester.id ||
+            (r.semester_id == null &&
+              (!r.student_id || semesterSet.has(r.student_id)))
+        )
+      : activityRequirements
+
     return students.reduce((map, student) => {
-      const studentActivity = activityByStudent[student.id] || []
-      const completed = studentActivity.filter((item) => item.completed).length
-      // Total requirements for this student = shared/cohort-wide items
-      // (student_id is null) plus any custom items added just for them.
-      const total = activityRequirements.filter(
+      const reqsForStudent = relevantRequirements.filter(
         (r) => !r.student_id || r.student_id === student.id
-      ).length
+      )
+      const reqIds = new Set(reqsForStudent.map((r) => r.id))
+      const studentActivity = (activityByStudent[student.id] || []).filter(
+        (item) => reqIds.has(item.requirement_id)
+      )
+      const completed = studentActivity.filter((item) => item.completed).length
+      const total = reqsForStudent.length
       const progress = total
         ? Math.min(100, Math.round((completed / total) * 100))
         : 0
 
+      const completedIds = new Set(
+        studentActivity
+          .filter((item) => item.completed)
+          .map((item) => item.requirement_id)
+      )
+      const nextActivity =
+        reqsForStudent.find((r) => !completedIds.has(r.id)) || null
+
       map[student.id] = {
         progress,
+        completed,
+        total,
         paymentState: getPaymentState(paymentsByStudent[student.id] || []),
-        status: progress >= 100 ? 'completed' : 'in-progress',
+        status: progress >= 100 && total > 0 ? 'completed' : 'in-progress',
+        inCurrentSemester: semesterSet.has(student.id),
+        semesterName: semesterSet.has(student.id)
+          ? activeSemester?.name || 'Current'
+          : activeSemester
+            ? 'Not assigned'
+            : '—',
+        currentActivityLabel: nextActivity
+          ? nextActivity.label
+          : total > 0
+            ? 'All complete'
+            : 'No activities',
       }
 
       return map
     }, {})
-  }, [students, payments, activity, activityRequirements])
+  }, [
+    students,
+    payments,
+    activity,
+    activityRequirements,
+    activeSemester,
+    semesterStudentIds,
+  ])
 
   const baseFilteredStudents = useMemo(() => {
     return students.filter((student) => {
@@ -613,18 +795,29 @@ function AdminDashboard() {
     </p>
   </div>
 </div>
-      <div className="dashboard-filter-row">
-        <div className="dashboard-controls">
-        <input
-          type="text"
-          className="dashboard-search"
-          placeholder="Search by name, email, phone, or subject..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+      <section className="dashboard-filter-card">
+
+        <div className="dashboard-filter-search">
+          <span className="dashboard-search-icon">⌕</span>
+          <input
+            type="text"
+            placeholder="Search by name, email, phone, or subject..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          {search && (
+            <button
+              type="button"
+              className="dashboard-clear-search"
+              onClick={() => setSearch('')}
+            >
+              ×
+            </button>
+          )}
+        </div>
 
         <select
-          className="school-filter"
+          className="dashboard-filter-select"
           value={schoolFilter}
           onChange={(e) => setSchoolFilter(e.target.value)}
         >
@@ -632,35 +825,45 @@ function AdminDashboard() {
           <option value="AUHS">AUHS</option>
           <option value="PACIFIC">PACIFIC</option>
         </select>
+
+        <div
+          className="dashboard-filter-pills"
+          role="tablist"
+          aria-label="Student status"
+        >
+          {[
+            { key: 'all', label: 'All' },
+            { key: 'in-progress', label: 'In Progress' },
+            { key: 'completed', label: 'Completed' },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              role="tab"
+              aria-selected={statusFilter === tab.key}
+              className={
+                statusFilter === tab.key
+                  ? 'dashboard-filter-pill active'
+                  : 'dashboard-filter-pill'
+              }
+              onClick={() => setStatusFilter(tab.key)}
+            >
+              {tab.label}
+              <span className="dashboard-filter-pill-count">
+                {statusCounts[tab.key]}
+              </span>
+            </button>
+          ))}
         </div>
 
-        <div className="dashboard-status-tabs" role="tablist" aria-label="Student status">
-        {[
-          { key: 'all', label: 'All' },
-          { key: 'in-progress', label: 'In Progress' },
-          { key: 'completed', label: 'Completed' },
-        ].map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            role="tab"
-            aria-selected={statusFilter === tab.key}
-            className={
-              statusFilter === tab.key
-                ? 'dashboard-status-tab active'
-                : 'dashboard-status-tab'
-            }
-            onClick={() => setStatusFilter(tab.key)}
-          >
-            <span>{tab.label}</span>
-            <span className="dashboard-status-count">
-              {statusCounts[tab.key]}
-            </span>
-          </button>
-        ))}
-      </div>
+        <div className="dashboard-filter-count">
+          Showing{' '}
+          <strong>{filteredStudents.length}</strong>
+          {' '}of{' '}
+          <strong>{students.length}</strong>
+        </div>
 
-      </div>
+      </section>
 
       {/* STUDENT TABLE */}
       {loading ? (
@@ -678,14 +881,17 @@ function AdminDashboard() {
                 </p>
               </div>
             ) : (
-              <table className="student-table">
+              <table className="student-table student-table-revamp">
                 <thead>
                   <tr>
-                    <th>STUDENT</th>
-                    <th>PROGRAM / SCHOOL</th>
-                    <th>STATUS &amp; PAYMENT</th>
-                    <th>ACTIVITY</th>
-                    <th>ACTIONS</th>
+                    <th>Student</th>
+                    <th>Phone</th>
+                    <th>School / Program</th>
+                    <th>Final Grade</th>
+                    <th>Semester</th>
+                    <th>Current Activity</th>
+                    <th>Progress</th>
+                    <th></th>
                   </tr>
                 </thead>
 
@@ -693,23 +899,22 @@ function AdminDashboard() {
                   {filteredStudents.map((student) => {
                     const metric = studentMetrics[student.id] || {
                       progress: 0,
+                      completed: 0,
+                      total: 0,
                       paymentState: 'none',
                       status: 'in-progress',
+                      semesterName: '—',
+                      currentActivityLabel: '—',
                     }
-                    const paymentLabel = {
-                      paid: 'Paid',
-                      pending: 'Pending',
-                      overdue: 'Overdue',
-                      none: 'No Invoice',
-                    }[metric.paymentState]
                     const actionOpen = openActionMenu === student.id
 
                     return (
                       <tr key={student.id}>
                         <td>
-                          <Link
-                            to={`/admin/students/${student.id}`}
-                            className="student-row-link"
+                          <button
+                            type="button"
+                            className="student-row-link student-row-open"
+                            onClick={() => openProfileModal(student)}
                             aria-label={`Open ${student.name}`}
                           >
                             <span className="student-avatar">
@@ -720,69 +925,81 @@ function AdminDashboard() {
                                 {student.name || 'Unnamed student'}
                               </span>
                               <span className="student-email">
-                                {student.email || 'No email address'}
+                                {student.email || 'No email'}
                               </span>
                             </span>
-                          </Link>
+                          </button>
+                        </td>
+
+                        <td>
+                          <span className="dash-cell-text">
+                            {student.phone || '—'}
+                          </span>
                         </td>
 
                         <td>
                           <div className="program-cell">
                             <span className="program-name">
-                              {student.program || 'General'} / {student.university || '—'}
+                              {student.university || '—'}
+                            </span>
+                            <span className="program-sub">
+                              {student.program || 'General'}
                             </span>
                           </div>
                         </td>
 
                         <td>
-                          <div className="status-payment-cell">
-                            <span
-                              className={`student-active-badge ${metric.status === 'completed' ? 'active' : 'inactive'}`}
-                            >
-                              <span className="status-dot" />
-                              {metric.status === 'completed' ? 'Completed' : 'In Progress'}
-                            </span>
-                            {metric.paymentState !== 'none' && (
-                              <>
-                                <span className="status-payment-separator">•</span>
-                                <span className={`payment-badge ${metric.paymentState}`}>
-                                  {metric.paymentState === 'paid' ? '✓' : ''}
-                                  {paymentLabel}
-                                </span>
-                              </>
-                            )}
-                            {metric.paymentState === 'none' && (
-                              <span className="payment-badge none">NO INVOICE</span>
-                            )}
-                          </div>
+                          <span
+                            className={
+                              student.final_grade
+                                ? 'dash-grade'
+                                : 'dash-cell-muted'
+                            }
+                          >
+                            {student.final_grade || '—'}
+                          </span>
                         </td>
 
                         <td>
-                          <div className="activity-cell">
-                            <div className="activity-meter-row">
-                              <div className="activity-progress activity-segments">
-                                {Array.from({ length: 7 }).map((_, index) => (
-                                  <span
-                                    key={index}
-                                    className={
-                                      index < Math.round(metric.progress / 14.2857)
-                                        ? 'filled'
-                                        : ''
-                                    }
-                                  />
-                                ))}
-                              </div>
-                              <span className="activity-value">{metric.progress}%</span>
+                          <span
+                            className={
+                              metric.inCurrentSemester
+                                ? 'dash-semester'
+                                : 'dash-cell-muted'
+                            }
+                          >
+                            {metric.semesterName}
+                          </span>
+                        </td>
+
+                        <td>
+                          <span
+                            className="dash-activity-label"
+                            title={metric.currentActivityLabel}
+                          >
+                            {metric.currentActivityLabel}
+                          </span>
+                        </td>
+
+                        <td>
+                          <div className="dash-progress-cell">
+                            <div className="dash-progress-track">
+                              <div
+                                className="dash-progress-fill"
+                                style={{
+                                  width: `${metric.progress}%`,
+                                }}
+                              />
                             </div>
+                            <strong>{metric.progress}%</strong>
+                            <span>
+                              {metric.completed}/{metric.total}
+                            </span>
                           </div>
                         </td>
+
                         <td className="student-row-actions-cell">
                           <div className="student-row-actions">
-                            {student.email ? (
-                              <button type="button" className="student-action-icon" onClick={() => openQuickContact(student)} aria-label={`Quick contact ${student.name}`} title="Quick contact">✉</button>
-                            ) : (
-                              <span className="student-action-icon disabled" aria-hidden="true">✉</span>
-                            )}
                             <button
                               type="button"
                               className={`student-action-icon menu-trigger ${actionOpen ? 'open' : ''}`}
@@ -793,7 +1010,8 @@ function AdminDashboard() {
                                   return
                                 }
 
-                                const rect = event.currentTarget.getBoundingClientRect()
+                                const rect =
+                                  event.currentTarget.getBoundingClientRect()
                                 const menuWidth = 290
                                 const margin = 12
                                 const left = Math.max(
@@ -804,44 +1022,73 @@ function AdminDashboard() {
                                   )
                                 )
                                 const estimatedHeight = 260
-                                const spaceBelow = window.innerHeight - rect.bottom - margin
-                                const openUpward = spaceBelow < estimatedHeight && rect.top > estimatedHeight
+                                const spaceBelow =
+                                  window.innerHeight - rect.bottom - margin
+                                const openUpward =
+                                  spaceBelow < estimatedHeight &&
+                                  rect.top > estimatedHeight
 
                                 setActionMenuPosition({
                                   left,
                                   top: openUpward
-                                    ? Math.max(margin, rect.top - estimatedHeight - 8)
+                                    ? Math.max(
+                                        margin,
+                                        rect.top - estimatedHeight - 8
+                                      )
                                     : rect.bottom + 8,
                                 })
                                 setOpenActionMenu(student.id)
                               }}
                               aria-label={`Actions for ${student.name}`}
                               aria-expanded={actionOpen}
-                            >⋮</button>
+                            >
+                              ⋮
+                            </button>
                             {actionOpen && actionMenuPosition && (
                               <div
                                 className="student-action-menu"
-                                style={{ left: actionMenuPosition.left, top: actionMenuPosition.top }}
+                                style={{
+                                  left: actionMenuPosition.left,
+                                  top: actionMenuPosition.top,
+                                }}
                                 role="menu"
                                 aria-label={`More actions for ${student.name}`}
                               >
-                                <Link to={`/admin/students/${student.id}`} role="menuitem">
+                                <button
+                                  type="button"
+                                  role="menuitem"
+                                  onClick={() => openProfileModal(student)}
+                                >
+                                  <span className="action-menu-icon">◎</span>
+                                  <span>Quick Profile</span>
+                                </button>
+                                <Link
+                                  to={`/admin/students/${student.id}`}
+                                  role="menuitem"
+                                >
                                   <span className="action-menu-icon">↗</span>
                                   <span>View Full Profile</span>
-                                </Link>
-                                <Link to={`/admin/students/${student.id}`} role="menuitem">
-                                  <span className="action-menu-icon">✎</span>
-                                  <span>Edit Student / Program Details</span>
                                 </Link>
                                 <Link to="/admin/payments" role="menuitem">
                                   <span className="action-menu-icon">$</span>
                                   <span>Manage Payment / Invoices</span>
                                 </Link>
-                                <button type="button" role="menuitem" onClick={() => exportStudentData(student)}>
+                                <button
+                                  type="button"
+                                  role="menuitem"
+                                  onClick={() => exportStudentData(student)}
+                                >
                                   <span className="action-menu-icon">↓</span>
                                   <span>Export Student Data</span>
                                 </button>
-                                <button type="button" role="menuitem" className="danger" onClick={() => archiveOrDeleteStudent(student)}>
+                                <button
+                                  type="button"
+                                  role="menuitem"
+                                  className="danger"
+                                  onClick={() =>
+                                    archiveOrDeleteStudent(student)
+                                  }
+                                >
                                   <span className="action-menu-icon">⌫</span>
                                   <span>Archive / Delete</span>
                                 </button>
@@ -1209,6 +1456,234 @@ function AdminDashboard() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Student profile modal — floating cards */}
+      {profileStudent && profileForm && (
+        <div
+          className="profile-modal-overlay"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) closeProfileModal()
+          }}
+        >
+          <div
+            className="profile-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="profile-modal-title"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div className="profile-modal-header">
+              <div className="profile-modal-identity">
+                <span className="student-avatar profile-modal-avatar">
+                  {getInitials(profileForm.name)}
+                </span>
+                <div>
+                  <span className="profile-modal-kicker">STUDENT PROFILE</span>
+                  <h2 id="profile-modal-title">
+                    {profileForm.name || 'Student'}
+                  </h2>
+                  <p>{profileForm.email || 'No email'}</p>
+                </div>
+              </div>
+              <div className="profile-modal-header-actions">
+                {profileMessage && (
+                  <span className="profile-save-message">{profileMessage}</span>
+                )}
+                <button
+                  type="submit"
+                  form="dashboard-profile-form"
+                  className="profile-save-button"
+                  disabled={profileSaving}
+                >
+                  {profileSaving ? 'Saving...' : 'Save'}
+                </button>
+                <Link
+                  to={`/admin/students/${profileStudent.id}`}
+                  className="profile-full-link"
+                >
+                  Full page →
+                </Link>
+                <button
+                  type="button"
+                  className="profile-modal-close"
+                  onClick={closeProfileModal}
+                  aria-label="Close"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            <form
+              id="dashboard-profile-form"
+              className="profile-modal-body"
+              onSubmit={handleProfileSave}
+            >
+              <div className="profile-card-grid">
+                <section className="profile-float-card">
+                  <header>
+                    <h3>Contact</h3>
+                    <span>Name, email, phone</span>
+                  </header>
+                  <div className="profile-card-fields">
+                    <label>
+                      <span>Name</span>
+                      <input
+                        name="name"
+                        value={profileForm.name}
+                        onChange={handleProfileChange}
+                        required
+                      />
+                    </label>
+                    <label>
+                      <span>Email</span>
+                      <input
+                        type="email"
+                        name="email"
+                        value={profileForm.email}
+                        onChange={handleProfileChange}
+                      />
+                    </label>
+                    <label>
+                      <span>Phone</span>
+                      <input
+                        name="phone"
+                        value={profileForm.phone}
+                        onChange={handleProfileChange}
+                      />
+                    </label>
+                  </div>
+                </section>
+
+                <section className="profile-float-card">
+                  <header>
+                    <h3>School & Program</h3>
+                    <span>Enrollment details</span>
+                  </header>
+                  <div className="profile-card-fields">
+                    <label>
+                      <span>School</span>
+                      <select
+                        name="university"
+                        value={profileForm.university}
+                        onChange={handleProfileChange}
+                      >
+                        <option value="">Select</option>
+                        <option value="AUHS">AUHS</option>
+                        <option value="PACIFIC">PACIFIC</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>Program</span>
+                      <input
+                        name="program"
+                        value={profileForm.program}
+                        onChange={handleProfileChange}
+                      />
+                    </label>
+                    <label>
+                      <span>Subject</span>
+                      <input
+                        name="subject"
+                        value={profileForm.subject}
+                        onChange={handleProfileChange}
+                      />
+                    </label>
+                    <label>
+                      <span>Clinic</span>
+                      <input
+                        name="clinic"
+                        value={profileForm.clinic}
+                        onChange={handleProfileChange}
+                      />
+                    </label>
+                  </div>
+                </section>
+
+                <section className="profile-float-card profile-float-card-accent">
+                  <header>
+                    <h3>Final Grades</h3>
+                    <span>Record outcome</span>
+                  </header>
+                  <div className="profile-card-fields">
+                    <label className="profile-field-wide">
+                      <span>Final grade</span>
+                      <input
+                        name="final_grade"
+                        value={profileForm.final_grade}
+                        onChange={handleProfileChange}
+                        placeholder="e.g. A, 92%, Pass"
+                      />
+                    </label>
+                  </div>
+                </section>
+
+                <section className="profile-float-card">
+                  <header>
+                    <h3>Current Semester</h3>
+                    <span>
+                      {activeSemester?.name || 'No active semester'}
+                    </span>
+                  </header>
+                  <div className="profile-stat-row">
+                    <div>
+                      <small>Assignment</small>
+                      <strong>
+                        {studentMetrics[profileStudent.id]?.inCurrentSemester
+                          ? 'Assigned'
+                          : 'Not assigned'}
+                      </strong>
+                    </div>
+                    <div>
+                      <small>Semester</small>
+                      <strong>
+                        {studentMetrics[profileStudent.id]?.semesterName ||
+                          '—'}
+                      </strong>
+                    </div>
+                  </div>
+                </section>
+
+                <section className="profile-float-card">
+                  <header>
+                    <h3>Activity Progress</h3>
+                    <span>
+                      {studentMetrics[profileStudent.id]?.currentActivityLabel ||
+                        '—'}
+                    </span>
+                  </header>
+                  <div className="profile-progress-block">
+                    <div className="dash-progress-track profile-progress-track">
+                      <div
+                        className="dash-progress-fill"
+                        style={{
+                          width: `${studentMetrics[profileStudent.id]?.progress || 0}%`,
+                        }}
+                      />
+                    </div>
+                    <div className="profile-stat-row">
+                      <div>
+                        <small>Progress</small>
+                        <strong>
+                          {studentMetrics[profileStudent.id]?.progress || 0}%
+                        </strong>
+                      </div>
+                      <div>
+                        <small>Completed</small>
+                        <strong>
+                          {studentMetrics[profileStudent.id]?.completed || 0}
+                          /
+                          {studentMetrics[profileStudent.id]?.total || 0}
+                        </strong>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              </div>
+            </form>
           </div>
         </div>
       )}

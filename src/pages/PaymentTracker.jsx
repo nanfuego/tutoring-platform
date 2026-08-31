@@ -721,188 +721,160 @@ function PaymentTracker() {
       </div>
 
 
-      {/* FILTERS */}
+      {/* FILTERS — single card matching ActivityTracker */}
 
-      <div className="tracker-controls">
+      <section className="tracker-filter-card">
 
-        <input
-          type="text"
-          className="tracker-search"
-          placeholder="Search student or description..."
-          value={search}
-          onChange={(event) =>
-            setSearch(
-              event.target.value
-            )
-          }
-        />
-
+        <div className="tracker-filter-search">
+          <span className="tracker-search-icon">⌕</span>
+          <input
+            type="text"
+            placeholder="Search student or description..."
+            value={search}
+            onChange={(event) =>
+              setSearch(event.target.value)
+            }
+          />
+          {search && (
+            <button
+              type="button"
+              className="tracker-clear-search"
+              onClick={() => setSearch('')}
+            >
+              ×
+            </button>
+          )}
+        </div>
 
         <select
-          className="month-filter"
+          className="tracker-filter-select"
           value={monthFilter}
           onChange={(event) =>
-            setMonthFilter(
-              event.target.value
-            )
+            setMonthFilter(event.target.value)
           }
         >
-
-          {monthOptions.map(
-            (option) => (
-              <option
-                key={option.value}
-                value={
-                  option.value
-                }
-              >
-                {option.label}
-              </option>
-            )
-          )}
-
+          {monthOptions.map((option) => (
+            <option
+              key={option.value}
+              value={option.value}
+            >
+              {option.label}
+            </option>
+          ))}
         </select>
-
 
         <select
-          className="school-filter"
+          className="tracker-filter-select"
           value={schoolFilter}
           onChange={(event) =>
-            setSchoolFilter(
-              event.target.value
-            )
+            setSchoolFilter(event.target.value)
           }
         >
-
-          <option value="all">
-            All Schools
-          </option>
-
-          <option value="AUHS">
-            AUHS
-          </option>
-
-          <option value="PACIFIC">
-            PACIFIC
-          </option>
-
+          <option value="all">All Schools</option>
+          <option value="AUHS">AUHS</option>
+          <option value="PACIFIC">PACIFIC</option>
         </select>
 
-      </div>
-
-
-      {/* STATUS FILTERS */}
-
-      <div className="tracker-filters">
-
-        {filters.map(
-          (filter) => (
+        <div className="tracker-filter-pills">
+          {filters.map((filter) => (
             <button
-              key={
-                filter.key
-              }
+              key={filter.key}
               type="button"
               className={
-                activeFilter ===
-                filter.key
-                  ? 'filter-pill active'
-                  : 'filter-pill'
+                activeFilter === filter.key
+                  ? 'tracker-filter-pill active'
+                  : 'tracker-filter-pill'
               }
               onClick={() =>
-                setActiveFilter(
-                  filter.key
-                )
+                setActiveFilter(filter.key)
               }
             >
               {filter.label}
             </button>
-          )
-        )}
+          ))}
+        </div>
 
-      </div>
+        <div className="tracker-filter-count">
+          Showing{' '}
+          <strong>{filtered.length}</strong>
+          {' '}of{' '}
+          <strong>{payments.length}</strong>
+        </div>
+
+      </section>
 
 
       {/* PAYMENT TABLE */}
 
       {loading ? (
 
-        <div className="loading-text">
-          Loading payments...
+        <div className="tracker-state-card">
+          <div className="tracker-spinner" />
+          <strong>Loading payments</strong>
+          <span>Please wait while invoices are loaded.</span>
         </div>
 
       ) : filtered.length === 0 ? (
 
-        <div className="empty-table">
-
-          No invoices
-          {monthFilter !==
-            'all' &&
-            ` for ${selectedMonthLabel}`}
-
-          {schoolFilter !==
-            'all' &&
-            ` (${schoolFilter})`}.
-
+        <div className="tracker-state-card">
+          <strong>No invoices found</strong>
+          <span>
+            No invoices
+            {monthFilter !== 'all' &&
+              ` for ${selectedMonthLabel}`}
+            {schoolFilter !== 'all' &&
+              ` (${schoolFilter})`}
+            . Try changing your filters.
+          </span>
         </div>
 
       ) : (
 
-        <div className="tracker-table-wrapper">
+        <div className="tracker-table-card">
 
-          <table className="tracker-table">
+          <div className="tracker-table-wrapper">
 
-            <thead>
+            <table className="tracker-table">
 
-              <tr>
-                <th>Student</th>
-                <th>School</th>
-                <th>Description</th>
-                <th>Amount</th>
-                <th>Invoice Date</th>
-                <th>Due</th>
-                <th>Status</th>
-                <th>Action</th>
-                <th></th>
-              </tr>
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Description</th>
+                  <th>Amount</th>
+                  <th>Dates</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
 
-            </thead>
+              <tbody>
 
-
-            <tbody>
-
-              {filtered.map(
-                (payment) => {
-
-                  const overdue =
-                    isOverdue(
-                      payment
-                    )
+                {filtered.map((payment) => {
+                  const overdue = isOverdue(payment)
 
                   return (
-                    <tr
-                      key={
-                        payment.id
-                      }
-                    >
+                    <tr key={payment.id}>
 
                       <td>
-                        {payment.students
-                          ?.name ||
-                          '—'}
+                        <div className="tracker-student-cell">
+                          <strong>
+                            {payment.students?.name || '—'}
+                          </strong>
+                          <span>
+                            {payment.students?.university ||
+                              '—'}
+                          </span>
+                        </div>
                       </td>
 
-                      <td>
-                        {payment.students
-                          ?.university ||
-                          '—'}
+                      <td
+                        className="desc-cell"
+                        title={payment.description || undefined}
+                      >
+                        {payment.description || '—'}
                       </td>
 
-                      <td className="desc-cell">
-                        {payment.description ||
-                          '—'}
-                      </td>
-
-                      <td>
+                      <td className="tracker-amount">
                         {formatMoney(
                           payment.amount,
                           payment.currency
@@ -910,100 +882,85 @@ function PaymentTracker() {
                       </td>
 
                       <td>
-                        {payment.invoice_date ||
-                          '—'}
-                      </td>
-
-                      <td
-                        className={
-                          overdue
-                            ? 'overdue-date'
-                            : ''
-                        }
-                      >
-                        {payment.due_date ||
-                          '—'}
+                        <div className="tracker-dates-cell">
+                          <span>
+                            Inv{' '}
+                            {payment.invoice_date || '—'}
+                          </span>
+                          <span
+                            className={
+                              overdue ? 'overdue-date' : ''
+                            }
+                          >
+                            Due{' '}
+                            {payment.due_date || '—'}
+                          </span>
+                        </div>
                       </td>
 
                       <td>
-
                         <span
                           className={
-                            payment.status ===
-                            'paid'
+                            payment.status === 'paid'
                               ? 'status-badge active'
                               : overdue
-                              ? 'status-badge overdue'
-                              : 'status-badge inactive'
+                                ? 'status-badge overdue'
+                                : 'status-badge inactive'
                           }
                         >
-                          {payment.status ===
-                          'paid'
+                          {payment.status === 'paid'
                             ? 'Paid'
                             : overdue
-                            ? 'Overdue'
-                            : 'Pending'}
+                              ? 'Overdue'
+                              : 'Pending'}
                         </span>
-
                       </td>
 
                       <td>
+                        <div className="tracker-actions">
+                          <button
+                            type="button"
+                            className="mark-paid-button"
+                            onClick={() =>
+                              toggleStatus(payment)
+                            }
+                            disabled={
+                              updatingId === payment.id
+                            }
+                          >
+                            {updatingId === payment.id
+                              ? '...'
+                              : payment.status === 'paid'
+                                ? 'Unpaid'
+                                : 'Paid'}
+                          </button>
 
-                        <button
-                          type="button"
-                          className="mark-paid-button"
-                          onClick={() =>
-                            toggleStatus(
-                              payment
-                            )
-                          }
-                          disabled={
-                            updatingId ===
-                            payment.id
-                          }
-                        >
-                          {updatingId ===
-                          payment.id
-                            ? 'Updating...'
-                            : payment.status ===
-                              'paid'
-                            ? 'Mark unpaid'
-                            : 'Mark paid'}
-                        </button>
-
-                      </td>
-
-                      <td>
-
-                        <button
-                          type="button"
-                          className="delete-button"
-                          onClick={() =>
-                            handleDelete(
-                              payment
-                            )
-                          }
-                          disabled={
-                            deletingId ===
-                            payment.id
-                          }
-                        >
-                          {deletingId ===
-                          payment.id
-                            ? '...'
-                            : 'Delete'}
-                        </button>
-
+                          <button
+                            type="button"
+                            className="delete-button"
+                            onClick={() =>
+                              handleDelete(payment)
+                            }
+                            disabled={
+                              deletingId === payment.id
+                            }
+                          >
+                            {deletingId === payment.id
+                              ? '...'
+                              : 'Delete'}
+                          </button>
+                        </div>
                       </td>
 
                     </tr>
                   )
-                }
-              )}
+                })}
 
-            </tbody>
+              </tbody>
 
-          </table>
+            </table>
+
+          </div>
 
         </div>
 
