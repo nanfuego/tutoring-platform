@@ -1,0 +1,114 @@
+/* ============================================================
+   ADD THESE TO PaymentTracker.css
+   1) Makes "+ Create Invoice" match ActivityTracker's
+      "Manage Activity" button (.activity-primary-button)
+   2) Styles for the new student payment-history modal
+============================================================ */
+
+/* --- 1. Create Invoice button, aligned with .activity-primary-button --- */
+.create-invoice-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 7px;
+
+  min-height: 40px;
+
+  padding: 0 15px;
+
+  border-radius: 7px;
+
+  box-sizing: border-box;
+
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  border: 1px solid #174c3a;
+  background: #174c3a;
+  color: #ffffff;
+
+  box-shadow: 0 3px 8px rgba(23, 76, 58, 0.13);
+
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+.create-invoice-button:hover {
+  background: #123f30;
+  border-color: #123f30;
+
+  transform: translateY(-1px);
+
+  box-shadow: 0 5px 12px rgba(23, 76, 58, 0.17);
+}
+
+/* If PaymentTracker's header wrapper isn't already a flex row
+   with right-aligned actions, uncomment and adjust to match
+   .activity-page-header / .activity-page-actions:
+*/
+/*
+.payment-tracker-page .page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-shrink: 0;
+}
+*/
+
+
+/* --- 2. Student name becomes a clickable cell --- */
+.tracker-student-cell-clickable {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+
+  gap: 2px;
+
+  border: none;
+  background: none;
+  padding: 0;
+
+  cursor: pointer;
+
+  text-align: left;
+}
+
+.tracker-student-cell-clickable strong {
+  color: #174c3a;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+
+  transition: text-decoration-color 0.15s ease;
+}
+
+.tracker-student-cell-clickable:hover strong {
+  text-decoration-color: #174c3a;
+}
+
+
+/* --- 3. Payment history modal --- */
+.history-modal {
+  width: min(720px, 96vw) !important;
+}
+
+.history-table-wrapper {
+  margin-top: 18px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.history-table th,
+.history-table td {
+  white-space: nowrap;
+}
+
+.history-empty-state {
+  margin-top: 18px;
+}

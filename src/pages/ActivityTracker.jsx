@@ -2031,8 +2031,7 @@ function ActivityTracker() {
                 <tr>
 
                   <th>STUDENT</th>
-                  <th>PROGRAM</th>
-                  <th>SCHOOL</th>
+                  <th>SCHOOL/PROGRAM</th>
                   <th>PROGRESS</th>
                   <th className="activity-action-column">
                     ACTION
@@ -2106,17 +2105,25 @@ function ActivityTracker() {
                         </td>
 
 
-                        {/* PROGRAM */}
+                        {/* SCHOOL/PROGRAM */}
                         <td>
-                          <span className="dash-cell-text">
-                            {student.program || '—'}
-                          </span>
-                        </td>
-
-                        {/* SCHOOL */}
-                        <td>
-                          <span className="dash-cell-text">
-                            {student.university || '—'}
+                          <span
+                            className="dash-cell-text dash-school-program"
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              lineHeight: 1.3,
+                            }}
+                          >
+                            <span className="dash-school">
+                              {student.university || '—'}
+                            </span>
+                            <span
+                              className="dash-program"
+                              style={{ fontSize: '0.85em', opacity: 0.7 }}
+                            >
+                              {student.program || '—'}
+                            </span>
                           </span>
                         </td>
 

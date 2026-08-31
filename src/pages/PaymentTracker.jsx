@@ -187,6 +187,9 @@ function PaymentTracker() {
   const [formError, setFormError] =
     useState('')
 
+  const [historyStudent, setHistoryStudent] =
+    useState(null)
+
 
   async function fetchPayments() {
     setLoading(true)
@@ -293,6 +296,24 @@ function PaymentTracker() {
     }
 
     setShowCreateModal(false)
+  }
+
+
+  function openHistoryModal(payment) {
+    if (!payment.student_id) {
+      return
+    }
+
+    setHistoryStudent({
+      id: payment.student_id,
+      name: payment.students?.name || 'Student',
+      university: payment.students?.university || '',
+    })
+  }
+
+
+  function closeHistoryModal() {
+    setHistoryStudent(null)
   }
 
 
@@ -623,6 +644,37 @@ function PaymentTracker() {
     ])
 
 
+  const studentHistory =
+    useMemo(() => {
+      if (!historyStudent) {
+        return []
+      }
+
+      return payments
+        .filter(
+          (payment) =>
+            payment.student_id ===
+            historyStudent.id
+        )
+        .sort((a, b) => {
+          const dateA =
+            a.due_date ||
+            a.invoice_date ||
+            ''
+
+          const dateB =
+            b.due_date ||
+            b.invoice_date ||
+            ''
+
+          return dateB.localeCompare(dateA)
+        })
+    }, [
+      payments,
+      historyStudent,
+    ])
+
+
   const monthOptions =
     getMonthOptions(
       payments
@@ -656,7 +708,7 @@ function PaymentTracker() {
         actions={
           <button
             type="button"
-            className="create-invoice-button"
+            className="create-invoice-button activity-primary-button"
             onClick={
               openCreateModal
             }
@@ -856,7 +908,16 @@ function PaymentTracker() {
                     <tr key={payment.id}>
 
                       <td>
-                        <div className="tracker-student-cell">
+                        <button
+                          type="button"
+                          className="tracker-student-cell tracker-student-cell-clickable"
+                          onClick={() =>
+                            openHistoryModal(payment)
+                          }
+                          title={`View payment history for ${
+                            payment.students?.name || 'this student'
+                          }`}
+                        >
                           <strong>
                             {payment.students?.name || '—'}
                           </strong>
@@ -864,7 +925,7 @@ function PaymentTracker() {
                             {payment.students?.university ||
                               '—'}
                           </span>
-                        </div>
+                        </button>
                       </td>
 
                       <td
@@ -1383,6 +1444,157 @@ function PaymentTracker() {
               </div>
 
             </form>
+
+          </div>
+
+        </div>
+
+      )}
+
+
+      {/* STUDENT PAYMENT HISTORY MODAL */}
+
+      {historyStudent && (
+
+        <div
+          className="invoice-modal-overlay"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              closeHistoryModal()
+            }
+          }}
+        >
+
+          <div
+            className="invoice-modal history-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="payment-history-title"
+            onMouseDown={(event) =>
+              event.stopPropagation()
+            }
+          >
+
+            <div className="invoice-modal-header">
+
+              <div>
+
+                <div className="invoice-modal-kicker">
+                  PAYMENT HISTORY
+                </div>
+
+                <h2 id="payment-history-title">
+                  {historyStudent.name}
+                </h2>
+
+                <p>
+                  {historyStudent.university ||
+                    'Full invoice history for this student'}
+                </p>
+
+              </div>
+
+
+              <button
+                type="button"
+                className="invoice-modal-close"
+                onClick={closeHistoryModal}
+                aria-label="Close payment history modal"
+              >
+                ×
+              </button>
+
+            </div>
+
+
+            {studentHistory.length === 0 ? (
+
+              <div className="tracker-state-card history-empty-state">
+                <strong>No invoices yet</strong>
+                <span>
+                  This student doesn't have any payment records.
+                </span>
+              </div>
+
+            ) : (
+
+              <div className="tracker-table-wrapper history-table-wrapper">
+
+                <table className="tracker-table history-table">
+
+                  <thead>
+                    <tr>
+                      <th>Description</th>
+                      <th>Amount</th>
+                      <th>Invoice</th>
+                      <th>Due</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+
+                    {studentHistory.map((payment) => {
+                      const overdue = isOverdue(payment)
+
+                      return (
+                        <tr key={payment.id}>
+
+                          <td
+                            className="desc-cell"
+                            title={payment.description || undefined}
+                          >
+                            {payment.description || '—'}
+                          </td>
+
+                          <td className="tracker-amount">
+                            {formatMoney(
+                              payment.amount,
+                              payment.currency
+                            )}
+                          </td>
+
+                          <td>
+                            {payment.invoice_date || '—'}
+                          </td>
+
+                          <td
+                            className={
+                              overdue ? 'overdue-date' : ''
+                            }
+                          >
+                            {payment.due_date || '—'}
+                          </td>
+
+                          <td>
+                            <span
+                              className={
+                                payment.status === 'paid'
+                                  ? 'status-badge active'
+                                  : overdue
+                                    ? 'status-badge overdue'
+                                    : 'status-badge inactive'
+                              }
+                            >
+                              {payment.status === 'paid'
+                                ? 'Paid'
+                                : overdue
+                                  ? 'Overdue'
+                                  : 'Pending'}
+                            </span>
+                          </td>
+
+                        </tr>
+                      )
+                    })}
+
+                  </tbody>
+
+                </table>
+
+              </div>
+
+            )}
 
           </div>
 

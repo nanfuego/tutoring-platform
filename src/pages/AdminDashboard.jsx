@@ -46,6 +46,48 @@ function getPaymentState(payments) {
   return 'pending'
 }
 
+const GRADE_PALETTES = {
+  green: { background: '#DCFCE7', color: '#15803D', borderColor: '#86EFAC' },
+  blue: { background: '#DBEAFE', color: '#1D4ED8', borderColor: '#93C5FD' },
+  amber: { background: '#FEF3C7', color: '#B45309', borderColor: '#FCD34D' },
+  orange: { background: '#FFEDD5', color: '#C2410C', borderColor: '#FDBA74' },
+  red: { background: '#FEE2E2', color: '#B91C1C', borderColor: '#FCA5A5' },
+  purple: { background: '#EDE9FE', color: '#6D28D9', borderColor: '#C4B5FD' },
+  neutral: { background: '#F1F5F9', color: '#94A3B8', borderColor: '#E2E8F0' },
+}
+
+function getGradePalette(grade) {
+  if (!grade) return GRADE_PALETTES.neutral
+
+  const value = grade.toString().trim()
+  const upper = value.toUpperCase()
+
+  if (upper.startsWith('A') || upper === 'PASS' || upper === 'PASSED') {
+    return GRADE_PALETTES.green
+  }
+  if (upper.startsWith('B')) return GRADE_PALETTES.blue
+  if (upper.startsWith('C')) return GRADE_PALETTES.amber
+  if (upper.startsWith('D')) return GRADE_PALETTES.orange
+  if (upper.startsWith('F') || upper === 'FAIL' || upper === 'FAILED') {
+    return GRADE_PALETTES.red
+  }
+  if (upper.includes('INCOMPLETE') || upper === 'IP' || upper === 'W') {
+    return GRADE_PALETTES.purple
+  }
+
+  const numericMatch = value.match(/-?\d+(\.\d+)?/)
+  if (numericMatch) {
+    const numeric = parseFloat(numericMatch[0])
+    if (numeric >= 90) return GRADE_PALETTES.green
+    if (numeric >= 80) return GRADE_PALETTES.blue
+    if (numeric >= 70) return GRADE_PALETTES.amber
+    if (numeric >= 60) return GRADE_PALETTES.orange
+    return GRADE_PALETTES.red
+  }
+
+  return GRADE_PALETTES.purple
+}
+
 function AdminDashboard() {
   const [students, setStudents] = useState([])
   const [loading, setLoading] = useState(true)
@@ -888,12 +930,18 @@ function AdminDashboard() {
                   <tr>
                     <th>Student</th>
                     <th>Phone</th>
-                    <th>School</th>
-                    <th>Program</th>
-                    <th>Final Grade</th>
+                    <th>School/Program</th>
                     <th>Semester</th>
                     <th>Current Activity</th>
                     <th>Progress</th>
+                    <th
+                      style={{
+                        fontWeight: 800,
+                        letterSpacing: '0.03em',
+                      }}
+                    >
+                      Final Grade
+                    </th>
                     <th></th>
                   </tr>
                 </thead>
@@ -941,26 +989,23 @@ function AdminDashboard() {
                         </td>
 
                         <td>
-                          <span className="dash-cell-text">
-                            {student.university || '—'}
-                          </span>
-                        </td>
-
-                        <td>
-                          <span className="dash-cell-text">
-                            {student.program || '—'}
-                          </span>
-                        </td>
-
-                        <td>
                           <span
-                            className={
-                              student.final_grade
-                                ? 'dash-grade'
-                                : 'dash-cell-muted'
-                            }
+                            className="dash-cell-text dash-school-program"
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              lineHeight: 1.3,
+                            }}
                           >
-                            {student.final_grade || '—'}
+                            <span className="dash-school">
+                              {student.university || '—'}
+                            </span>
+                            <span
+                              className="dash-program"
+                              style={{ fontSize: '0.85em', opacity: 0.7 }}
+                            >
+                              {student.program || '—'}
+                            </span>
                           </span>
                         </td>
 
@@ -1000,6 +1045,28 @@ function AdminDashboard() {
                               {metric.completed}/{metric.total}
                             </span>
                           </div>
+                        </td>
+
+                        <td>
+                          <span
+                            className="dash-grade-badge"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              minWidth: '46px',
+                              padding: '4px 12px',
+                              borderRadius: '999px',
+                              fontWeight: 700,
+                              fontSize: '0.8rem',
+                              letterSpacing: '0.02em',
+                              border: `1px solid ${getGradePalette(student.final_grade).borderColor}`,
+                              backgroundColor: getGradePalette(student.final_grade).background,
+                              color: getGradePalette(student.final_grade).color,
+                            }}
+                          >
+                            {student.final_grade || '—'}
+                          </span>
                         </td>
 
                         <td className="student-row-actions-cell">
