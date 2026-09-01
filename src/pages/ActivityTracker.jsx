@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../supabaseClient'
 import './ActivityTracker.css'
+import StudentActivityModal from './StudentActivityModal'
 
 function ActivityTracker() {
   // ============================================================
@@ -30,6 +31,10 @@ function ActivityTracker() {
   const [clinicFilter, setClinicFilter] = useState('all')
   const [schoolFilter, setSchoolFilter] = useState('all')
   const [manageSchoolFilter, setManageSchoolFilter] = useState('all')
+
+  // Main student table pagination
+  const STUDENTS_PER_PAGE = 10
+  const [currentPage, setCurrentPage] = useState(1)
 
   // Assign activity to student(s) by school
   const [showAssignActivity, setShowAssignActivity] = useState(false)
@@ -488,6 +493,26 @@ function ActivityTracker() {
     )
   }
 
+  const allAssignActivitiesSelected =
+    assignableActivities.length > 0 &&
+    assignableActivities.every((activity) =>
+      assignSelectedActivityIds.includes(activity.id)
+    )
+
+  function toggleSelectAllAssignActivities() {
+    if (!assignStudentId || assignSaving) return
+
+    const visibleIds = assignableActivities.map((activity) => activity.id)
+
+    setAssignSelectedActivityIds((current) => {
+      if (allAssignActivitiesSelected) {
+        return current.filter((id) => !visibleIds.includes(id))
+      }
+
+      return Array.from(new Set([...current, ...visibleIds]))
+    })
+  }
+
   async function submitAssignActivity(event) {
     event.preventDefault()
 
@@ -676,6 +701,46 @@ function ActivityTracker() {
   }, [students, requirements, studentActivity])
 
   // ============================================================
+  // CURRENT ACTIVITY MAP
+  // ============================================================
+
+  const currentActivityMap = useMemo(() => {
+    const map = {}
+
+    students.forEach((student) => {
+      const studentReqs = requirementsForStudent(
+        student,
+        requirements
+      )
+
+      const activityByRequirement = new Map(
+        studentActivity
+          .filter((item) => item.student_id === student.id)
+          .map((item) => [item.requirement_id, item])
+      )
+
+      const assignedRequirements = studentReqs.filter((requirement) =>
+        activityByRequirement.has(requirement.id)
+      )
+
+      const currentRequirement = assignedRequirements.find((requirement) => {
+        const item = activityByRequirement.get(requirement.id)
+        return item?.completed !== true
+      })
+
+      if (currentRequirement) {
+        map[student.id] = currentRequirement.label || currentRequirement.name || 'Activity'
+      } else if (assignedRequirements.length > 0) {
+        map[student.id] = 'All complete'
+      } else {
+        map[student.id] = 'No activity'
+      }
+    })
+
+    return map
+  }, [students, requirements, studentActivity])
+
+  // ============================================================
   // SEMESTER ARCHIVE STATS
   // ============================================================
 
@@ -834,6 +899,39 @@ function ActivityTracker() {
     clinicFilter,
     schoolFilter,
   ])
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredStudents.length / STUDENTS_PER_PAGE)
+  )
+
+  const paginatedStudents = useMemo(() => {
+    const startIndex = (currentPage - 1) * STUDENTS_PER_PAGE
+    return filteredStudents.slice(
+      startIndex,
+      startIndex + STUDENTS_PER_PAGE
+    )
+  }, [filteredStudents, currentPage])
+
+  const pageStart = filteredStudents.length
+    ? (currentPage - 1) * STUDENTS_PER_PAGE + 1
+    : 0
+  const pageEnd = Math.min(
+    currentPage * STUDENTS_PER_PAGE,
+    filteredStudents.length
+  )
+
+  // Return to page 1 whenever the main filters change.
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, clinicFilter, schoolFilter])
+
+  // Keep the current page valid if students are removed or filters shrink.
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages)
+    }
+  }, [currentPage, totalPages])
 
   // ============================================================
   // SUMMARY
@@ -2032,10 +2130,8 @@ function ActivityTracker() {
 
                   <th>STUDENT</th>
                   <th>SCHOOL/PROGRAM</th>
+                  <th>CURRENT ACTIVITY</th>
                   <th>PROGRESS</th>
-                  <th className="activity-action-column">
-                    ACTION
-                  </th>
 
                 </tr>
 
@@ -2044,7 +2140,7 @@ function ActivityTracker() {
 
               <tbody>
 
-                {filteredStudents.map(
+                {paginatedStudents.map(
                   (student) => {
 
                     const progress =
@@ -2069,7 +2165,23 @@ function ActivityTracker() {
 
                         <td>
 
-                          <div className="student-person">
+                          <button
+                            type="button"
+                            className="student-person"
+                            onClick={() =>
+                              openChecklist(student)
+                            }
+                            title={`View activity for ${student.name}`}
+                            style={{
+                              width: '100%',
+                              padding: 0,
+                              border: 0,
+                              background: 'transparent',
+                              font: 'inherit',
+                              textAlign: 'left',
+                              cursor: 'pointer',
+                            }}
+                          >
 
                             <div className="student-avatar">
 
@@ -2100,7 +2212,7 @@ function ActivityTracker() {
 
                             </div>
 
-                          </div>
+                          </button>
 
                         </td>
 
@@ -2124,6 +2236,22 @@ function ActivityTracker() {
                             >
                               {student.program || '—'}
                             </span>
+                          </span>
+                        </td>
+
+                        {/* CURRENT ACTIVITY */}
+                        <td>
+                          <span
+                            className={
+                              currentActivityMap[student.id] === 'All complete'
+                                ? 'activity-current-label is-complete'
+                                : currentActivityMap[student.id] === 'No activity'
+                                  ? 'activity-current-label is-empty'
+                                  : 'activity-current-label'
+                            }
+                            title={currentActivityMap[student.id]}
+                          >
+                            {currentActivityMap[student.id]}
                           </span>
                         </td>
 
@@ -2164,24 +2292,7 @@ function ActivityTracker() {
                         </td>
 
 
-                        {/* ACTION */}
 
-                        <td className="activity-action-column">
-
-                          <button
-                            type="button"
-                            className="view-checklist-button"
-                            onClick={() =>
-                              openChecklist(
-                                student
-                              )
-                            }
-                          >
-                            View
-                            <span>→</span>
-                          </button>
-
-                        </td>
 
                       </tr>
 
@@ -2193,6 +2304,39 @@ function ActivityTracker() {
 
             </table>
 
+          </div>
+
+          <div className="activity-pagination">
+            <div className="activity-pagination-info">
+              Showing <strong>{pageStart}–{pageEnd}</strong> of{' '}
+              <strong>{filteredStudents.length}</strong> students
+            </div>
+
+            <div className="activity-pagination-controls">
+              <button
+                type="button"
+                className="activity-pagination-button"
+                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                disabled={currentPage === 1}
+              >
+                ← Previous
+              </button>
+
+              <span className="activity-pagination-page">
+                Page <strong>{currentPage}</strong> of <strong>{totalPages}</strong>
+              </span>
+
+              <button
+                type="button"
+                className="activity-pagination-button"
+                onClick={() =>
+                  setCurrentPage((page) => Math.min(totalPages, page + 1))
+                }
+                disabled={currentPage === totalPages}
+              >
+                Next →
+              </button>
+            </div>
           </div>
 
         </div>
@@ -2539,345 +2683,14 @@ function ActivityTracker() {
 
 
       {/* ======================================================
-          STUDENT CHECKLIST MODAL
+          STUDENT ACTIVITY MODAL
       ======================================================= */}
 
       {selectedStudent && (
-
-        <div
-          className="activity-modal-overlay"
-          onMouseDown={(event) => {
-            if (
-              event.target ===
-              event.currentTarget
-            ) {
-              closeChecklist()
-            }
-          }}
-        >
-
-          <div
-            className="checklist-modal"
-            onMouseDown={(event) =>
-              event.stopPropagation()
-            }
-          >
-
-            <div className="modal-header">
-
-              <div>
-
-                <span className="activity-eyebrow">
-                  STUDENT ACTIVITY
-                </span>
-
-                <h2>
-                  {
-                    selectedStudent.name
-                  }
-                </h2>
-
-                <p>
-
-                  {
-                    selectedStudent.program ||
-                    'General'
-                  }
-
-                  {selectedStudent.university &&
-                    ` · ${selectedStudent.university}`}
-
-                </p>
-
-              </div>
-
-
-              <button
-                type="button"
-                className="modal-close"
-                onClick={
-                  closeChecklist
-                }
-              >
-                ×
-              </button>
-
-            </div>
-
-            {/* ACTIVITY DATE RANGES */}
-            {selectedStudentGroups.some(
-              (group) =>
-                group.items.some(
-                  (item) => item.start_date || item.end_date
-                )
-            ) && (
-              <div className="checklist-date-summary">
-                {selectedStudentGroups.flatMap((group) =>
-                  group.items
-                    .filter(
-                      (item) => item.start_date || item.end_date
-                    )
-                    .map((item) => (
-                      <div
-                        key={item.id}
-                        className="checklist-date-chip"
-                      >
-                        <strong>{item.label}</strong>
-                        <span>
-                          {item.start_date || '—'}
-                          {' → '}
-                          {item.end_date || '—'}
-                        </span>
-                      </div>
-                    ))
-                )}
-              </div>
-            )}
-
-
-            {/* PROGRESS */}
-
-            <div className="checklist-summary">
-
-              <div className="checklist-summary-top">
-
-                <span>
-                  OVERALL COMPLETION
-                </span>
-
-                <strong>
-                  {
-                    progressMap[
-                      selectedStudent.id
-                    ]?.percentage || 0
-                  }%
-                </strong>
-
-              </div>
-
-              <div className="checklist-progress-track">
-
-                <div
-                  className="checklist-progress-fill"
-                  style={{
-                    width: `${
-                      progressMap[
-                        selectedStudent.id
-                      ]?.percentage || 0
-                    }%`,
-                  }}
-                />
-
-              </div>
-
-            </div>
-
-
-            {/* BODY */}
-
-            <div className="checklist-body">
-
-              {selectedStudentGroups.length ===
-              0 ? (
-
-                <div className="empty-checklist">
-
-                  <strong>
-                    No activities for this school
-                  </strong>
-
-                  <span>
-                    Create school-specific activities
-                    in Manage Activity, or use Assign
-                    Activity.
-                  </span>
-
-                </div>
-
-              ) : (
-
-                selectedStudentGroups.map(
-                  (group) => (
-
-                    <div
-                      key={
-                        group.week
-                      }
-                      className="week-section"
-                    >
-
-                      <div className="week-header">
-
-                        <div>
-
-                          <span>
-                            ACTIVITY WEEK
-                          </span>
-
-                          <h3>
-                            {
-                              group.label
-                            }
-                          </h3>
-
-                        </div>
-
-                        <span className="week-count">
-                          {
-                            group.items
-                              .length
-                          }{' '}
-
-                          {group.items
-                            .length === 1
-                            ? 'activity'
-                            : 'activities'}
-                        </span>
-
-                      </div>
-
-
-                      <div className="checklist-items">
-
-                        {group.items.map(
-                          (
-                            requirement
-                          ) => {
-
-                            const existing =
-                              getStudentActivity(
-                                selectedStudent.id,
-                                requirement.id
-                              )
-
-                            const completed =
-                              existing?.completed ===
-                              true
-
-                            return (
-
-                              <div
-                                key={
-                                  requirement.id
-                                }
-                                className={`checklist-item ${
-                                  completed
-                                    ? 'is-completed'
-                                    : ''
-                                }`}
-                              >
-
-                                <label className="check-item-label">
-
-                                  <input
-                                    type="checkbox"
-                                    checked={
-                                      completed
-                                    }
-                                    disabled={
-                                      savingActivityId ===
-                                      requirement.id
-                                    }
-                                    onChange={() =>
-                                      toggleActivity(
-                                        selectedStudent.id,
-                                        requirement.id,
-                                        completed
-                                      )
-                                    }
-                                  />
-
-                                  <span className="custom-checkbox" />
-
-                                  <span className="check-item-text">
-
-                                    <strong>
-                                      {
-                                        requirement.label
-                                      }
-                                    </strong>
-
-                                    {(requirement.start_date ||
-                                      requirement.end_date) && (
-                                      <small className="check-item-dates">
-                                        {requirement.start_date ||
-                                          '—'}
-                                        {' → '}
-                                        {requirement.end_date ||
-                                          '—'}
-                                      </small>
-                                    )}
-
-                                    {requirement.code && (
-                                      <small>
-                                        {
-                                          requirement.code
-                                        }
-                                      </small>
-                                    )}
-
-                                  </span>
-
-                                </label>
-
-
-                                <input
-                                  type="text"
-                                  className="check-item-note"
-                                  placeholder="Add a note..."
-                                  defaultValue={
-                                    existing?.note ||
-                                    ''
-                                  }
-                                  onBlur={(
-                                    event
-                                  ) =>
-                                    saveNote(
-                                      selectedStudent.id,
-                                      requirement.id,
-                                      event
-                                        .target
-                                        .value
-                                    )
-                                  }
-                                />
-
-                              </div>
-
-                            )
-                          }
-                        )}
-
-                      </div>
-
-                    </div>
-
-                  )
-                )
-
-              )}
-
-            </div>
-
-
-            <div className="modal-footer">
-
-              <button
-                type="button"
-                className="activity-secondary-button"
-                onClick={
-                  closeChecklist
-                }
-              >
-                Close
-              </button>
-
-            </div>
-
-          </div>
-
-        </div>
-
+        <StudentActivityModal
+          student={selectedStudent}
+          onClose={closeChecklist}
+        />
       )}
 
 
@@ -3830,11 +3643,25 @@ function ActivityTracker() {
                           }`
                         : 'Activities'}
                     </strong>
-                    <span>
-                      {assignStudentId
-                        ? `${assignSelectedActivityIds.length} assigned`
-                        : 'Select a student'}
-                    </span>
+                    <div className="assign-panel-header-actions">
+                      <span>
+                        {assignStudentId
+                          ? `${assignSelectedActivityIds.length} assigned`
+                          : 'Select a student'}
+                      </span>
+
+                      {assignStudentId && assignableActivities.length > 0 && (
+                        <label className="assign-select-all">
+                          <input
+                            type="checkbox"
+                            checked={allAssignActivitiesSelected}
+                            disabled={assignSaving}
+                            onChange={toggleSelectAllAssignActivities}
+                          />
+                          <span>Select All</span>
+                        </label>
+                      )}
+                    </div>
                   </div>
 
                   {!assignStudentId ? (

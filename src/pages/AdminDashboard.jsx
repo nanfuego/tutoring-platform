@@ -131,6 +131,8 @@ function AdminDashboard() {
   const [search, setSearch] = useState('')
   const [schoolFilter, setSchoolFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [currentPage, setCurrentPage] = useState(1)
+  const STUDENTS_PER_PAGE = 10
 
   // Student Manager dropdown
   const [showManagerMenu, setShowManagerMenu] = useState(false)
@@ -668,6 +670,26 @@ function AdminDashboard() {
     )
   }, [baseFilteredStudents, statusFilter, studentMetrics])
 
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredStudents.length / STUDENTS_PER_PAGE)
+  )
+
+  const paginatedStudents = useMemo(() => {
+    const startIndex = (currentPage - 1) * STUDENTS_PER_PAGE
+    return filteredStudents.slice(startIndex, startIndex + STUDENTS_PER_PAGE)
+  }, [filteredStudents, currentPage])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, schoolFilter, statusFilter])
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages)
+    }
+  }, [currentPage, totalPages])
+
   const deleteFilteredStudents = useMemo(() => {
     const query = deleteSearch.trim().toLowerCase()
 
@@ -947,7 +969,7 @@ function AdminDashboard() {
                 </thead>
 
                 <tbody>
-                  {filteredStudents.map((student) => {
+                  {paginatedStudents.map((student) => {
                     const metric = studentMetrics[student.id] || {
                       progress: 0,
                       completed: 0,
@@ -1174,6 +1196,54 @@ function AdminDashboard() {
               </table>
             )}
           </div>
+
+          {filteredStudents.length > 0 && (
+            <div className="dashboard-pagination">
+              <div className="dashboard-pagination-summary">
+                Showing{' '}
+                <strong>
+                  {(currentPage - 1) * STUDENTS_PER_PAGE + 1}
+                </strong>
+                {' '}–{' '}
+                <strong>
+                  {Math.min(
+                    currentPage * STUDENTS_PER_PAGE,
+                    filteredStudents.length
+                  )}
+                </strong>
+                {' '}of <strong>{filteredStudents.length}</strong> students
+              </div>
+
+              <div
+                className="dashboard-pagination-controls"
+                aria-label="Student table pagination"
+              >
+                <button
+                  type="button"
+                  className="dashboard-pagination-button"
+                  onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                  disabled={currentPage === 1}
+                >
+                  ← Previous
+                </button>
+
+                <span className="dashboard-pagination-page">
+                  Page <strong>{currentPage}</strong> of <strong>{totalPages}</strong>
+                </span>
+
+                <button
+                  type="button"
+                  className="dashboard-pagination-button"
+                  onClick={() =>
+                    setCurrentPage((page) => Math.min(totalPages, page + 1))
+                  }
+                  disabled={currentPage === totalPages}
+                >
+                  Next →
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

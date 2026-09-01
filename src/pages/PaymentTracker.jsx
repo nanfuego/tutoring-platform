@@ -161,6 +161,11 @@ function PaymentTracker() {
   const [monthFilter, setMonthFilter] =
     useState('all')
 
+  // Main payment table pagination
+  const PAYMENTS_PER_PAGE = 10
+  const [currentPage, setCurrentPage] =
+    useState(1)
+
   const [updatingId, setUpdatingId] =
     useState(null)
 
@@ -187,6 +192,9 @@ function PaymentTracker() {
 
   const [currency, setCurrency] =
     useState('USD')
+
+  const [paymentMethod, setPaymentMethod] =
+    useState('PayPal')
 
   const [description, setDescription] =
     useState('')
@@ -345,6 +353,7 @@ function PaymentTracker() {
     setShowStudentDropdown(false)
     setAmount('')
     setCurrency('USD')
+    setPaymentMethod('PayPal')
     setDescription('')
 
     if (monthFilter !== 'all') {
@@ -437,6 +446,7 @@ function PaymentTracker() {
         student_id: studentId,
         amount: Number(amount),
         currency,
+        payment_method: paymentMethod,
         description: description.trim() || null,
         due_date: dueDate || null,
         invoice_date: new Date().toISOString().slice(0, 10),
@@ -640,6 +650,43 @@ function PaymentTracker() {
     ])
 
 
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filtered.length / PAYMENTS_PER_PAGE)
+  )
+
+  const paginatedPayments = useMemo(() => {
+    const startIndex =
+      (currentPage - 1) * PAYMENTS_PER_PAGE
+
+    return filtered.slice(
+      startIndex,
+      startIndex + PAYMENTS_PER_PAGE
+    )
+  }, [filtered, currentPage])
+
+  const pageStart = filtered.length
+    ? (currentPage - 1) * PAYMENTS_PER_PAGE + 1
+    : 0
+
+  const pageEnd = Math.min(
+    currentPage * PAYMENTS_PER_PAGE,
+    filtered.length
+  )
+
+  // Start from page 1 whenever the visible payment set changes by filter.
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, schoolFilter, monthFilter, activeFilter])
+
+  // Keep the page valid after cancelling/deleting invoices.
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages)
+    }
+  }, [currentPage, totalPages])
+
+
   const totals =
     useMemo(() => {
       let base =
@@ -747,6 +794,31 @@ function PaymentTracker() {
       payments,
       historyStudent,
     ])
+
+
+  const historySummary =
+    useMemo(() => {
+      const totalBilled = studentHistory.reduce(
+        (sum, payment) => sum + Number(payment.amount || 0),
+        0
+      )
+
+      const totalPaid = studentHistory
+        .filter((payment) => payment.status === 'paid')
+        .reduce(
+          (sum, payment) => sum + Number(payment.amount || 0),
+          0
+        )
+
+      const outstanding = Math.max(0, totalBilled - totalPaid)
+
+      return {
+        invoiceCount: studentHistory.length,
+        totalBilled,
+        totalPaid,
+        outstanding,
+      }
+    }, [studentHistory])
 
 
   const monthOptions =
@@ -1031,24 +1103,25 @@ function PaymentTracker() {
 
         <div className="tracker-table-card">
 
-          <div className="tracker-table-wrapper">
+          <div className="tracker-table-wrapper payment-main-table-wrapper">
 
-            <table className="tracker-table">
+            <table className="tracker-table payment-main-table">
 
               <thead>
                 <tr>
                   <th>Student</th>
-                  <th>Description</th>
                   <th>Dates</th>
+                  <th>Method</th>
                   <th>Status</th>
                   <th>Amount</th>
-                  <th>Actions</th>
+                  <th>Description</th>
+                  <th className="payment-actions-header">Actions</th>
                 </tr>
               </thead>
 
               <tbody>
 
-                {filtered.map((payment) => {
+                {paginatedPayments.map((payment) => {
                   const overdue = isOverdue(payment)
 
                   return (
@@ -1082,13 +1155,6 @@ function PaymentTracker() {
                         </button>
                       </td>
 
-                      <td
-                        className="desc-cell"
-                        title={payment.description || undefined}
-                      >
-                        {payment.description || '—'}
-                      </td>
-
                       <td>
                         <div className="tracker-dates-cell">
                           <span>
@@ -1104,6 +1170,12 @@ function PaymentTracker() {
                             {payment.due_date || '—'}
                           </span>
                         </div>
+                      </td>
+
+                      <td>
+                        <span className="payment-method-badge">
+                          {payment.payment_method || '—'}
+                        </span>
                       </td>
 
                       <td>
@@ -1131,7 +1203,14 @@ function PaymentTracker() {
                         )}
                       </td>
 
-                      <td>
+                      <td
+                        className="desc-cell"
+                        title={payment.description || undefined}
+                      >
+                        {payment.description || '—'}
+                      </td>
+
+                      <td className="payment-actions-cell">
                         <div className="tracker-actions">
                           <button
                             type="button"
@@ -1173,6 +1252,41 @@ function PaymentTracker() {
 
             </table>
 
+          </div>
+
+          <div className="tracker-pagination">
+            <div className="tracker-pagination-info">
+              Showing <strong>{pageStart}–{pageEnd}</strong> of{' '}
+              <strong>{filtered.length}</strong> invoices
+            </div>
+
+            <div className="tracker-pagination-controls">
+              <button
+                type="button"
+                className="tracker-pagination-button"
+                onClick={() =>
+                  setCurrentPage((page) => Math.max(1, page - 1))
+                }
+                disabled={currentPage === 1}
+              >
+                ← Previous
+              </button>
+
+              <span className="tracker-pagination-page">
+                Page <strong>{currentPage}</strong> of <strong>{totalPages}</strong>
+              </span>
+
+              <button
+                type="button"
+                className="tracker-pagination-button"
+                onClick={() =>
+                  setCurrentPage((page) => Math.min(totalPages, page + 1))
+                }
+                disabled={currentPage === totalPages}
+              >
+                Next →
+              </button>
+            </div>
           </div>
 
         </div>
@@ -1475,7 +1589,7 @@ function PaymentTracker() {
                     </strong>
 
                     <span>
-                      Amount, description and payment deadline
+                      Amount, payment method, description and payment deadline
                     </span>
 
                   </div>
@@ -1576,6 +1690,29 @@ function PaymentTracker() {
                         PHP — Philippine Peso
                       </option>
 
+                    </select>
+
+                  </label>
+
+
+                  <label className="invoice-field">
+
+                    <span>
+                      Payment Method
+                    </span>
+
+                    <select
+                      value={paymentMethod}
+                      onChange={(event) =>
+                        setPaymentMethod(event.target.value)
+                      }
+                    >
+                      <option value="PayPal">
+                        PayPal
+                      </option>
+                      <option value="G-Cash">
+                        G-Cash
+                      </option>
                     </select>
 
                   </label>
@@ -1746,14 +1883,45 @@ function PaymentTracker() {
 
             ) : (
 
-              <div className="tracker-table-wrapper history-table-wrapper">
+              <>
+                <div className="history-summary-grid">
+                  <div className="history-summary-card">
+                    <span>Invoices</span>
+                    <strong>{historySummary.invoiceCount}</strong>
+                  </div>
 
-                <table className="tracker-table history-table">
+                  <div className="history-summary-card">
+                    <span>Total billed</span>
+                    <strong>{formatMoney(historySummary.totalBilled, 'USD')}</strong>
+                  </div>
+
+                  <div className="history-summary-card history-summary-card-paid">
+                    <span>Paid</span>
+                    <strong>{formatMoney(historySummary.totalPaid, 'USD')}</strong>
+                  </div>
+
+                  <div className="history-summary-card history-summary-card-outstanding">
+                    <span>Outstanding</span>
+                    <strong>{formatMoney(historySummary.outstanding, 'USD')}</strong>
+                  </div>
+                </div>
+
+                <div className="history-section-heading">
+                  <div>
+                    <strong>Invoice history</strong>
+                    <span>Most recent invoice first</span>
+                  </div>
+                </div>
+
+                <div className="tracker-table-wrapper history-table-wrapper">
+
+                  <table className="tracker-table history-table">
 
                   <thead>
                     <tr>
                       <th>Description</th>
                       <th>Amount</th>
+                      <th>Method</th>
                       <th>Invoice</th>
                       <th>Due</th>
                       <th>Status</th>
@@ -1780,6 +1948,12 @@ function PaymentTracker() {
                               payment.amount,
                               payment.currency
                             )}
+                          </td>
+
+                          <td>
+                            <span className="payment-method-badge">
+                              {payment.payment_method || '—'}
+                            </span>
                           </td>
 
                           <td>
@@ -1818,9 +1992,10 @@ function PaymentTracker() {
 
                   </tbody>
 
-                </table>
+                  </table>
 
-              </div>
+                </div>
+              </>
 
             )}
 

@@ -1173,7 +1173,7 @@
 .activity-split-panel:not(.activity-archive-panel)
   .activity-table-compact
   td:nth-child(1) {
-  width: 32%;
+  width: 30%;
 }
 
 .activity-split-panel:not(.activity-archive-panel)
@@ -1182,7 +1182,7 @@
 .activity-split-panel:not(.activity-archive-panel)
   .activity-table-compact
   td:nth-child(2) {
-  width: 24%;
+  width: 22%;
 }
 
 .activity-split-panel:not(.activity-archive-panel)
@@ -1192,6 +1192,35 @@
   .activity-table-compact
   td:nth-child(3) {
   width: 26%;
+}
+
+.activity-split-panel:not(.activity-archive-panel)
+  .activity-table-compact
+  th:nth-child(4),
+.activity-split-panel:not(.activity-archive-panel)
+  .activity-table-compact
+  td:nth-child(4) {
+  width: 22%;
+}
+
+.activity-current-label {
+  display: block;
+  overflow: hidden;
+  color: #344055;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.activity-current-label.is-complete {
+  color: #174c3a;
+}
+
+.activity-current-label.is-empty {
+  color: #929baa;
+  font-weight: 600;
 }
 
 /* Archive table columns */
@@ -3281,5 +3310,263 @@
 
   .activity-table-compact .activity-action-column {
     width: 88px;
+  }
+}
+
+/* ============================================================
+   MAIN STUDENT TABLE PAGINATION
+============================================================ */
+.activity-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  border-top: 1px solid #e7ebef;
+  background: #fafbfc;
+}
+
+.activity-pagination-info,
+.activity-pagination-page {
+  color: #7a8595;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.activity-pagination-info strong,
+.activity-pagination-page strong {
+  color: #344055;
+  font-weight: 750;
+}
+
+.activity-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.activity-pagination-button {
+  min-height: 32px;
+  padding: 0 11px;
+  border: 1px solid #d8dfe7;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #344055;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.activity-pagination-button:hover:not(:disabled) {
+  background: #f4f7f5;
+  border-color: #bfcac4;
+}
+
+.activity-pagination-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@media (max-width: 700px) {
+  .activity-pagination {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .activity-pagination-controls {
+    justify-content: space-between;
+    width: 100%;
+  }
+}
+
+
+/* ============================================================
+   ASSIGN ACTIVITY — SELECT ALL
+============================================================ */
+
+.assign-panel-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.assign-select-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid #d8dfe7;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #344055;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.assign-select-all:hover {
+  background: #f7f9fb;
+  border-color: #c5ced9;
+}
+
+.assign-select-all input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: #174c3a;
+  cursor: pointer;
+}
+
+.assign-select-all span {
+  color: inherit;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.assign-select-all:has(input:checked) {
+  border-color: #b9d1c6;
+  background: #edf3f0;
+  color: #174c3a;
+}
+
+.assign-select-all:has(input:disabled) {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 700px) {
+  .assign-panel-header {
+    align-items: flex-start;
+  }
+
+  .assign-panel-header-actions {
+    gap: 7px;
+  }
+}
+
+/* ============================================================
+   CURRENT SEMESTER TABLE — FIT PANEL / NO HORIZONTAL SCROLL
+============================================================ */
+.activity-split-panel:not(.activity-archive-panel) .activity-table-scroll {
+  overflow-x: hidden;
+}
+
+.activity-split-panel:not(.activity-archive-panel) .activity-table-compact {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.activity-split-panel:not(.activity-archive-panel) .activity-table-compact th,
+.activity-split-panel:not(.activity-archive-panel) .activity-table-compact td {
+  min-width: 0;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+/* Student | School/Program | Current Activity | Progress */
+.activity-split-panel:not(.activity-archive-panel) .activity-table-compact th:nth-child(1),
+.activity-split-panel:not(.activity-archive-panel) .activity-table-compact td:nth-child(1) {
+  width: 31%;
+}
+
+.activity-split-panel:not(.activity-archive-panel) .activity-table-compact th:nth-child(2),
+.activity-split-panel:not(.activity-archive-panel) .activity-table-compact td:nth-child(2) {
+  width: 20%;
+}
+
+.activity-split-panel:not(.activity-archive-panel) .activity-table-compact th:nth-child(3),
+.activity-split-panel:not(.activity-archive-panel) .activity-table-compact td:nth-child(3) {
+  width: 29%;
+}
+
+.activity-split-panel:not(.activity-archive-panel) .activity-table-compact th:nth-child(4),
+.activity-split-panel:not(.activity-archive-panel) .activity-table-compact td:nth-child(4) {
+  width: 20%;
+}
+
+.activity-split-panel:not(.activity-archive-panel) .activity-table-compact th {
+  white-space: normal;
+  line-height: 1.15;
+}
+
+.activity-split-panel:not(.activity-archive-panel) .student-person-info,
+.activity-split-panel:not(.activity-archive-panel) .dash-school-program,
+.activity-split-panel:not(.activity-archive-panel) .progress-cell {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.activity-split-panel:not(.activity-archive-panel) .activity-current-label {
+  display: -webkit-box;
+  overflow: hidden;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.activity-split-panel:not(.activity-archive-panel) .progress-cell {
+  gap: 5px;
+}
+
+.activity-split-panel:not(.activity-archive-panel) .progress-track {
+  width: clamp(36px, 5vw, 54px);
+  min-width: 36px;
+  flex: 1 1 54px;
+}
+
+.activity-split-panel:not(.activity-archive-panel) .progress-cell strong {
+  min-width: 26px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 620px) {
+  .activity-split-panel:not(.activity-archive-panel) .activity-table-compact th,
+  .activity-split-panel:not(.activity-archive-panel) .activity-table-compact td {
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+
+  .activity-split-panel:not(.activity-archive-panel) .activity-table-compact th:nth-child(1),
+  .activity-split-panel:not(.activity-archive-panel) .activity-table-compact td:nth-child(1) {
+    width: 34%;
+  }
+
+  .activity-split-panel:not(.activity-archive-panel) .activity-table-compact th:nth-child(2),
+  .activity-split-panel:not(.activity-archive-panel) .activity-table-compact td:nth-child(2) {
+    width: 18%;
+  }
+
+  .activity-split-panel:not(.activity-archive-panel) .activity-table-compact th:nth-child(3),
+  .activity-split-panel:not(.activity-archive-panel) .activity-table-compact td:nth-child(3) {
+    width: 28%;
+  }
+
+  .activity-split-panel:not(.activity-archive-panel) .activity-table-compact th:nth-child(4),
+  .activity-split-panel:not(.activity-archive-panel) .activity-table-compact td:nth-child(4) {
+    width: 20%;
+  }
+
+  .activity-split-panel:not(.activity-archive-panel) .student-avatar {
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+  }
+
+  .activity-split-panel:not(.activity-archive-panel) .student-person {
+    gap: 6px;
+  }
+
+  .activity-split-panel:not(.activity-archive-panel) .student-person-info span {
+    display: none;
   }
 }
