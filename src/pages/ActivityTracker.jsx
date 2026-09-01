@@ -320,15 +320,16 @@ function ActivityTracker() {
   }, [allStudents])
 
   /**
-   * Activities for a student = current-semester (or global) requirements
-   * that are either unscoped (university null) or match the student's school.
+   * Activities for a student = current-semester requirements that
+   * explicitly match the student's school, plus activities deliberately
+   * marked SHARED. Blank/NULL school values are not treated as shared.
    */
   function requirementsForStudent(student, reqList = requirements) {
     const school = student?.university || null
     return reqList.filter((r) => {
       if (r.student_id && r.student_id !== student?.id) return false
-      if (!r.university || r.university === '') return true
-      return school && r.university === school
+      if (r.university === 'SHARED') return true
+      return Boolean(school) && r.university === school
     })
   }
 
@@ -336,7 +337,7 @@ function ActivityTracker() {
     const pool = requirements.filter((r) => r.student_id == null)
     if (manageSchoolFilter === 'all') return pool
     if (manageSchoolFilter === 'shared') {
-      return pool.filter((r) => !r.university)
+      return pool.filter((r) => r.university === 'SHARED')
     }
     // School-specific view: only that school's activities (not shared)
     return pool.filter((r) => r.university === manageSchoolFilter)
@@ -436,7 +437,7 @@ function ActivityTracker() {
     return requirements.filter(
       (r) =>
         r.student_id == null &&
-        (!r.university || r.university === assignSchool)
+        (r.university === assignSchool || r.university === 'SHARED')
     )
   }, [requirements, assignSchool])
 
@@ -1193,7 +1194,7 @@ function ActivityTracker() {
       name: '',
       code: '',
       week: '1',
-      university: value === 'shared' || value === 'all' ? '' : value,
+      university: value === 'shared' ? 'SHARED' : value === 'all' ? 'AUHS' : value,
       startDate: '',
       endDate: '',
     }))
@@ -1433,7 +1434,7 @@ function ActivityTracker() {
         week: '1',
         university:
           manageSchoolFilter === 'shared'
-            ? ''
+            ? 'SHARED'
             : manageSchoolFilter === 'all'
               ? 'AUHS'
               : manageSchoolFilter,
@@ -1771,6 +1772,11 @@ function ActivityTracker() {
           week: template.week ?? 1,
           sort_order: template.sort_order ?? index,
           description: template.description || null,
+          // IMPORTANT: preserve the school's scope when copying an
+          // activity into a new semester. Without this, AUHS/PACIFIC
+          // activities become unscoped in Supabase and can leak across
+          // schools in later assignment/checklist flows.
+          university: template.university || null,
           semester_id: newSemester.id,
           student_id: null,
         }))
@@ -2757,7 +2763,7 @@ function ActivityTracker() {
                           week: '1',
                           university:
                             manageSchoolFilter === 'shared'
-                              ? ''
+                              ? 'SHARED'
                               : manageSchoolFilter === 'all'
                                 ? 'AUHS'
                                 : manageSchoolFilter,
@@ -2815,7 +2821,7 @@ function ActivityTracker() {
                           name: event.target.value,
                           university:
                             manageSchoolFilter === 'shared'
-                              ? ''
+                              ? 'SHARED'
                               : manageSchoolFilter === 'all'
                                 ? 'AUHS'
                                 : manageSchoolFilter,
@@ -3218,7 +3224,7 @@ function ActivityTracker() {
                       )
                     }
                   >
-                    <option value="">
+                    <option value="SHARED">
                       All schools (shared)
                     </option>
                     {schools.map((school) => (
