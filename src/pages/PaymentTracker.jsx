@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../supabaseClient'
-import PageHeader from '../components/PageHeader'
 import './PaymentTracker.css'
 
 const filters = [
@@ -44,9 +43,14 @@ function formatMoney(amount, currency) {
       ? '₱'
       : '$'
 
-  return `${symbol}${Number(
-    amount || 0
-  ).toFixed(2)}`
+  const numberValue = Number(amount || 0)
+  
+  // Format with thousands separators
+  const formattedAmount = numberValue
+    .toFixed(2)
+    .replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+
+  return `${symbol}${formattedAmount}`
 }
 
 function getMonthKey(dateString) {
@@ -169,6 +173,15 @@ function PaymentTracker() {
   const [studentId, setStudentId] =
     useState('')
 
+  const [selectedStudentIds, setSelectedStudentIds] =
+    useState([])
+
+  const [studentSearch, setStudentSearch] =
+    useState('')
+
+  const [showStudentDropdown, setShowStudentDropdown] =
+    useState(false)
+
   const [amount, setAmount] =
     useState('')
 
@@ -189,6 +202,15 @@ function PaymentTracker() {
 
   const [historyStudent, setHistoryStudent] =
     useState(null)
+
+  const [usdPhpRate, setUsdPhpRate] =
+    useState(null)
+
+  const [fxLoading, setFxLoading] =
+    useState(true)
+
+  const [fxUpdated, setFxUpdated] =
+    useState('')
 
 
   async function fetchPayments() {
@@ -250,10 +272,77 @@ function PaymentTracker() {
     fetchPayments()
   }, [])
 
+  useEffect(() => {
+    if (!showStudentDropdown) {
+      return undefined
+    }
+
+    function handleStudentPickerOutsideClick(event) {
+      if (!event.target.closest('.invoice-student-picker')) {
+        setShowStudentDropdown(false)
+      }
+    }
+
+    document.addEventListener(
+      'pointerdown',
+      handleStudentPickerOutsideClick
+    )
+
+    return () => {
+      document.removeEventListener(
+        'pointerdown',
+        handleStudentPickerOutsideClick
+      )
+    }
+  }, [showStudentDropdown])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function fetchUsdPhpRate() {
+      setFxLoading(true)
+
+      try {
+        const response = await fetch(
+          'https://open.er-api.com/v6/latest/USD'
+        )
+
+        if (!response.ok) {
+          throw new Error('Unable to load exchange rate')
+        }
+
+        const data = await response.json()
+        const rate = Number(data?.rates?.PHP)
+
+        if (!Number.isFinite(rate) || rate <= 0) {
+          throw new Error('Invalid exchange rate')
+        }
+
+        if (!cancelled) {
+          setUsdPhpRate(rate)
+          setFxUpdated(data?.time_last_update_utc || '')
+        }
+      } catch (error) {
+        console.error('Error loading USD/PHP exchange rate:', error)
+      } finally {
+        if (!cancelled) setFxLoading(false)
+      }
+    }
+
+    fetchUsdPhpRate()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
 
   function openCreateModal() {
     setFormError('')
     setStudentId('')
+    setSelectedStudentIds([])
+    setStudentSearch('')
+    setShowStudentDropdown(false)
     setAmount('')
     setCurrency('USD')
     setDescription('')
@@ -324,9 +413,9 @@ function PaymentTracker() {
 
     setFormError('')
 
-    if (!studentId) {
+    if (!selectedStudentIds.length) {
       setFormError(
-        'Please select a student.'
+        'Please select at least one student.'
       )
       return
     }
@@ -343,47 +432,32 @@ function PaymentTracker() {
 
     setSaving(true)
 
-    const {
-      error,
-    } = await supabase
-      .from('payments')
-      .insert({
-        student_id:
-          studentId,
-
-        amount:
-          Number(amount),
-
+    try {
+      const invoicesToCreate = selectedStudentIds.map((studentId) => ({
+        student_id: studentId,
+        amount: Number(amount),
         currency,
+        description: description.trim() || null,
+        due_date: dueDate || null,
+        invoice_date: new Date().toISOString().slice(0, 10),
+        status: 'pending',
+      }))
 
-        description:
-          description.trim() ||
-          null,
+      const { error } = await supabase
+        .from('payments')
+        .insert(invoicesToCreate)
 
-        due_date:
-          dueDate || null,
+      if (error) {
+        throw error
+      }
 
-        invoice_date:
-          new Date()
-            .toISOString()
-            .slice(0, 10),
-
-        status:
-          'pending',
-      })
-
-    setSaving(false)
-
-    if (error) {
-      setFormError(
-        error.message
-      )
-      return
+      setShowCreateModal(false)
+      fetchPayments()
+    } catch (error) {
+      setFormError(error.message)
+    } finally {
+      setSaving(false)
     }
-
-    setShowCreateModal(false)
-
-    fetchPayments()
   }
 
 
@@ -690,87 +764,160 @@ function PaymentTracker() {
         )?.label || ''
 
 
-  const selectedStudent =
-    students.find(
-      (student) =>
-        student.id ===
-        studentId
+  const selectedStudentsForInvoice =
+    students.filter((student) =>
+      selectedStudentIds.includes(student.id)
     )
+
+  const filteredStudentsForPicker =
+    students.filter((student) => {
+      const query =
+        studentSearch.trim().toLowerCase()
+
+      if (!query) return true
+
+      const name =
+        String(student.name || '').toLowerCase()
+      const university =
+        String(student.university || '').toLowerCase()
+
+      return (
+        name.includes(query) ||
+        university.includes(query)
+      )
+    })
 
 
   return (
     <div className="payment-tracker-page">
 
-      <PageHeader
-        eyebrow="FINANCIAL MANAGEMENT"
-        title="Payment Management"
-        description="Track student payments, invoices, and payment status."
-        actions={
+      <section className="activity-page-header">
+        <div className="activity-page-header-copy">
+          <span className="activity-eyebrow">
+            FINANCIAL MANAGEMENT
+          </span>
+          <h1>Payment Management</h1>
+          <p>
+            Track student payments, invoices, and payment status.
+          </p>
+        </div>
+        <div className="activity-page-actions">
           <button
             type="button"
-            className="create-invoice-button activity-primary-button"
-            onClick={
-              openCreateModal
-            }
+            className="activity-primary-button"
+            onClick={openCreateModal}
           >
-            + Create Invoice
+            <span className="button-plus">+</span>
+            Create Invoice
           </button>
-        }
-      />
-
-
-      {/* SUMMARY */}
-
-      <div className="tracker-summary">
-
-        <div className="summary-card">
-
-          <p className="summary-label">
-            Outstanding
-          </p>
-
-          <p className="summary-value">
-            {formatMoney(
-              totals.pending,
-              'USD'
-            )}
-          </p>
-
         </div>
+      </section>
 
 
-        <div className="summary-card">
+  
 
-          <p className="summary-label">
-            Collected
-          </p>
+    {/* SUMMARY */}
 
-          <p className="summary-value paid">
-            {formatMoney(
-              totals.paid,
-              'USD'
-            )}
-          </p>
+{/* SUMMARY */}
 
-        </div>
+<div className="tracker-summary">
 
+  <div className="summary-card summary-card-fx">
 
-        <div className="summary-card">
+    <p className="summary-label">
+      USD → PHP
+    </p>
 
-          <p className="summary-label">
-            Overdue
-          </p>
+    <p className="summary-value fx-value">
+      {fxLoading
+        ? 'Loading...'
+        : usdPhpRate
+          ? `₱${usdPhpRate.toFixed(2)}`
+          : '—'}
+    </p>
 
-          <p className="summary-value overdue">
-            {formatMoney(
-              totals.overdue,
-              'USD'
-            )}
-          </p>
+    <span className="fx-caption">
+      {fxUpdated
+        ? `1 USD · Updated ${new Date(fxUpdated).toLocaleDateString()}`
+        : 'Daily reference rate'}
+      <span className="fx-live-dot" />
+    </span>
 
-        </div>
+  </div>
 
-      </div>
+  <div className="summary-card">
+
+    <p className="summary-label">
+      Outstanding
+    </p>
+
+    <p className="summary-value">
+      {formatMoney(
+        totals.pending,
+        'USD'
+      )}
+    </p>
+
+    {usdPhpRate && (
+      <p className="summary-conversion">
+        ≈ {formatMoney(
+          totals.pending * usdPhpRate,
+          'PHP'
+        )}
+      </p>
+    )}
+
+  </div>
+
+  <div className="summary-card">
+
+    <p className="summary-label">
+      Collected
+    </p>
+
+    <p className="summary-value paid">
+      {formatMoney(
+        totals.paid,
+        'USD'
+      )}
+    </p>
+
+    {usdPhpRate && (
+      <p className="summary-conversion">
+        ≈ {formatMoney(
+          totals.paid * usdPhpRate,
+          'PHP'
+        )}
+      </p>
+    )}
+
+  </div>
+
+  <div className="summary-card">
+
+    <p className="summary-label">
+      Overdue
+    </p>
+
+    <p className="summary-value overdue">
+      {formatMoney(
+        totals.overdue,
+        'USD'
+      )}
+    </p>
+
+    {usdPhpRate && (
+      <p className="summary-conversion">
+        ≈ {formatMoney(
+          totals.overdue * usdPhpRate,
+          'PHP'
+        )}
+      </p>
+    )}
+
+  </div>
+
+</div>
 
 
       {/* FILTERS — single card matching ActivityTracker */}
@@ -892,9 +1039,9 @@ function PaymentTracker() {
                 <tr>
                   <th>Student</th>
                   <th>Description</th>
-                  <th>Amount</th>
                   <th>Dates</th>
                   <th>Status</th>
+                  <th>Amount</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -910,7 +1057,7 @@ function PaymentTracker() {
                       <td>
                         <button
                           type="button"
-                          className="tracker-student-cell tracker-student-cell-clickable"
+                          className="tracker-student-cell tracker-student-cell-clickable student-person"
                           onClick={() =>
                             openHistoryModal(payment)
                           }
@@ -918,13 +1065,20 @@ function PaymentTracker() {
                             payment.students?.name || 'this student'
                           }`}
                         >
-                          <strong>
-                            {payment.students?.name || '—'}
-                          </strong>
-                          <span>
-                            {payment.students?.university ||
-                              '—'}
-                          </span>
+                          <div className="student-avatar">
+                            {payment.students?.name
+                              ?.charAt(0)
+                              ?.toUpperCase() || '?'}
+                          </div>
+                          <div className="student-person-info">
+                            <strong>
+                              {payment.students?.name || '—'}
+                            </strong>
+                            <span>
+                              {payment.students?.university ||
+                                '—'}
+                            </span>
+                          </div>
                         </button>
                       </td>
 
@@ -933,13 +1087,6 @@ function PaymentTracker() {
                         title={payment.description || undefined}
                       >
                         {payment.description || '—'}
-                      </td>
-
-                      <td className="tracker-amount">
-                        {formatMoney(
-                          payment.amount,
-                          payment.currency
-                        )}
                       </td>
 
                       <td>
@@ -977,6 +1124,13 @@ function PaymentTracker() {
                         </span>
                       </td>
 
+                      <td className="tracker-amount">
+                        {formatMoney(
+                          payment.amount,
+                          payment.currency
+                        )}
+                      </td>
+
                       <td>
                         <div className="tracker-actions">
                           <button
@@ -991,9 +1145,7 @@ function PaymentTracker() {
                           >
                             {updatingId === payment.id
                               ? '...'
-                              : payment.status === 'paid'
-                                ? 'Unpaid'
-                                : 'Paid'}
+                              : 'Paid'}
                           </button>
 
                           <button
@@ -1008,7 +1160,7 @@ function PaymentTracker() {
                           >
                             {deletingId === payment.id
                               ? '...'
-                              : 'Delete'}
+                              : 'Cancel'}
                           </button>
                         </div>
                       </td>
@@ -1047,7 +1199,7 @@ function PaymentTracker() {
         >
 
           <div
-            className="invoice-modal invoice-modal-modern"
+            className="invoice-modal invoice-modal-modern invoice-modal-wide"
             role="dialog"
             aria-modal="true"
             aria-labelledby="create-invoice-title"
@@ -1074,7 +1226,7 @@ function PaymentTracker() {
                   {monthFilter !==
                   'all'
                     ? `New invoice · ${selectedMonthLabel}`
-                    : 'Create a new invoice for a student'}
+                    : 'Create a new invoice for multiple students'}
                 </p>
 
               </div>
@@ -1112,11 +1264,11 @@ function PaymentTracker() {
 
                   <div>
                     <strong>
-                      Student
+                      Students
                     </strong>
 
                     <span>
-                      Select who this invoice belongs to
+                      Select one or more students for this invoice
                     </span>
                   </div>
 
@@ -1132,102 +1284,177 @@ function PaymentTracker() {
 
                 ) : (
 
-                  <label className="invoice-field">
+                  <div className="invoice-field invoice-student-picker-field">
 
                     <span>
-                      Student <b>*</b>
+                      Students <b>*</b>
                     </span>
 
-                    <select
-                      value={studentId}
-                      onChange={(
-                        event
-                      ) =>
-                        setStudentId(
-                          event.target
-                            .value
-                        )
+                    <div
+                      className={
+                        showStudentDropdown
+                          ? 'invoice-student-picker open'
+                          : 'invoice-student-picker'
+                      }
+                      onMouseDown={() =>
+                        setShowStudentDropdown(true)
                       }
                     >
 
-                      <option value="">
-                        Select a student
-                      </option>
+                      <div className="invoice-student-search-wrap">
 
-                      {students.map(
-                        (student) => (
-                          <option
-                            key={
-                              student.id
-                            }
-                            value={
-                              student.id
-                            }
+                        <span className="invoice-student-search-icon">
+                          ⌕
+                        </span>
+
+                        <input
+                          type="text"
+                          className="invoice-student-search"
+                          placeholder={
+                            selectedStudentIds.length > 0
+                              ? `${selectedStudentIds.length} student${selectedStudentIds.length > 1 ? 's' : ''} selected`
+                              : 'Search students...'
+                          }
+                          value={studentSearch}
+                          onFocus={() => setShowStudentDropdown(true)}
+                          onChange={(event) => {
+                            setStudentSearch(event.target.value)
+                            setShowStudentDropdown(true)
+                          }}
+                          autoComplete="off"
+                          aria-label="Search students"
+                        />
+
+                        {studentSearch && (
+                          <button
+                            type="button"
+                            className="invoice-student-search-clear"
+                            onClick={() => setStudentSearch('')}
+                            aria-label="Clear student search"
                           >
-                            {student.name}
-                            {' '}
-                            (
-                            {
-                              student.university
-                            }
-                            )
-                            {!student.active &&
-                              ' (inactive)'}
-                          </option>
-                        )
+                            ×
+                          </button>
+                        )}
+
+                        <span className="invoice-student-chevron">
+                          {showStudentDropdown ? '' : ''}
+                        </span>
+
+                      </div>
+
+                      {showStudentDropdown && (
+
+                        <div className="invoice-student-dropdown">
+
+                          {filteredStudentsForPicker.length === 0 ? (
+
+                            <div className="invoice-student-empty">
+                              No students found
+                            </div>
+
+                          ) : (
+
+                            <div className="invoice-student-card-grid">
+                              {filteredStudentsForPicker.map((student) => (
+
+                                <button
+                                  type="button"
+                                  key={student.id}
+                                  className={
+                                    selectedStudentIds.includes(student.id)
+                                      ? 'invoice-student-card selected'
+                                      : 'invoice-student-card'
+                                  }
+                                  onClick={() => {
+                                    setSelectedStudentIds((current) => {
+                                      if (current.includes(student.id)) {
+                                        return current.filter(
+                                          (id) => id !== student.id
+                                        )
+                                      }
+
+                                      return [...current, student.id]
+                                    })
+
+                                    setStudentSearch('')
+                                  }}
+                                >
+
+                                  <span className="invoice-student-card-avatar">
+                                    {student.name
+                                      ?.split(' ')
+                                      .map((part) => part[0])
+                                      .join('')
+                                      .slice(0, 2)
+                                      .toUpperCase() || '?'}
+                                  </span>
+
+                                  <span className="invoice-student-card-info">
+                                    <strong>{student.name}</strong>
+                                    <span>
+                                      {student.university || 'School not assigned'}
+                                      {!student.active && ' · Inactive'}
+                                    </span>
+                                  </span>
+
+                                  {selectedStudentIds.includes(student.id) && (
+                                    <span className="invoice-student-card-check">✓</span>
+                                  )}
+
+                                </button>
+
+                              ))}
+                            </div>
+
+                          )}
+
+                        </div>
+
                       )}
 
-                    </select>
-
-                  </label>
-
-                )}
-
-
-                {selectedStudent && (
-
-                  <div className="invoice-student-preview">
-
-                    <div className="invoice-student-avatar">
-
-                      {selectedStudent.name
-                        ?.split(' ')
-                        .map(
-                          (part) =>
-                            part[0]
-                        )
-                        .join('')
-                        .slice(0, 2)
-                        .toUpperCase()}
-
                     </div>
-
-                    <div>
-
-                      <strong>
-                        {
-                          selectedStudent.name
-                        }
-                      </strong>
-
-                      <span>
-                        {
-                          selectedStudent.university ||
-                          'School not assigned'
-                        }
-
-                        {!selectedStudent.active &&
-                          ' · Inactive'}
-                      </span>
-
-                    </div>
-
-                    <span className="invoice-status-chip">
-                      PENDING
-                    </span>
 
                   </div>
 
+                )}
+
+                {selectedStudentsForInvoice.length > 0 && (
+                  <div className="invoice-selected-students-section">
+                    <div className="invoice-selected-students-header">
+                      <span className="invoice-selected-count">
+                        {selectedStudentsForInvoice.length} student{selectedStudentsForInvoice.length > 1 ? 's' : ''} selected
+                      </span>
+                    </div>
+                    <div className="invoice-selected-students-bubbles">
+                      {selectedStudentsForInvoice.map((student) => (
+                        <div key={student.id} className="invoice-selected-student-bubble">
+                          <div className="invoice-selected-student-avatar">
+                            {student.name
+                              ?.split(' ')
+                              .map((part) => part[0])
+                              .join('')
+                              .slice(0, 2)
+                              .toUpperCase()}
+                          </div>
+                          <div className="invoice-selected-student-name">
+                            {student.name}
+                          </div>
+                          <button
+                            type="button"
+                            className="invoice-selected-student-remove"
+                            onClick={() => {
+                              setSelectedStudentIds((current) =>
+                                current.filter((id) => id !== student.id)
+                              )
+                            }}
+                            aria-label={`Remove ${student.name}`}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
 
               </section>
@@ -1433,12 +1660,13 @@ function PaymentTracker() {
                   className="invoice-create-button"
                   disabled={
                     saving ||
-                    loadingStudents
+                    loadingStudents ||
+                    selectedStudentIds.length === 0
                   }
                 >
                   {saving
                     ? 'Creating...'
-                    : 'Create Invoice'}
+                    : `Create Invoice${selectedStudentIds.length > 1 ? ` (${selectedStudentIds.length})` : ''}`}
                 </button>
 
               </div>

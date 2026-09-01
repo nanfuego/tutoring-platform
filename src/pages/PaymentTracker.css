@@ -508,99 +508,7 @@
 }
 
 /* =========================================
-   CREATE INVOICE MODAL
-   ========================================= */
-
-.invoice-modal {
-  width: 100%;
-  max-width: 480px;
-  max-height: calc(100vh - 3rem);
-  overflow-y: auto;
-  box-sizing: border-box;
-  padding: 1.5rem;
-  border: 1px solid var(--color-border, #dedbd4);
-  border-radius: 12px;
-  background: var(--color-surface, #ffffff);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
-}
-
-.invoice-modal .modal-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 1.25rem;
-}
-
-.invoice-modal .modal-header h2 {
-  margin: 0 0 0.25rem;
-  font-family: var(--font-display, Georgia, serif);
-  font-size: 1.3rem;
-  font-weight: 500;
-}
-
-.invoice-modal .modal-header p {
-  margin: 0;
-  color: var(--color-muted, #777);
-  font-family: var(--font-body, Arial, sans-serif);
-  font-size: 0.78rem;
-}
-
-.modal-close-button {
-  border: none;
-  background: transparent;
-  font-size: 1.4rem;
-  line-height: 1;
-  color: var(--color-muted, #777);
-  cursor: pointer;
-  padding: 0;
-}
-
-.invoice-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.1rem;
-}
-
-.invoice-form label {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  font-family: var(--font-body, Arial, sans-serif);
-  font-size: 0.8rem;
-  color: var(--color-muted, #777);
-}
-
-.invoice-form input,
-.invoice-form select {
-  font-family: var(--font-body, Arial, sans-serif);
-  font-size: 0.95rem;
-  padding: 0.55rem 0.7rem;
-  border: 1px solid var(--color-border, #dedbd4);
-  border-radius: 8px;
-  color: var(--color-ink, #222);
-  background: white;
-}
-
-.invoice-form input:focus,
-.invoice-form select:focus {
-  outline: 2px solid var(--color-accent, #426b62);
-  outline-offset: 1px;
-}
-
-.invoice-row {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 1rem;
-}
-
-@media (max-width: 420px) {
-  .invoice-row {
-    grid-template-columns: 1fr;
-  }
-}/* Existing PaymentTracker.css from the repository should remain above the new modal styles. */
-
-/* =========================================
-   CREATE INVOICE — MODERN COMPACT MODAL
+   CREATE INVOICE — READABLE MODAL (UPDATED)
    ========================================= */
 
 .invoice-modal-overlay {
@@ -610,21 +518,21 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
+  padding: 1.5rem;
   box-sizing: border-box;
-  background: rgba(31, 35, 33, 0.42);
-  backdrop-filter: blur(3px);
+  background: rgba(31, 35, 33, 0.5);
+  backdrop-filter: blur(4px);
 }
 
 .invoice-modal-modern {
-  width: min(680px, 100%);
-  max-height: min(88vh, 760px);
+  width: min(720px, 100%);
+  max-height: min(90vh, 800px);
   overflow-y: auto;
   padding: 0;
   border: 1px solid #dedbd4;
-  border-radius: 13px;
+  border-radius: 14px;
   background: #fff;
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.25);
 }
 
 .invoice-modal-header {
@@ -632,49 +540,53 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1.15rem 1.3rem 1rem;
+  padding: 1.5rem 1.75rem 1.25rem;
   border-bottom: 1px solid #ece9e4;
   background: #fff;
 }
 
 .invoice-modal-kicker {
-  margin-bottom: 0.3rem;
+  margin-bottom: 0.4rem;
   color: #426b62;
-  font-size: 0.57rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  letter-spacing: 0.11em;
+  letter-spacing: 0.1em;
 }
 
 .invoice-modal-header h2 {
   margin: 0;
   color: #292d2b;
   font-family: var(--font-display, Georgia, serif);
-  font-size: 1.35rem;
+  font-size: 1.75rem;
   font-weight: 500;
+  line-height: 1.2;
 }
 
 .invoice-modal-header p {
-  margin: 0.22rem 0 0;
-  color: #777d79;
+  margin: 0.35rem 0 0;
+  color: #666c68;
   font-family: var(--font-body, Arial, sans-serif);
-  font-size: 0.67rem;
+  font-size: 0.9rem;
+  line-height: 1.4;
 }
 
 .invoice-modal-close {
-  width: 30px;
-  height: 30px;
-  flex: 0 0 30px;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
   border: 0;
-  border-radius: 7px;
+  border-radius: 8px;
   background: #f3f2ef;
   color: #626864;
-  font-size: 1.2rem;
+  font-size: 1.5rem;
   line-height: 1;
   cursor: pointer;
+  transition: all 0.15s ease;
 }
 
 .invoice-modal-close:hover:not(:disabled) {
   background: #e9e8e4;
+  transform: scale(1.05);
 }
 
 .invoice-modal-close:disabled {
@@ -688,57 +600,57 @@
 }
 
 .invoice-form-section {
-  padding: 1rem 1.3rem;
+  padding: 1.5rem 1.75rem;
   border-bottom: 1px solid #ece9e4;
 }
 
 .invoice-section-heading {
   display: flex;
   align-items: center;
-  gap: 0.62rem;
-  margin-bottom: 0.75rem;
+  gap: 0.85rem;
+  margin-bottom: 1.1rem;
 }
 
 .invoice-section-number {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   background: #eef3f1;
   color: #426b62;
-  font-size: 0.58rem;
+  font-size: 0.8rem;
   font-weight: 700;
 }
 
 .invoice-section-heading div {
   display: flex;
   flex-direction: column;
-  gap: 0.08rem;
+  gap: 0.15rem;
 }
 
 .invoice-section-heading strong {
-  color: #343936;
-  font-size: 0.7rem;
+  color: #2c302e;
+  font-size: 1rem;
   font-weight: 700;
 }
 
 .invoice-section-heading span {
-  color: #888d89;
-  font-size: 0.58rem;
+  color: #777d79;
+  font-size: 0.85rem;
 }
 
 .invoice-field {
   display: flex;
   flex-direction: column;
-  gap: 0.32rem;
+  gap: 0.45rem;
   min-width: 0;
 }
 
 .invoice-field > span {
-  color: #626965;
-  font-size: 0.61rem;
+  color: #4a514d;
+  font-size: 0.85rem;
   font-weight: 600;
 }
 
@@ -749,37 +661,37 @@
 .invoice-field input,
 .invoice-field select {
   width: 100%;
-  min-height: 35px;
+  min-height: 44px;
   box-sizing: border-box;
-  padding: 0.45rem 0.62rem;
-  border: 1px solid #dedbd4;
-  border-radius: 7px;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #d0cdc6;
+  border-radius: 8px;
   outline: none;
   background: #fff;
   color: #303432;
   font-family: var(--font-body, Arial, sans-serif);
-  font-size: 0.68rem;
+  font-size: 0.95rem;
 }
 
 .invoice-field input::placeholder {
-  color: #aaa;
+  color: #a8a49d;
 }
 
 .invoice-field input:focus,
 .invoice-field select:focus {
-  border-color: #8eaaa1;
-  box-shadow: 0 0 0 2px rgba(66, 107, 98, 0.08);
+  border-color: #7a9e94;
+  box-shadow: 0 0 0 3px rgba(66, 107, 98, 0.12);
 }
 
 .invoice-field-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-  margin-top: 0.72rem;
+  gap: 1rem;
+  margin-top: 1rem;
 }
 
 .invoice-field-row-main {
-  grid-template-columns: minmax(0, 1.65fr) minmax(145px, 0.8fr);
+  grid-template-columns: minmax(0, 1.5fr) minmax(160px, 1fr);
   margin-top: 0;
 }
 
@@ -789,36 +701,36 @@
 
 .invoice-amount-input > span {
   position: absolute;
-  left: 0.62rem;
+  left: 0.8rem;
   top: 50%;
   transform: translateY(-50%);
-  color: #777d79;
-  font-size: 0.7rem;
+  color: #666c68;
+  font-size: 0.95rem;
   pointer-events: none;
 }
 
 .invoice-amount-input input {
-  padding-left: 1.3rem;
+  padding-left: 1.6rem;
 }
 
 .invoice-select-loading {
-  min-height: 35px;
+  min-height: 44px;
   display: flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.6rem;
   box-sizing: border-box;
-  padding: 0.45rem 0.62rem;
-  border: 1px solid #dedbd4;
-  border-radius: 7px;
-  color: #858a87;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #d0cdc6;
+  border-radius: 8px;
+  color: #777d79;
   background: #fafaf8;
-  font-size: 0.63rem;
+  font-size: 0.9rem;
 }
 
 .invoice-spinner {
   display: inline-block;
-  width: 11px;
-  height: 11px;
+  width: 16px;
+  height: 16px;
   border: 2px solid #d7dfdc;
   border-top-color: #426b62;
   border-radius: 50%;
@@ -834,74 +746,21 @@
   to { transform: rotate(360deg); }
 }
 
-.invoice-student-preview {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  margin-top: 0.65rem;
-  padding: 0.58rem 0.65rem;
-  border: 1px solid #e3e8e5;
-  border-radius: 8px;
-  background: #fafcfb;
-}
-
-.invoice-student-avatar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  flex: 0 0 30px;
-  border-radius: 50%;
-  background: #dfe9e5;
-  color: #426b62;
-  font-size: 0.56rem;
-  font-weight: 700;
-}
-
-.invoice-student-preview > div:nth-child(2) {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  flex: 1;
-}
-
-.invoice-student-preview strong {
-  color: #3a3e3c;
-  font-size: 0.65rem;
-}
-
-.invoice-student-preview > div:nth-child(2) span {
-  margin-top: 0.12rem;
-  color: #858b87;
-  font-size: 0.57rem;
-}
-
-.invoice-status-chip {
-  padding: 0.22rem 0.42rem;
-  border-radius: 999px;
-  background: #f3ead7;
-  color: #8a6b35;
-  font-size: 0.49rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-}
-
 .invoice-pending-note {
   display: flex;
   align-items: center;
-  gap: 0.52rem;
-  margin-top: 0.72rem;
-  padding: 0.55rem 0.62rem;
+  gap: 0.7rem;
+  margin-top: 1rem;
+  padding: 0.8rem 0.9rem;
   border: 1px solid #e7e3d8;
-  border-radius: 7px;
+  border-radius: 8px;
   background: #fbfaf6;
 }
 
 .invoice-pending-dot {
-  width: 7px;
-  height: 7px;
-  flex: 0 0 7px;
+  width: 9px;
+  height: 9px;
+  flex: 0 0 9px;
   border-radius: 50%;
   background: #c39a4a;
 }
@@ -909,96 +768,461 @@
 .invoice-pending-note div {
   display: flex;
   flex-direction: column;
-  gap: 0.08rem;
+  gap: 0.1rem;
 }
 
 .invoice-pending-note strong {
-  color: #625b4c;
-  font-size: 0.59rem;
+  color: #5a5342;
+  font-size: 0.85rem;
 }
 
 .invoice-pending-note span {
-  color: #8b877d;
-  font-size: 0.55rem;
+  color: #7d796d;
+  font-size: 0.8rem;
 }
 
 .invoice-form-error {
   display: flex;
   align-items: flex-start;
-  gap: 0.5rem;
-  margin: 0.8rem 1.3rem 0;
-  padding: 0.58rem 0.65rem;
+  gap: 0.7rem;
+  margin: 1rem 1.75rem 0;
+  padding: 0.8rem 0.9rem;
   border: 1px solid #e9c9c6;
-  border-radius: 7px;
+  border-radius: 8px;
   background: #fff6f5;
-  color: #964d47;
-  font-size: 0.61rem;
+  color: #8c4a45;
+  font-size: 0.9rem;
+  line-height: 1.4;
 }
 
 .invoice-form-error > span {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 15px;
-  height: 15px;
-  flex: 0 0 15px;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
   border-radius: 50%;
   background: #a33a35;
   color: white;
-  font-size: 0.52rem;
+  font-size: 0.7rem;
   font-weight: 700;
 }
 
 .invoice-modal-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 0.55rem;
-  padding: 0.8rem 1.3rem;
+  gap: 0.75rem;
+  padding: 1rem 1.75rem;
   border-top: 1px solid #ece9e4;
   background: #fcfbf9;
 }
 
 .invoice-cancel-button,
 .invoice-create-button {
-  min-height: 34px;
-  padding: 0.42rem 0.78rem;
-  border-radius: 7px;
+  min-height: 44px;
+  padding: 0.55rem 1rem;
+  border-radius: 8px;
   font-family: var(--font-body, Arial, sans-serif);
-  font-size: 0.63rem;
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
+  transition: all 0.15s ease;
 }
 
 .invoice-cancel-button {
-  border: 1px solid #dedbd4;
+  border: 1px solid #d0cdc6;
   background: #fff;
-  color: #666c68;
+  color: #555b57;
 }
 
 .invoice-cancel-button:hover:not(:disabled) {
   background: #f5f4f1;
+  border-color: #b8b4ab;
 }
 
 .invoice-create-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
-  min-width: 112px;
+  gap: 0.5rem;
+  min-width: 140px;
   border: 1px solid #426b62;
   background: #426b62;
   color: #fff;
+  box-shadow: 0 2px 4px rgba(66, 107, 98, 0.2);
 }
 
 .invoice-create-button:hover:not(:disabled) {
   background: #365b53;
   border-color: #365b53;
+  box-shadow: 0 3px 8px rgba(66, 107, 98, 0.3);
+  transform: translateY(-1px);
 }
 
 .invoice-cancel-button:disabled,
 .invoice-create-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Student picker - larger text */
+.invoice-student-picker-field {
+  position: relative;
+  z-index: 101;
+}
+
+.invoice-student-picker {
+  position: relative;
+  z-index: 102;
+}
+
+.invoice-student-search-wrap {
+  position: relative;
+  z-index: 2;
+}
+
+.invoice-student-search {
+  font-size: 0.95rem !important;
+  min-height: 44px !important;
+}
+
+.invoice-student-search::placeholder {
+  font-size: 0.9rem;
+}
+
+.invoice-student-search-icon {
+  font-size: 1.1rem;
+}
+
+.invoice-student-search-clear {
+  width: 28px;
+  height: 28px;
+  font-size: 1.2rem;
+}
+
+/* Student dropdown - larger cards */
+.invoice-student-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 99999;
+  display: block;
+  width: 100%;
+  max-height: 420px !important;
+  overflow-y: auto;
+  padding: 12px !important;
+  border: 1px solid #d0cdc6 !important;
+  border-radius: 12px !important;
+  background: #fafaf9 !important;
+  box-shadow: 0 16px 40px rgba(35, 35, 30, .18) !important;
+}
+
+.invoice-student-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+  padding: 2px;
+}
+
+.invoice-student-card {
+  position: relative;
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+  min-height: 68px !important;
+  gap: 10px !important;
+  padding: 10px 12px !important;
+  border: 2px solid #e0e3e0 !important;
+  border-radius: 12px !important;
+  background: #fff !important;
+  color: var(--color-ink, #222) !important;
+  text-align: left !important;
+  box-sizing: border-box !important;
+  cursor: pointer !important;
+  transition: all .18s ease !important;
+}
+
+.invoice-student-card:hover {
+  border-color: #8eaaa1 !important;
+  background: #f7faf8 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 14px rgba(35, 35, 30, .1) !important;
+}
+
+.invoice-student-card.selected {
+  border-color: #426b62 !important;
+  background: #f0f6f3 !important;
+  box-shadow: 0 2px 10px rgba(66, 107, 98, 0.18) !important;
+}
+
+.invoice-student-card-avatar {
+  display: inline-flex !important;
+  flex: 0 0 36px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 50% !important;
+  background: #e8eeeb !important;
+  color: #426b62 !important;
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+}
+
+.invoice-student-card.selected .invoice-student-card-avatar {
+  background: #426b62 !important;
+  color: #fff !important;
+}
+
+.invoice-student-card-info {
+  display: flex !important;
+  min-width: 0 !important;
+  flex: 1 !important;
+  flex-direction: column !important;
+  gap: 3px !important;
+}
+
+.invoice-student-card-info strong {
+  overflow: hidden !important;
+  color: #2c3a35 !important;
+  font-size: 0.85rem !important;
+  font-weight: 650 !important;
+  line-height: 1.3 !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.invoice-student-card-info span {
+  overflow: hidden !important;
+  color: #7d827e !important;
+  font-size: 0.75rem !important;
+  line-height: 1.3 !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.invoice-student-card-check {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex !important;
+  flex: 0 0 24px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 50% !important;
+  background: #426b62 !important;
+  color: #fff !important;
+  font-size: 0.8rem !important;
+  font-weight: 800 !important;
+}
+
+/* Selected students - larger bubbles */
+.invoice-selected-students-section {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid #e0e5e2;
+  border-radius: 12px;
+  background: #fafcfb;
+}
+
+.invoice-selected-students-header {
+  margin-bottom: 0.8rem;
+}
+
+.invoice-selected-count {
+  color: #426b62;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.invoice-selected-students-bubbles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.invoice-selected-student-bubble {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px 8px 8px;
+  border: 1px solid #c8dcd4;
+  border-radius: 50px;
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  transition: all 0.18s ease;
+}
+
+.invoice-selected-student-bubble:hover {
+  border-color: #8eaaa1;
+  box-shadow: 0 3px 10px rgba(66, 107, 98, 0.15);
+  transform: translateY(-1px);
+}
+
+.invoice-selected-student-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #426b62;
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.invoice-selected-student-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #2c3a35;
+  white-space: nowrap;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.invoice-selected-student-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #f0f3f1;
+  color: #6e817b;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  flex-shrink: 0;
+}
+
+.invoice-selected-student-remove:hover {
+  background: #e74c3c;
+  color: #ffffff;
+  transform: scale(1.1);
+}
+
+/* Wide modal specific */
+.invoice-modal-wide {
+  width: min(720px, 100%) !important;
+  max-width: 720px !important;
+}
+
+.invoice-modal-wide .invoice-modal-body,
+.invoice-modal-wide .invoice-form-modern,
+.invoice-modal-wide .invoice-form-section {
+  overflow: visible;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .invoice-modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .invoice-modal-modern {
+    width: 100%;
+    max-height: 92vh;
+    border-radius: 14px 14px 0 0;
+  }
+
+  .invoice-field-row,
+  .invoice-field-row-main {
+    grid-template-columns: 1fr;
+  }
+
+  .invoice-modal-header,
+  .invoice-form-section,
+  .invoice-modal-footer {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+
+  .invoice-form-error {
+    margin-left: 1.25rem;
+    margin-right: 1.25rem;
+  }
+  
+  .invoice-student-card-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .invoice-student-card {
+    min-height: 60px !important;
+    padding: 8px 10px !important;
+  }
+  
+  .invoice-selected-students-bubbles {
+    gap: 8px;
+  }
+  
+  .invoice-selected-student-bubble {
+    padding: 6px 10px 6px 6px;
+    gap: 8px;
+  }
+  
+  .invoice-selected-student-avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 0.65rem;
+  }
+  
+  .invoice-selected-student-name {
+    font-size: 0.8rem;
+    max-width: 140px;
+  }
+  
+  .invoice-selected-student-remove {
+    width: 22px;
+    height: 22px;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .invoice-modal-header h2 {
+    font-size: 1.5rem;
+  }
+  
+  .invoice-modal-header p {
+    font-size: 0.8rem;
+  }
+  
+  .invoice-section-heading strong {
+    font-size: 0.9rem;
+  }
+  
+  .invoice-section-heading span {
+    font-size: 0.8rem;
+  }
+  
+  .invoice-field > span {
+    font-size: 0.8rem;
+  }
+  
+  .invoice-field input,
+  .invoice-field select {
+    font-size: 0.9rem;
+    min-height: 40px;
+  }
+  
+  .invoice-create-button,
+  .invoice-cancel-button {
+    font-size: 0.85rem;
+    min-height: 40px;
+  }
 }
 
 @media (max-width: 620px) {
@@ -1028,5 +1252,1323 @@
   .invoice-form-error {
     margin-left: 1rem;
     margin-right: 1rem;
+  }
+}
+
+
+/* =========================================
+   STUDENT CELL — ADMIN DASHBOARD STYLE
+   ========================================= */
+
+.tracker-table td:first-child {
+  overflow: visible;
+}
+
+.tracker-student-cell.tracker-student-cell-clickable {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  appearance: none;
+  box-shadow: none;
+}
+
+.tracker-student-cell.tracker-student-cell-clickable:hover,
+.tracker-student-cell.tracker-student-cell-clickable:focus,
+.tracker-student-cell.tracker-student-cell-clickable:active {
+  border: 0;
+  outline: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.tracker-student-cell.tracker-student-cell-clickable:focus-visible {
+  outline: 2px solid rgba(66, 107, 98, 0.28);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+.student-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  flex: 0 0 34px;
+  border-radius: 50%;
+  background: #e8eeeb;
+  color: #426b62;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.student-person-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.student-person-info strong {
+  display: block;
+  overflow: hidden;
+  color: var(--color-ink, #222);
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.student-person-info span {
+  display: block;
+  overflow: hidden;
+  color: var(--color-muted, #777);
+  font-size: 0.72rem;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Keep the table's first cell from inheriting button-like/card styling */
+.tracker-table tbody td:first-child {
+  background: transparent;
+}
+
+/* On narrow screens the avatar stays compact */
+@media (max-width: 700px) {
+  .student-avatar {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    flex-basis: 32px;
+    font-size: 0.68rem;
+  }
+
+  .tracker-student-cell.tracker-student-cell-clickable {
+    gap: 8px;
+  }
+}
+
+
+/* FINAL: requested table column order */
+.tracker-table th:nth-child(1), .tracker-table td:nth-child(1) { width: 24%; }
+.tracker-table th:nth-child(2), .tracker-table td:nth-child(2) { width: 24%; }
+.tracker-table th:nth-child(3), .tracker-table td:nth-child(3) { width: 15%; }
+.tracker-table th:nth-child(4), .tracker-table td:nth-child(4) { width: 12%; }
+.tracker-table th:nth-child(5), .tracker-table td:nth-child(5) { width: 11%; }
+.tracker-table th:nth-child(6), .tracker-table td:nth-child(6) { width: 14%; text-align: right; }
+
+/* FINAL: wider modal and dropdown layering */
+.invoice-modal-wide {
+  width: min(960px, calc(100vw - 32px)) !important;
+  max-width: 960px !important;
+}
+.invoice-modal-wide .invoice-student-picker-field {
+  position: relative;
+  z-index: 101;
+}
+.invoice-modal-wide .invoice-student-picker {
+  position: relative;
+  z-index: 102;
+}
+.invoice-modal-wide .invoice-student-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 99999;
+  display: block;
+  width: 100%;
+  max-height: 360px;
+  overflow-y: auto;
+  background: #fff;
+}
+.invoice-modal-wide .invoice-modal-body,
+.invoice-modal-wide .invoice-form-modern,
+.invoice-modal-wide .invoice-form-section {
+  overflow: visible;
+}
+
+@media (max-width: 760px) {
+  .invoice-modal-wide {
+    width: calc(100vw - 16px) !important;
+    max-width: none !important;
+  }
+}
+
+
+/* =========================================
+   CREATE INVOICE — COMPACT STUDENT CARDS
+   ========================================= */
+
+.invoice-student-dropdown {
+  max-height: 310px !important;
+  padding: 7px !important;
+  border: 1px solid #e3e1dc !important;
+  border-radius: 11px !important;
+  background: #fafaf9 !important;
+  box-shadow: 0 16px 36px rgba(35, 35, 30, .14) !important;
+}
+
+/* Each student appears as a small individual card */
+.invoice-student-dropdown .invoice-student-option {
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+  min-height: 48px !important;
+  gap: 9px !important;
+  margin: 3px 0 !important;
+  padding: 7px 9px !important;
+  border: 1px solid transparent !important;
+  border-radius: 8px !important;
+  background: #fff !important;
+  color: var(--color-ink, #222) !important;
+  text-align: left !important;
+  box-sizing: border-box !important;
+  cursor: pointer !important;
+  transition: background .14s ease, border-color .14s ease,
+              box-shadow .14s ease, transform .14s ease !important;
+}
+
+.invoice-student-dropdown .invoice-student-option:hover {
+  background: #f7f8f6 !important;
+  border-color: #e1e5e1 !important;
+  box-shadow: 0 3px 9px rgba(35, 35, 30, .06) !important;
+  transform: translateY(-1px) !important;
+}
+
+.invoice-student-dropdown .invoice-student-option.selected {
+  background: #f2f6f4 !important;
+  border-color: #d8e3df !important;
+  box-shadow: none !important;
+}
+
+/* Smaller avatar */
+.invoice-student-dropdown .invoice-picker-avatar {
+  display: inline-flex !important;
+  flex: 0 0 30px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 50% !important;
+  background: #e8eeeb !important;
+  color: #426b62 !important;
+  font-size: .64rem !important;
+  font-weight: 700 !important;
+}
+
+/* Compact student name + school */
+.invoice-student-dropdown .invoice-picker-info {
+  display: flex !important;
+  min-width: 0 !important;
+  flex: 1 !important;
+  flex-direction: column !important;
+  gap: 1px !important;
+}
+
+.invoice-student-dropdown .invoice-picker-info strong {
+  overflow: hidden !important;
+  font-size: .76rem !important;
+  font-weight: 650 !important;
+  line-height: 1.25 !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.invoice-student-dropdown .invoice-picker-info span {
+  overflow: hidden !important;
+  color: #8a8781 !important;
+  font-size: .63rem !important;
+  line-height: 1.25 !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+/* Small selected check */
+.invoice-student-dropdown .invoice-picker-check {
+  display: inline-flex !important;
+  flex: 0 0 20px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 20px !important;
+  height: 20px !important;
+  border-radius: 50% !important;
+  background: #e0ebe7 !important;
+  color: #426b62 !important;
+  font-size: .68rem !important;
+  font-weight: 800 !important;
+}
+
+/* Slightly tighter on smaller screens */
+@media (max-width: 600px) {
+  .invoice-student-dropdown .invoice-student-option {
+    min-height: 45px !important;
+    padding: 6px 8px !important;
+  }
+
+  .invoice-student-dropdown .invoice-picker-avatar {
+    width: 28px !important;
+    height: 28px !important;
+    flex-basis: 28px !important;
+  }
+}
+
+
+/* =========================================
+   CREATE INVOICE — MULTI-STUDENT SELECTION
+   One invoice is created per selected student.
+   ========================================= */
+
+.invoice-selected-student-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 7px;
+}
+
+.invoice-selected-student-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 230px;
+  min-height: 30px;
+  padding: 3px 7px 3px 4px;
+  border: 1px solid #dbe4e0;
+  border-radius: 7px;
+  background: #f3f7f5;
+  color: #3f625a;
+  box-sizing: border-box;
+}
+
+.invoice-chip-avatar {
+  display: inline-flex;
+  flex: 0 0 23px;
+  align-items: center;
+  justify-content: center;
+  width: 23px;
+  height: 23px;
+  border-radius: 50%;
+  background: #e0ebe7;
+  color: #426b62;
+  font-size: .56rem;
+  font-weight: 700;
+}
+
+.invoice-chip-name {
+  min-width: 0;
+  overflow: hidden;
+  font-size: .67rem;
+  font-weight: 650;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.invoice-chip-remove {
+  display: inline-flex;
+  flex: 0 0 18px;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #6e817b;
+  font-size: .86rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.invoice-chip-remove:hover {
+  background: #dfe9e5;
+  color: #36574f;
+}
+
+/* When chips exist, the search input stays compact and clean. */
+.invoice-selected-student-chips + .invoice-student-search-wrap
+  .invoice-student-search {
+  min-height: 44px;
+}
+
+@media (max-width: 600px) {
+  .invoice-selected-student-chip {
+    max-width: 190px;
+  }
+}
+
+
+/* Student picker dismissal: no full-width overlay or invisible hit area. */
+.invoice-student-picker {
+  position: relative;
+}
+
+.invoice-student-dropdown {
+  pointer-events: auto;
+}
+
+.invoice-student-search-wrap {
+  position: relative;
+  z-index: 2;
+}
+/* =========================================
+   CREATE INVOICE — MULTI-STUDENT SELECTION
+   One invoice is created per selected student.
+   ========================================= */
+
+.invoice-selected-student-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 7px;
+}
+
+.invoice-selected-student-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 230px;
+  min-height: 30px;
+  padding: 3px 7px 3px 4px;
+  border: 1px solid #dbe4e0;
+  border-radius: 7px;
+  background: #f3f7f5;
+  color: #3f625a;
+  box-sizing: border-box;
+}
+
+.invoice-chip-avatar {
+  display: inline-flex;
+  flex: 0 0 23px;
+  align-items: center;
+  justify-content: center;
+  width: 23px;
+  height: 23px;
+  border-radius: 50%;
+  background: #e0ebe7;
+  color: #426b62;
+  font-size: .56rem;
+  font-weight: 700;
+}
+
+.invoice-chip-name {
+  min-width: 0;
+  overflow: hidden;
+  font-size: .67rem;
+  font-weight: 650;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.invoice-chip-remove {
+  display: inline-flex;
+  flex: 0 0 18px;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #6e817b;
+  font-size: .86rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.invoice-chip-remove:hover {
+  background: #dfe9e5;
+  color: #36574f;
+}
+
+/* When chips exist, the search input stays compact and clean. */
+.invoice-selected-student-chips + .invoice-student-search-wrap
+  .invoice-student-search {
+  min-height: 44px;
+}
+
+/* Multi-student preview section */
+.invoice-multi-student-preview {
+  margin-top: 0.65rem;
+  padding: 0.65rem;
+  border: 1px solid #e3e8e5;
+  border-radius: 8px;
+  background: #fafcfb;
+}
+
+.invoice-multi-student-count {
+  margin-bottom: 0.5rem;
+  color: #426b62;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+.invoice-multi-student-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.invoice-multi-student-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.invoice-multi-student-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.invoice-multi-student-info strong {
+  color: #3a3e3c;
+  font-size: 0.65rem;
+  font-weight: 650;
+}
+
+.invoice-multi-student-info span {
+  margin-top: 0.1rem;
+  color: #858b87;
+  font-size: 0.57rem;
+}
+
+/* Student picker dismissal: no full-width overlay or invisible hit area. */
+.invoice-student-picker {
+  position: relative;
+}
+
+.invoice-student-dropdown {
+  pointer-events: auto;
+}
+
+.invoice-student-search-wrap {
+  position: relative;
+  z-index: 2;
+}
+
+@media (max-width: 600px) {
+  .invoice-selected-student-chip {
+    max-width: 190px;
+  }
+  
+  .invoice-multi-student-preview {
+    padding: 0.5rem;
+  }
+}
+/* =========================================
+   CREATE INVOICE — MULTI-STUDENT SELECTION
+   ========================================= */
+
+/* Student dropdown grid layout */
+.invoice-student-dropdown {
+  max-height: 400px !important;
+  padding: 10px !important;
+  border: 1px solid #e3e1dc !important;
+  border-radius: 11px !important;
+  background: #fafaf9 !important;
+  box-shadow: 0 16px 36px rgba(35, 35, 30, .14) !important;
+}
+
+.invoice-student-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+  padding: 2px;
+}
+
+/* Individual student cards in dropdown */
+.invoice-student-card {
+  position: relative;
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+  min-height: 60px !important;
+  gap: 8px !important;
+  padding: 8px 10px !important;
+  border: 2px solid #e5e8e5 !important;
+  border-radius: 10px !important;
+  background: #fff !important;
+  color: var(--color-ink, #222) !important;
+  text-align: left !important;
+  box-sizing: border-box !important;
+  cursor: pointer !important;
+  transition: all .15s ease !important;
+}
+
+.invoice-student-card:hover {
+  border-color: #8eaaa1 !important;
+  background: #f7faf8 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(35, 35, 30, .08) !important;
+}
+
+.invoice-student-card.selected {
+  border-color: #426b62 !important;
+  background: #f0f6f3 !important;
+  box-shadow: 0 2px 8px rgba(66, 107, 98, 0.15) !important;
+}
+
+.invoice-student-card-avatar {
+  display: inline-flex !important;
+  flex: 0 0 32px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  background: #e8eeeb !important;
+  color: #426b62 !important;
+  font-size: .68rem !important;
+  font-weight: 700 !important;
+}
+
+.invoice-student-card.selected .invoice-student-card-avatar {
+  background: #426b62 !important;
+  color: #fff !important;
+}
+
+.invoice-student-card-info {
+  display: flex !important;
+  min-width: 0 !important;
+  flex: 1 !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+
+.invoice-student-card-info strong {
+  overflow: hidden !important;
+  color: #2c3a35 !important;
+  font-size: .72rem !important;
+  font-weight: 650 !important;
+  line-height: 1.25 !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.invoice-student-card-info span {
+  overflow: hidden !important;
+  color: #8a8781 !important;
+  font-size: .6rem !important;
+  line-height: 1.25 !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.invoice-student-card-check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: inline-flex !important;
+  flex: 0 0 20px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 20px !important;
+  height: 20px !important;
+  border-radius: 50% !important;
+  background: #426b62 !important;
+  color: #fff !important;
+  font-size: .68rem !important;
+  font-weight: 800 !important;
+}
+
+/* Selected students - horizontal bubbles */
+.invoice-selected-students-section {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid #e3e8e5;
+  border-radius: 10px;
+  background: #fafcfb;
+}
+
+.invoice-selected-students-header {
+  margin-bottom: 0.6rem;
+}
+
+.invoice-selected-count {
+  color: #426b62;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Horizontal bubble container */
+.invoice-selected-students-bubbles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Individual student bubble */
+.invoice-selected-student-bubble {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px 6px 6px;
+  border: 1px solid #c8dcd4;
+  border-radius: 50px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  transition: all 0.15s ease;
+}
+
+.invoice-selected-student-bubble:hover {
+  border-color: #8eaaa1;
+  box-shadow: 0 2px 8px rgba(66, 107, 98, 0.12);
+  transform: translateY(-1px);
+}
+
+.invoice-selected-student-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #426b62;
+  color: #ffffff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.invoice-selected-student-name {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #2c3a35;
+  white-space: nowrap;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.invoice-selected-student-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #f0f3f1;
+  color: #6e817b;
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.invoice-selected-student-remove:hover {
+  background: #e74c3c;
+  color: #ffffff;
+}
+
+/* Student picker dismissal */
+.invoice-student-picker {
+  position: relative;
+}
+
+.invoice-student-dropdown {
+  pointer-events: auto;
+}
+
+.invoice-student-search-wrap {
+  position: relative;
+  z-index: 2;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .invoice-student-card-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 6px;
+  }
+  
+  .invoice-student-card {
+    min-height: 55px !important;
+    padding: 6px 8px !important;
+  }
+  
+  .invoice-student-card-avatar {
+    width: 28px !important;
+    height: 28px !important;
+    flex-basis: 28px !important;
+  }
+  
+  .invoice-selected-students-bubbles {
+    gap: 6px;
+  }
+  
+  .invoice-selected-student-bubble {
+    padding: 5px 8px 5px 5px;
+    gap: 6px;
+  }
+  
+  .invoice-selected-student-avatar {
+    width: 24px;
+    height: 24px;
+    font-size: 0.55rem;
+  }
+  
+  .invoice-selected-student-name {
+    font-size: 0.65rem;
+    max-width: 120px;
+  }
+  
+  .invoice-selected-student-remove {
+    width: 18px;
+    height: 18px;
+    font-size: 0.8rem;
+  }
+/* =========================================
+   PAYMENT HISTORY MODAL — SIMPLE & ELEGANT
+   ========================================= */
+
+.history-modal {
+  width: min(480px, 100%) !important;
+  max-width: 480px !important;
+  max-height: min(85vh, 600px);
+  overflow-y: auto;
+  padding: 0;
+  border: 1px solid #dedbd4;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.25);
+}
+
+.history-modal .invoice-modal-header {
+  padding: 1.5rem 1.75rem 1.25rem;
+  border-bottom: 1px solid #ece9e4;
+  background: #fff;
+}
+
+.history-modal .invoice-modal-kicker {
+  margin-bottom: 0.4rem;
+  color: #426b62;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.history-modal .invoice-modal-header h2 {
+  margin: 0;
+  color: #292d2b;
+  font-family: var(--font-display, Georgia, serif);
+  font-size: 1.5rem;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.history-modal .invoice-modal-header p {
+  margin: 0.35rem 0 0;
+  color: #666c68;
+  font-family: var(--font-body, Arial, sans-serif);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.history-modal .invoice-modal-close {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  border: 0;
+  border-radius: 8px;
+  background: #f3f2ef;
+  color: #626864;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.history-modal .invoice-modal-close:hover {
+  background: #e9e8e4;
+  transform: scale(1.05);
+}
+
+/* History table styling */
+.history-table-wrapper {
+  padding: 1rem 1.75rem 1.5rem;
+  overflow-x: auto;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.history-table th {
+  padding: 0.75rem 0.5rem;
+  border-bottom: 2px solid #e7ebef;
+  color: #8a95a4;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.history-table td {
+  padding: 0.75rem 0.5rem;
+  border-bottom: 1px solid #edf0f3;
+  color: #4e5a6c;
+  font-size: 0.85rem;
+  vertical-align: middle;
+}
+
+.history-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.history-table tbody tr:hover {
+  background: #fbfcfc;
+}
+
+.history-table .desc-cell {
+  max-width: 200px;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: 1.3;
+}
+
+.history-table .tracker-amount {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.history-table .status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.history-table .status-badge::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.85;
+}
+
+.history-table .status-badge.active {
+  background: #edf3f0;
+  color: #174c3a;
+}
+
+.history-table .status-badge.inactive {
+  background: #f3f5f7;
+  color: #6b7685;
+}
+
+.history-table .status-badge.overdue {
+  background: #fbeceb;
+  color: #a83d36;
+}
+
+.history-table .overdue-date {
+  color: #a83d36;
+  font-weight: 600;
+}
+
+/* Empty state */
+.history-empty-state {
+  margin: 1.5rem 1.75rem;
+  padding: 2rem 1rem;
+  border: 1px dashed #d0cdc6;
+  border-radius: 10px;
+  background: #fafaf8;
+  text-align: center;
+}
+
+.history-empty-state strong {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #4a514d;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.history-empty-state span {
+  color: #777d79;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .history-modal {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 92vh;
+    border-radius: 14px 14px 0 0;
+  }
+
+  .history-modal .invoice-modal-header,
+  .history-table-wrapper {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+
+  .history-empty-state {
+    margin-left: 1.25rem;
+    margin-right: 1.25rem;
+  }
+
+  .history-table {
+    font-size: 0.8rem;
+  }
+
+  .history-table th {
+    font-size: 0.65rem;
+    padding: 0.6rem 0.4rem;
+  }
+
+  .history-table td {
+    font-size: 0.8rem;
+    padding: 0.6rem 0.4rem;
+  }
+
+  .history-table .desc-cell {
+    max-width: 140px;
+  }
+}
+}
+/* =========================================
+   PAYMENT HISTORY MODAL — REDESIGNED
+   ========================================= */
+
+.invoice-modal.history-modal {
+  width: min(640px, calc(100vw - 32px)) !important;
+  max-width: 640px !important;
+  min-width: 320px !important;
+  max-height: min(85vh, 700px) !important;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0;
+  border: 1px solid #dedbd4;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+}
+
+.history-modal .invoice-modal-header {
+  padding: 1.5rem 1.75rem 1.25rem;
+  border-bottom: 1px solid #ece9e4;
+  background: #fff;
+}
+
+.history-modal .invoice-modal-kicker {
+  margin-bottom: 0.4rem;
+  color: #426b62;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.history-modal .invoice-modal-header h2 {
+  margin: 0;
+  color: #292d2b;
+  font-family: var(--font-display, Georgia, serif);
+  font-size: 1.5rem;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.history-modal .invoice-modal-header p {
+  margin: 0.35rem 0 0;
+  color: #666c68;
+  font-family: var(--font-body, Arial, sans-serif);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.history-modal .invoice-modal-close {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  border: 0;
+  border-radius: 8px;
+  background: #f3f2ef;
+  color: #626864;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.history-modal .invoice-modal-close:hover {
+  background: #e9e8e4;
+  transform: scale(1.05);
+}
+
+/* History table styling - no horizontal scroll */
+.history-table-wrapper {
+  padding: 1rem 1.5rem 1.5rem;
+  overflow: visible;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  table-layout: auto;
+}
+
+.history-table th {
+  padding: 0.75rem 0.75rem;
+  border-bottom: 2px solid #e7ebef;
+  color: #8a95a4;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.history-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #edf0f3;
+  color: #4e5a6c;
+  font-size: 0.85rem;
+  vertical-align: middle;
+}
+
+.history-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.history-table tbody tr:hover {
+  background: #fbfcfc;
+}
+
+/* Column widths */
+.history-table th:nth-child(1),
+.history-table td:nth-child(1) {
+  width: 35%;
+}
+
+.history-table th:nth-child(2),
+.history-table td:nth-child(2) {
+  width: 20%;
+}
+
+.history-table th:nth-child(3),
+.history-table td:nth-child(3) {
+  width: 15%;
+}
+
+.history-table th:nth-child(4),
+.history-table td:nth-child(4) {
+  width: 15%;
+}
+
+.history-table th:nth-child(5),
+.history-table td:nth-child(5) {
+  width: 15%;
+}
+
+.history-table .desc-cell {
+  max-width: none;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: 1.3;
+}
+
+.history-table .tracker-amount {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.history-table .status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.history-table .status-badge::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.85;
+}
+
+.history-table .status-badge.active {
+  background: #edf3f0;
+  color: #174c3a;
+}
+
+.history-table .status-badge.inactive {
+  background: #f3f5f7;
+  color: #6b7685;
+}
+
+.history-table .status-badge.overdue {
+  background: #fbeceb;
+  color: #a83d36;
+}
+
+.history-table .overdue-date {
+  color: #a83d36;
+  font-weight: 600;
+}
+
+/* Empty state */
+.history-empty-state {
+  margin: 1.5rem;
+  padding: 2rem 1rem;
+  border: 1px dashed #d0cdc6;
+  border-radius: 10px;
+  background: #fafaf8;
+  text-align: center;
+}
+
+.history-empty-state strong {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #4a514d;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.history-empty-state span {
+  color: #777d79;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .invoice-modal.history-modal {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    max-height: 92vh !important;
+    border-radius: 14px 14px 0 0;
+  }
+
+  .history-modal .invoice-modal-header,
+  .history-table-wrapper {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+
+  .history-empty-state {
+    margin-left: 1.25rem;
+    margin-right: 1.25rem;
+  }
+
+  .history-table {
+    font-size: 0.8rem;
+  }
+
+  .history-table th {
+    font-size: 0.65rem;
+    padding: 0.6rem 0.5rem;
+  }
+
+  .history-table td {
+    font-size: 0.8rem;
+    padding: 0.6rem 0.5rem;
+  }
+
+  .history-table .desc-cell {
+    max-width: 120px;
+  }
+}
+/* Summary conversion styling */
+.summary-conversion {
+  margin: 0.25rem 0 0;
+  font-family: var(--font-body, Arial, sans-serif);
+  font-size: 0.75rem;
+  color: #8a95a4;
+  font-weight: 500;
+}
+
+.summary-card-fx .summary-value.fx-value {
+  font-size: 1.4rem;
+}
+
+.fx-caption {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+  color: #929baa;
+  font-size: 0.7rem;
+}
+
+.fx-live-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4caf50;
+  animation: fx-pulse 2s ease-in-out infinite;
+}
+
+@keyframes fx-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+@media (max-width: 700px) {
+  .summary-conversion {
+    font-size: 0.7rem;
   }
 }
