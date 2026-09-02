@@ -3119,3 +3119,1592 @@
     padding-right: 18px !important;
   }
 }
+
+
+/* ============================================================
+   PAYMENT ACTIONS REVAMP
+   Mark as Paid / Edit / Cancel
+   ============================================================ */
+
+.payment-main-table .payment-actions-cell {
+  overflow: visible;
+}
+
+.payment-main-table .payment-actions-cell .payment-row-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: auto;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.payment-main-table .payment-actions-cell .mark-paid-button-primary {
+  width: auto;
+  min-width: 86px;
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid #9fc6b5;
+  background: #edf7f2;
+  color: #175c43;
+  font-size: 9.5px;
+  font-weight: 700;
+}
+
+.payment-main-table .payment-actions-cell .mark-paid-button-primary:hover:not(:disabled) {
+  border-color: #7eaf99;
+  background: #e1f1e9;
+}
+
+.payment-main-table .payment-actions-cell .edit-invoice-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-width: 42px;
+  min-height: 28px;
+  padding: 0 8px;
+  border: 1px solid #cfd7df;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #344055;
+  font-family: inherit;
+  font-size: 9.5px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.payment-main-table .payment-actions-cell .edit-invoice-button:hover {
+  border-color: #aeb9c5;
+  background: #f5f7f9;
+}
+
+.payment-main-table .payment-actions-cell .delete-button {
+  width: auto;
+  min-width: 46px;
+  min-height: 28px;
+  padding: 0 7px;
+  font-size: 9.5px;
+}
+
+.paid-action-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 62px;
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid #c4dfd2;
+  border-radius: 6px;
+  background: #f1f8f4;
+  color: #1b6249;
+  font-size: 9.5px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+/* Give the action column enough room without bringing back a scrollbar. */
+.payment-main-table th:nth-child(1),
+.payment-main-table td:nth-child(1) {
+  width: 18%;
+}
+
+.payment-main-table th:nth-child(2),
+.payment-main-table td:nth-child(2) {
+  width: 14%;
+}
+
+.payment-main-table th:nth-child(3),
+.payment-main-table td:nth-child(3) {
+  width: 9%;
+}
+
+.payment-main-table th:nth-child(4),
+.payment-main-table td:nth-child(4) {
+  width: 9%;
+}
+
+.payment-main-table th:nth-child(5),
+.payment-main-table td:nth-child(5) {
+  width: 10%;
+}
+
+.payment-main-table th:nth-child(6),
+.payment-main-table td:nth-child(6) {
+  width: 19%;
+}
+
+.payment-main-table th:nth-child(7),
+.payment-main-table td:nth-child(7) {
+  width: 21%;
+}
+
+/* ============================================================
+   EDIT INVOICE MODAL
+   ============================================================ */
+
+.edit-invoice-modal {
+  width: min(720px, calc(100vw - 36px));
+  max-width: 720px;
+}
+
+.edit-invoice-modal .invoice-form {
+  padding-top: 0;
+}
+
+.edit-invoice-student-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 12px 14px;
+  border: 1px solid #e1e5e2;
+  border-radius: 10px;
+  background: #fafbf9;
+}
+
+.edit-invoice-student-card .student-avatar {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+}
+
+.edit-invoice-student-card > div:nth-child(2) {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.edit-invoice-student-card strong {
+  overflow: hidden;
+  color: #303632;
+  font-size: 0.92rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.edit-invoice-student-card span {
+  color: #747b76;
+  font-size: 0.78rem;
+}
+
+.edit-invoice-locked-label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border: 1px solid #dfe4e0;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #747b76 !important;
+  font-size: 0.68rem !important;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.edit-invoice-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 900px) {
+  .payment-main-table .payment-actions-cell .payment-row-actions {
+    gap: 4px;
+  }
+
+  .payment-main-table .payment-actions-cell .mark-paid-button-primary {
+    min-width: 76px;
+    padding-left: 6px;
+    padding-right: 6px;
+    font-size: 9px;
+  }
+
+  .payment-main-table .payment-actions-cell .edit-invoice-button,
+  .payment-main-table .payment-actions-cell .delete-button,
+  .paid-action-indicator {
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 640px) {
+  .edit-invoice-modal {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .edit-invoice-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .edit-invoice-student-card {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .edit-invoice-locked-label {
+    grid-column: 1 / -1;
+    width: fit-content;
+  }
+}
+
+/* ==========================================================
+   Payment management v3 — payer types, partial payments,
+   record-payment workflow, and compact invoice actions
+   ========================================================== */
+
+.payer-type-switch {
+  display: inline-flex;
+  gap: 6px;
+  padding: 5px;
+  margin-bottom: 18px;
+  border: 1px solid #dfe5ec;
+  border-radius: 12px;
+  background: #f7f9fb;
+}
+
+.payer-type-switch button {
+  min-width: 132px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  padding: 10px 16px;
+  color: #667085;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.payer-type-switch button.is-active {
+  background: #fff;
+  color: #101828;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.12);
+}
+
+.external-payer-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: end;
+}
+
+.edit-external-payer-grid {
+  margin: 18px 0;
+}
+
+.invoice-field-full {
+  display: flex;
+  width: 100%;
+  margin-top: 14px;
+}
+
+.invoice-field textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 86px;
+  box-sizing: border-box;
+  border: 1px solid #d0d5dd;
+  border-radius: 10px;
+  padding: 11px 12px;
+  font: inherit;
+  color: #101828;
+  background: #fff;
+}
+
+.invoice-field textarea:focus {
+  outline: none;
+  border-color: #98a2b3;
+  box-shadow: 0 0 0 3px rgba(152, 162, 179, 0.14);
+}
+
+.status-badge.partial {
+  background: #fff7e8;
+  color: #9a6700;
+  border-color: #f3d28b;
+}
+
+.payment-amount-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 98px;
+}
+
+.payment-amount-stack strong {
+  color: #101828;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.payment-amount-stack span {
+  color: #667085;
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.payment-row-actions-v2 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.payment-row-actions-v2 button,
+.payment-row-actions-v2 .paid-action-indicator {
+  min-height: 30px;
+  border-radius: 7px;
+  padding: 6px 9px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.payment-action-primary {
+  border: 1px solid #079455;
+  background: #079455;
+  color: #fff;
+  cursor: pointer;
+}
+
+.payment-action-primary:hover:not(:disabled) {
+  background: #067647;
+}
+
+.payment-action-secondary,
+.payment-action-edit {
+  border: 1px solid #d0d5dd;
+  background: #fff;
+  color: #344054;
+  cursor: pointer;
+}
+
+.payment-action-secondary:hover,
+.payment-action-edit:hover {
+  background: #f9fafb;
+}
+
+.payment-action-cancel {
+  border: 0;
+  background: transparent;
+  color: #b42318;
+  cursor: pointer;
+}
+
+.payment-row-actions-v2 button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.record-payment-modal {
+  width: min(760px, calc(100vw - 32px));
+}
+
+.record-payment-balance-card {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px 18px;
+  margin-bottom: 20px;
+  padding: 16px 18px;
+  border: 1px solid #eaecf0;
+  border-radius: 12px;
+  background: #f9fafb;
+}
+
+.record-payment-balance-card span {
+  color: #667085;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.record-payment-balance-card strong {
+  color: #101828;
+  font-size: 16px;
+}
+
+.transaction-mini-history {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #eaecf0;
+}
+
+.transaction-mini-history > strong {
+  display: block;
+  margin-bottom: 10px;
+  color: #344054;
+  font-size: 12px;
+}
+
+.transaction-mini-history > div {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 0;
+  border-top: 1px solid #f2f4f7;
+  color: #667085;
+  font-size: 12px;
+}
+
+.transaction-mini-history > div strong {
+  color: #101828;
+}
+
+.edit-payment-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.edit-payment-summary > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid #eaecf0;
+  border-radius: 10px;
+  background: #f9fafb;
+  min-width: 0;
+}
+
+.edit-payment-summary span {
+  color: #667085;
+  font-size: 11px;
+}
+
+.edit-payment-summary strong {
+  overflow: hidden;
+  color: #101828;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.payment-history-v2 th,
+.payment-history-v2 td {
+  white-space: nowrap;
+}
+
+.payment-history-v2 .desc-cell {
+  min-width: 180px;
+  white-space: normal;
+}
+
+@media (max-width: 920px) {
+  .external-payer-grid,
+  .edit-payment-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .record-payment-balance-card {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================================
+   PAYMENT TRACKER V3 — FILTER TABS + PAGINATION ALIGNMENT FIX
+   Matches the class names currently used by PaymentTracker.jsx.
+   ============================================================ */
+
+.tracker-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border: 1px solid #e4e9ee;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.tracker-filter-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tracker-filter {
+  appearance: none;
+  min-height: 34px;
+  padding: 0 13px;
+  border: 1px solid #d9e0e6;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #5b6675;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease,
+    box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.tracker-filter:hover {
+  border-color: #b8c4cd;
+  background: #f7f9f8;
+  color: #2f493f;
+}
+
+.tracker-filter:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(23, 76, 58, 0.12);
+}
+
+.tracker-filter.active {
+  border-color: #174c3a;
+  background: #174c3a;
+  color: #ffffff;
+  box-shadow: 0 2px 7px rgba(23, 76, 58, 0.18);
+}
+
+.tracker-toolbar-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+.tracker-toolbar-controls .tracker-search,
+.tracker-toolbar-controls select {
+  min-height: 36px;
+  border: 1px solid #d9e0e6;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #344055;
+  font: inherit;
+  font-size: 12px;
+}
+
+.tracker-toolbar-controls .tracker-search {
+  min-width: 220px;
+  padding: 0 11px;
+}
+
+.tracker-toolbar-controls select {
+  padding: 0 30px 0 10px;
+}
+
+.tracker-toolbar-controls .tracker-search:focus,
+.tracker-toolbar-controls select:focus {
+  outline: none;
+  border-color: #8fa49a;
+  box-shadow: 0 0 0 3px rgba(23, 76, 58, 0.06);
+}
+
+.tracker-pagination > span {
+  color: #7a8595;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.tracker-pagination-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 9px;
+}
+
+.tracker-pagination-actions > span {
+  min-width: 92px;
+  text-align: center;
+  color: #667284;
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.tracker-pagination-actions button {
+  appearance: none;
+  min-width: 78px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid #d8dfe7;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #344055;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.tracker-pagination-actions button:hover:not(:disabled) {
+  border-color: #174c3a;
+  background: #f2f7f5;
+  color: #174c3a;
+}
+
+.tracker-pagination-actions button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(23, 76, 58, 0.1);
+}
+
+.tracker-pagination-actions button:disabled {
+  border-color: #e2e7ec;
+  background: #f5f7f8;
+  color: #a9b1bb;
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+@media (max-width: 900px) {
+  .tracker-toolbar {
+    align-items: stretch;
+  }
+
+  .tracker-filter-tabs,
+  .tracker-toolbar-controls {
+    width: 100%;
+  }
+
+  .tracker-toolbar-controls {
+    justify-content: flex-start;
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 700px) {
+  .tracker-toolbar-controls .tracker-search {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .tracker-toolbar-controls select {
+    flex: 1 1 140px;
+  }
+
+  .tracker-pagination-actions {
+    justify-content: space-between;
+    width: 100%;
+  }
+}
+
+/* ============================================================
+   PAYMENT SUMMARY — MATCH ACTIVITY TRACKER STAT CARDS
+============================================================ */
+.payment-tracker-page .tracker-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 0 22px;
+}
+
+.payment-tracker-page .summary-card {
+  min-width: 0;
+  min-height: 102px;
+  padding: 17px 18px 15px;
+  box-sizing: border-box;
+  border: 1px solid #dbe2e9;
+  border-radius: 9px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(24, 34, 53, 0.025);
+}
+
+.payment-tracker-page .summary-label {
+  margin: 0 0 7px;
+  color: #748093;
+  font-family: inherit;
+  font-size: 10px;
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.payment-tracker-page .summary-value,
+.payment-tracker-page .summary-card-fx .summary-value.fx-value {
+  margin: 0;
+  color: #182235;
+  font-family: inherit;
+  font-size: 26px;
+  line-height: 1.08;
+  font-weight: 750;
+  letter-spacing: -0.025em;
+}
+
+.payment-tracker-page .summary-value.paid,
+.payment-tracker-page .summary-value.overdue {
+  color: #182235;
+}
+
+.payment-tracker-page .summary-subtext {
+  display: block;
+  margin-top: 7px;
+  color: #8a94a3;
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 1.35;
+  font-weight: 500;
+}
+
+@media (max-width: 900px) {
+  .payment-tracker-page .tracker-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .payment-tracker-page .tracker-summary {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* ============================================================
+   PAYMENT SUMMARY — ACTIVITY TRACKER TYPOGRAPHY + OVERDUE ALERT
+============================================================ */
+.payment-tracker-page .tracker-summary,
+.payment-tracker-page .summary-card,
+.payment-tracker-page .summary-label,
+.payment-tracker-page .summary-value,
+.payment-tracker-page .summary-subtext,
+.payment-tracker-page .summary-conversion-label {
+  font-family: var(--font-body, 'Inter', Arial, sans-serif);
+}
+
+.payment-tracker-page .summary-label {
+  margin: 0 0 6px;
+  color: #748093;
+  font-size: 10px;
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.payment-tracker-page .summary-conversion-label {
+  display: block;
+  margin: 0 0 3px;
+  color: #8a94a3;
+  font-size: 10px;
+  line-height: 1.2;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+
+.payment-tracker-page .summary-value,
+.payment-tracker-page .summary-card-fx .summary-value.fx-value {
+  margin: 0;
+  color: #182235;
+  font-size: 26px;
+  line-height: 1.08;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.payment-tracker-page .summary-subtext {
+  display: block;
+  margin-top: 7px;
+  color: #8a94a3;
+  font-size: 11px;
+  line-height: 1.35;
+  font-weight: 400;
+}
+
+.payment-tracker-page .summary-card-overdue {
+  background: #fff1f2;
+  border-color: #fecdd3;
+  box-shadow: 0 1px 2px rgba(190, 24, 93, 0.05);
+}
+
+.payment-tracker-page .summary-card-overdue .summary-label {
+  color: #9f1239;
+}
+
+.payment-tracker-page .summary-card-overdue .summary-value {
+  color: #b42318;
+}
+
+.payment-tracker-page .summary-card-overdue .summary-subtext {
+  color: #a65a67;
+}
+
+
+/* ============================================================
+   PAYMENT SUMMARY — PHP EQUIVALENTS
+============================================================ */
+.payment-tracker-page .summary-php-conversion {
+  display: block;
+  margin-top: 4px;
+  color: #667085;
+  font-family: var(--font-body, 'Inter', Arial, sans-serif);
+  font-size: 11px;
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+
+.payment-tracker-page .summary-card-overdue .summary-php-conversion {
+  color: #b15b69;
+}
+
+/* ============================================================
+   PAYMENT HISTORY V3 — ACCOUNT / TRANSACTION VIEW
+   ============================================================ */
+.invoice-modal.history-modal.history-modal-v3 {
+  width: min(920px, calc(100vw - 36px)) !important;
+  max-width: 920px !important;
+  min-width: 0 !important;
+  max-height: min(90vh, 860px) !important;
+  overflow: hidden !important;
+  border: 1px solid #dfe4e9;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 26px 80px rgba(22, 34, 53, 0.24);
+  font-family: var(--font-body, 'Inter', Arial, sans-serif);
+}
+
+.history-modal-v3 .history-v3-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px 24px;
+  border-bottom: 1px solid #e8ebef;
+  background: #ffffff;
+}
+
+.history-v3-identity {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-width: 0;
+}
+
+.history-v3-avatar {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border-radius: 11px;
+  background: #edf3f0;
+  color: #174c3a;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.history-modal-v3 .invoice-modal-kicker {
+  margin: 0 0 4px;
+  color: #748093;
+  font-size: 9px;
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+}
+
+.history-modal-v3 .invoice-modal-header h2 {
+  margin: 0;
+  color: #182235;
+  font-family: var(--font-body, 'Inter', Arial, sans-serif);
+  font-size: 20px;
+  line-height: 1.2;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+
+.history-modal-v3 .invoice-modal-header p {
+  margin: 4px 0 0;
+  color: #7a8595;
+  font-family: var(--font-body, 'Inter', Arial, sans-serif);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.history-v3-body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px 22px 24px;
+  max-height: calc(min(90vh, 860px) - 90px);
+  overflow-y: auto;
+  background: #fbfcfd;
+}
+
+.history-v3-overview {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.history-v3-summary-card {
+  min-width: 0;
+  padding: 14px 15px;
+  border: 1px solid #dfe4e9;
+  border-radius: 9px;
+  background: #ffffff;
+}
+
+.history-v3-summary-label {
+  display: block;
+  margin-bottom: 8px;
+  color: #748093;
+  font-size: 9px;
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.history-v3-summary-card strong {
+  display: block;
+  color: #182235;
+  font-size: 21px;
+  line-height: 1.15;
+  font-weight: 750;
+  letter-spacing: -0.025em;
+  white-space: nowrap;
+}
+
+.history-v3-summary-card small {
+  display: block;
+  margin-top: 3px;
+  color: #667386;
+  font-size: 10px;
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+.history-v3-summary-card > span:last-child {
+  display: block;
+  margin-top: 7px;
+  color: #8993a2;
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+.history-v3-summary-paid {
+  border-color: #d8e5df;
+  background: #fbfdfc;
+}
+
+.history-v3-summary-paid strong {
+  color: #174c3a;
+}
+
+.history-v3-summary-overdue {
+  border-color: #efc9c5;
+  background: #fff2f1;
+}
+
+.history-v3-summary-overdue .history-v3-summary-label,
+.history-v3-summary-overdue strong,
+.history-v3-summary-overdue small,
+.history-v3-summary-overdue > span:last-child {
+  color: #a83d36;
+}
+
+.history-v3-progress-card {
+  padding: 14px 16px;
+  border: 1px solid #e2e6ea;
+  border-radius: 9px;
+  background: #ffffff;
+}
+
+.history-v3-progress-copy {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 9px;
+}
+
+.history-v3-progress-copy > div {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.history-v3-progress-copy span {
+  color: #748093;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.history-v3-progress-copy strong {
+  color: #174c3a;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.history-v3-progress-track {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #edf0f2;
+}
+
+.history-v3-progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #174c3a;
+  transition: width 0.2s ease;
+}
+
+.history-v3-section {
+  overflow: hidden;
+  border: 1px solid #e2e6ea;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.history-v3-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #e8ebee;
+}
+
+.history-v3-section-heading > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.history-v3-section-eyebrow {
+  color: #8993a2;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+}
+
+.history-v3-section-heading strong {
+  color: #233044;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.history-v3-section-heading > span {
+  color: #8a94a3;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.history-v3-inline-empty {
+  padding: 22px 16px;
+  color: #8a94a3;
+  font-size: 11px;
+  text-align: center;
+}
+
+.history-v3-invoice-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.history-v3-invoice-card {
+  padding: 14px 16px;
+  border-bottom: 1px solid #edf0f2;
+}
+
+.history-v3-invoice-card:last-child {
+  border-bottom: 0;
+}
+
+.history-v3-invoice-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.history-v3-invoice-title {
+  min-width: 0;
+}
+
+.history-v3-invoice-title strong {
+  display: block;
+  color: #253044;
+  font-size: 12px;
+  line-height: 1.35;
+  font-weight: 750;
+}
+
+.history-v3-invoice-title span {
+  display: block;
+  margin-top: 3px;
+  color: #8a94a3;
+  font-size: 9px;
+  line-height: 1.35;
+}
+
+.history-v3-invoice-money {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #f8fafb;
+}
+
+.history-v3-invoice-money div {
+  min-width: 0;
+}
+
+.history-v3-invoice-money span {
+  display: block;
+  margin-bottom: 3px;
+  color: #8a94a3;
+  font-size: 8px;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.history-v3-invoice-money strong {
+  color: #344155;
+  font-size: 11px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.history-v3-invoice-money .has-balance strong {
+  color: #a36520;
+}
+
+.history-v3-method {
+  font-size: 10px !important;
+}
+
+.history-v3-invoice-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 10px;
+  margin-top: 9px;
+  color: #8a94a3;
+  font-size: 9px;
+  line-height: 1.35;
+}
+
+.history-v3-note {
+  flex-basis: 100%;
+  color: #697587;
+}
+
+.history-modal-v3 .status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.history-modal-v3 .status-badge::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.history-modal-v3 .status-badge.active {
+  background: #edf3f0;
+  color: #174c3a;
+}
+
+.history-modal-v3 .status-badge.partial {
+  background: #fff5e8;
+  color: #9a641f;
+}
+
+.history-modal-v3 .status-badge.inactive {
+  background: #f2f4f6;
+  color: #6e7887;
+}
+
+.history-modal-v3 .status-badge.overdue {
+  background: #fbeceb;
+  color: #a83d36;
+}
+
+@media (max-width: 760px) {
+  .invoice-modal.history-modal.history-modal-v3 {
+    width: min(100%, calc(100vw - 18px)) !important;
+    max-height: 94vh !important;
+  }
+
+  .history-modal-v3 .history-v3-header {
+    padding: 18px;
+  }
+
+  .history-v3-body {
+    padding: 14px;
+  }
+
+  .history-v3-overview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .history-v3-progress-copy {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .history-v3-invoice-money {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .history-v3-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .history-v3-summary-card strong {
+    font-size: 19px;
+  }
+
+  .history-v3-transaction {
+    grid-template-columns: 28px minmax(0, 1fr);
+  }
+
+  .history-v3-transaction time {
+    grid-column: 2;
+    padding-top: 0;
+  }
+}
+
+/* Payment History v3: invoice history now follows collection progress directly. */
+.history-v3-progress-card + .history-v3-invoices-section {
+  margin-top: 0;
+}
+
+/* ============================================================
+   PAYMENT HISTORY V3 — SCROLLABLE INVOICE HISTORY
+   Keeps account summary + collection progress visible while
+   the Billing / Invoice history list scrolls independently.
+   ============================================================ */
+
+.invoice-modal.history-modal.history-modal-v3 {
+  display: flex;
+  flex-direction: column;
+  max-height: min(90vh, 860px) !important;
+}
+
+.history-modal-v3 .history-v3-header {
+  flex: 0 0 auto;
+}
+
+.history-v3-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  overflow: hidden;
+}
+
+.history-v3-invoices-section {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.history-v3-invoices-section .history-v3-section-heading {
+  flex: 0 0 auto;
+}
+
+.history-v3-invoice-list {
+  flex: 1 1 auto;
+  min-height: 180px;
+  max-height: min(42vh, 430px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.history-v3-invoice-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.history-v3-invoice-list::-webkit-scrollbar-track {
+  background: #f5f7f8;
+}
+
+.history-v3-invoice-list::-webkit-scrollbar-thumb {
+  border: 2px solid #f5f7f8;
+  border-radius: 999px;
+  background: #c8d0d8;
+}
+
+.history-v3-invoice-list::-webkit-scrollbar-thumb:hover {
+  background: #aeb8c2;
+}
+
+@media (max-width: 760px) {
+  .history-v3-body {
+    overflow: hidden;
+  }
+
+  .history-v3-invoice-list {
+    min-height: 150px;
+    max-height: 42vh;
+  }
+}
+
+/* ============================================================
+   PAYMENT HISTORY — UNIFIED TYPOGRAPHY WITH PAYMENT SUMMARY
+============================================================ */
+.payment-tracker-page .history-modal-v3,
+.payment-tracker-page .history-modal-v3 * {
+  font-family: var(--font-body, 'Inter', Arial, sans-serif);
+}
+
+.payment-tracker-page .history-modal-v3 .invoice-modal-kicker,
+.payment-tracker-page .history-v3-summary-label,
+.payment-tracker-page .history-v3-section-kicker,
+.payment-tracker-page .history-v3-invoice-kicker,
+.payment-tracker-page .history-v3-label {
+  font-family: var(--font-body, 'Inter', Arial, sans-serif);
+  font-size: 10px;
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.payment-tracker-page .history-modal-v3 .invoice-modal-header h2 {
+  font-family: var(--font-body, 'Inter', Arial, sans-serif);
+  font-size: 20px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.payment-tracker-page .history-modal-v3 .invoice-modal-header p,
+.payment-tracker-page .history-v3-summary-card > span:last-child,
+.payment-tracker-page .history-v3-progress-copy span,
+.payment-tracker-page .history-v3-section-heading span,
+.payment-tracker-page .history-v3-invoice-meta,
+.payment-tracker-page .history-v3-note,
+.payment-tracker-page .history-v3-empty {
+  font-family: var(--font-body, 'Inter', Arial, sans-serif);
+  font-weight: 400;
+}
+
+/* Match the numbers in history summary cards to the page summary cards. */
+.payment-tracker-page .history-v3-summary-card strong {
+  font-family: var(--font-body, 'Inter', Arial, sans-serif);
+  font-size: 26px;
+  line-height: 1.08;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.payment-tracker-page .history-v3-summary-card small {
+  font-family: var(--font-body, 'Inter', Arial, sans-serif);
+  font-size: 11px;
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+
+.payment-tracker-page .history-v3-summary-card > span:last-child {
+  margin-top: 7px;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.payment-tracker-page .history-v3-progress-copy strong,
+.payment-tracker-page .history-v3-section-heading strong,
+.payment-tracker-page .history-v3-invoice-title,
+.payment-tracker-page .history-v3-invoice-amount,
+.payment-tracker-page .history-v3-balance strong {
+  font-family: var(--font-body, 'Inter', Arial, sans-serif);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+/* ============================================================
+   FINAL TYPOGRAPHY LOCK — SUMMARY + PAYMENT HISTORY VALUES
+   Keep monetary values visually identical in both areas.
+============================================================ */
+.payment-tracker-page .summary-value,
+.payment-tracker-page .summary-card-fx .summary-value.fx-value,
+.payment-tracker-page .history-v3-summary-card strong {
+  font-family: var(--font-body, 'Inter', Arial, sans-serif) !important;
+  font-size: 26px !important;
+  line-height: 1.08 !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.025em !important;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+
+/* ============================================================
+   PAYMENT SUMMARY STATUS BACKGROUNDS
+   Outstanding = yellow 10%, Collected = green 10%, Overdue = red 10%
+============================================================ */
+
+.payment-tracker-page .summary-card-outstanding {
+  background: rgba(245, 190, 65, 0.02);
+  border-color: rgba(194, 139, 25, 0.18);
+}
+
+.payment-tracker-page .summary-card-collected {
+  background: rgba(72, 166, 116, 0.02);
+  border-color: rgba(47, 132, 86, 0.18);
+}
+
+.payment-tracker-page .summary-card-overdue {
+  background: rgba(220, 86, 86, 0.02);
+  border-color: rgba(184, 55, 55, 0.18);
+}
+
+/* Keep the conversion-rate card neutral so the status cards carry the emphasis. */
+.payment-tracker-page .summary-card-fx {
+  background: #ffffff;
+}
+
+/* ============================================================
+   FINAL SUMMARY CARD OVERRIDE
+   Strong final rules to avoid conflicts with older summary CSS.
+============================================================ */
+.payment-tracker-page .tracker-summary > .summary-card.summary-card-outstanding {
+  background-color: rgba(245, 190, 65, 0.02) !important;
+  background-image: none !important;
+  border-color: rgba(194, 139, 25, 0.18) !important;
+}
+
+.payment-tracker-page .tracker-summary > .summary-card.summary-card-collected {
+  background-color: rgba(72, 166, 116, 0.02) !important;
+  background-image: none !important;
+  border-color: rgba(47, 132, 86, 0.18) !important;
+}
+
+.payment-tracker-page .tracker-summary > .summary-card.summary-card-overdue {
+  background-color: rgba(220, 86, 86, 0.02) !important;
+  background-image: none !important;
+  border-color: rgba(184, 55, 55, 0.18) !important;
+}
+
+.payment-tracker-page .tracker-summary > .summary-card.summary-card-fx {
+  background-color: #ffffff !important;
+  background-image: none !important;
+}
+
+/* More compact summary typography. */
+.payment-tracker-page .tracker-summary .summary-label {
+  font-family: var(--font-body, 'Inter', Arial, sans-serif) !important;
+  font-size: 9px !important;
+  line-height: 1.2 !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.12em !important;
+  margin-bottom: 5px !important;
+}
+
+.payment-tracker-page .tracker-summary .summary-conversion-label {
+  font-family: var(--font-body, 'Inter', Arial, sans-serif) !important;
+  font-size: 9px !important;
+  line-height: 1.2 !important;
+  font-weight: 500 !important;
+  margin-bottom: 3px !important;
+}
+
+.payment-tracker-page .tracker-summary .summary-value,
+.payment-tracker-page .tracker-summary .summary-card-fx .summary-value.fx-value {
+  font-family: var(--font-body, 'Inter', Arial, sans-serif) !important;
+  font-size: 21px !important;
+  line-height: 1.08 !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.payment-tracker-page .tracker-summary .summary-php-conversion {
+  font-family: var(--font-body, 'Inter', Arial, sans-serif) !important;
+  font-size: 11px !important;
+  line-height: 1.25 !important;
+  font-weight: 600 !important;
+  margin-top: 4px !important;
+}
+
+.payment-tracker-page .tracker-summary .summary-subtext {
+  font-family: var(--font-body, 'Inter', Arial, sans-serif) !important;
+  font-size: 10px !important;
+  line-height: 1.3 !important;
+  font-weight: 400 !important;
+  margin-top: 5px !important;
+}
+
+.payment-tracker-page .tracker-summary > .summary-card {
+  min-height: 92px !important;
+  padding: 14px 16px 13px !important;
+}
+
+
+/* ============================================================
+   RECORD PAYMENT — BALANCE CARD FINAL LAYOUT FIX
+   Each label/value pair stays in its own column.
+   ============================================================ */
+
+.record-payment-modal .record-payment-balance-card {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+  align-items: stretch !important;
+}
+
+.record-payment-modal .record-payment-balance-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 7px;
+  min-width: 0;
+}
+
+.record-payment-modal .record-payment-balance-item span {
+  display: block;
+  margin: 0;
+  color: #667085;
+  font-size: 11px;
+  line-height: 1.2;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.record-payment-modal .record-payment-balance-item strong {
+  display: block;
+  margin: 0;
+  color: #101828;
+  font-size: 16px;
+  line-height: 1.2;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .record-payment-modal .record-payment-balance-card {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+}
