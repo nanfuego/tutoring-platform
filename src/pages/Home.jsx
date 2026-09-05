@@ -5,6 +5,7 @@ import hero from '../assets/westpacific-hero.jpg'
 import palmLeft from '../assets/palm-left.jpg'
 import palmRight from '../assets/palm-right.jpg'
 import './Home.css'
+import ContactForm from '../components/ContactForm'
 
 function PeopleIcon() {
   return (
@@ -171,22 +172,6 @@ const values = [
 ]
 
 function Home() {
-  const handleContactSubmit = (event) => {
-    event.preventDefault()
-
-    const form = new FormData(event.currentTarget)
-    const name = form.get('name') || ''
-    const email = form.get('email') || ''
-    const service = form.get('service') || ''
-    const message = form.get('message') || ''
-
-    const subject = encodeURIComponent(`WestPacific Desk Inquiry — ${service}`)
-    const body = encodeURIComponent(
-      `Name: ${name}\nEmail: ${email}\nService: ${service}\n\nMessage:\n${message}`,
-    )
-
-    window.location.href = `mailto:gloujoyce@gmail.com?subject=${subject}&body=${body}`
-  }
 
   return (
     <div className="wp-site" id="home">
@@ -413,65 +398,7 @@ function Home() {
             </div>
 
             <div className="wp-contact-form-card">
-              <form onSubmit={handleContactSubmit}>
-                <div className="wp-form-row">
-                  <label>
-                    <span>Name</span>
-                    <input
-                      type="text"
-                      name="name"
-                      placeholder="Your name"
-                      required
-                    />
-                  </label>
-
-                  <label>
-                    <span>Email</span>
-                    <input
-                      type="email"
-                      name="email"
-                      placeholder="Your email address"
-                      required
-                    />
-                  </label>
-                </div>
-
-                <label>
-                  <span>What do you need help with?</span>
-                  <select name="service" defaultValue="" required>
-                    <option value="" disabled>Select a service</option>
-                    <option>Student Assistance</option>
-                    <option>Administrative Support</option>
-                    <option>Web App Development</option>
-                    <option>Website Building & Management</option>
-                    <option>Virtual Office Assistance</option>
-                    <option>Data Management & Reporting</option>
-                    <option>Something Else</option>
-                  </select>
-                </label>
-
-                <label>
-                  <span>Message</span>
-                  <textarea
-                    name="message"
-                    rows="6"
-                    placeholder="Tell us briefly about the support you need, your timeline, and any important details."
-                    required
-                  />
-                </label>
-
-                <button className="wp-button wp-button-primary wp-contact-submit" type="submit">
-                  Send Message <span aria-hidden="true">→</span>
-                </button>
-
-                <p className="wp-form-note">
-                  Prefer WhatsApp?{' '}
-                  <a href="https://wa.me/639776324096" target="_blank" rel="noreferrer">
-                    Send us a message directly
-                  </a>
-                  {' '}and we’ll get back to you as soon as possible.
-                </p>
-              </form>
+         <ContactForm />
             </div>
           </div>
         </section>

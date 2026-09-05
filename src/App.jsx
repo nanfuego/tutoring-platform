@@ -7,6 +7,7 @@ import AdminDashboard from './pages/AdminDashboard'
 import StudentDetail from './pages/StudentDetail'
 import PaymentTracker from './pages/PaymentTracker'
 import ActivityTracker from './pages/ActivityTracker'
+import InquiryTracker from './pages/InquiryTracker'
 import AdminShell from './components/AdminShell'
 import ProtectedRoute from './components/ProtectedRoute'
 
@@ -58,6 +59,15 @@ function App() {
         element={
           <AdminPage>
             <PaymentTracker />
+          </AdminPage>
+        }
+      />
+
+      <Route
+        path="/admin/inquiries"
+        element={
+          <AdminPage>
+            <InquiryTracker />
           </AdminPage>
         }
       />

@@ -236,6 +236,7 @@ export default function AdminShell({ children }) {
   const isDashboard = location.pathname === '/admin'
   const isActivity = location.pathname === '/admin/activity'
   const isPayments = location.pathname === '/admin/payments'
+  const isInquiries = location.pathname === '/admin/inquiries'
 
   return (
     <div className="universal-admin-page">
@@ -280,15 +281,22 @@ export default function AdminShell({ children }) {
           >
             Student Progress
           </Link>
-
+<Link
+  to="/admin/payments"
+  className={`universal-admin-nav-link ${
+    isPayments ? 'active' : ''
+  }`}
+>
+  Payment Management
+</Link>
           <Link
-            to="/admin/payments"
-            className={`universal-admin-nav-link ${
-              isPayments ? 'active' : ''
-            }`}
-          >
-            Payment Management
-          </Link>
+  to="/admin/inquiries"
+  className={`universal-admin-nav-link ${
+    isInquiries ? 'active' : ''
+  }`}
+>
+  Inquiries
+</Link>
         </nav>
       </header>
 
