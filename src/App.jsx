@@ -10,6 +10,7 @@ import ActivityTracker from './pages/ActivityTracker'
 import InquiryTracker from './pages/InquiryTracker'
 import AdminShell from './components/AdminShell'
 import ProtectedRoute from './components/ProtectedRoute'
+import ScrollToHash from './components/ScrollToHash'
 
 function AdminPage({ children }) {
   return (
@@ -21,57 +22,61 @@ function AdminPage({ children }) {
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/about" element={<About />} />
-      <Route path="/status/:slug" element={<StudentStatus />} />
-      <Route path="/admin/login" element={<AdminLogin />} />
+    <>
+      <ScrollToHash />
 
-      <Route
-        path="/admin"
-        element={
-          <AdminPage>
-            <AdminDashboard />
-          </AdminPage>
-        }
-      />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/status/:slug" element={<StudentStatus />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
 
-      <Route
-        path="/admin/students/:id"
-        element={
-          <AdminPage>
-            <StudentDetail />
-          </AdminPage>
-        }
-      />
+        <Route
+          path="/admin"
+          element={
+            <AdminPage>
+              <AdminDashboard />
+            </AdminPage>
+          }
+        />
 
-      <Route
-        path="/admin/activity"
-        element={
-          <AdminPage>
-            <ActivityTracker />
-          </AdminPage>
-        }
-      />
+        <Route
+          path="/admin/students/:id"
+          element={
+            <AdminPage>
+              <StudentDetail />
+            </AdminPage>
+          }
+        />
 
-      <Route
-        path="/admin/payments"
-        element={
-          <AdminPage>
-            <PaymentTracker />
-          </AdminPage>
-        }
-      />
+        <Route
+          path="/admin/activity"
+          element={
+            <AdminPage>
+              <ActivityTracker />
+            </AdminPage>
+          }
+        />
 
-      <Route
-        path="/admin/inquiries"
-        element={
-          <AdminPage>
-            <InquiryTracker />
-          </AdminPage>
-        }
-      />
-    </Routes>
+        <Route
+          path="/admin/payments"
+          element={
+            <AdminPage>
+              <PaymentTracker />
+            </AdminPage>
+          }
+        />
+
+        <Route
+          path="/admin/inquiries"
+          element={
+            <AdminPage>
+              <InquiryTracker />
+            </AdminPage>
+          }
+        />
+      </Routes>
+    </>
   )
 }
 
