@@ -3,10 +3,8 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../supabaseClient'
 import logo from '../assets/westpacific-logo-footer-white.png'
 import joycePhoto from '../assets/joyce.png'
-import AdminOperationsOverview from './AdminOperationsOverview'
 import './AdminShell.css'
 import './UniversalAdminTheme.css'
-import './AdminModalFixes.css'
 
 function formatNow() {
   const now = new Date()
@@ -138,7 +136,7 @@ export default function AdminShell({ children }) {
     <div className="wp-admin-app">
       <aside className={`wp-admin-sidebar ${mobileNavOpen ? 'open' : ''}`}>
         <div className="wp-admin-brand">
-          <Link to="/admin" className="wp-admin-brand-link" aria-label="WestPacific Desk admin dashboard">
+          <Link to="/" className="wp-admin-brand-link" aria-label="WestPacific Desk home">
             <img
               src={logo}
               alt="WestPacific Desk"
@@ -249,7 +247,6 @@ export default function AdminShell({ children }) {
         </header>
 
         <main className="wp-admin-content">
-          {isDashboard && <AdminOperationsOverview />}
           {children}
         </main>
       </section>

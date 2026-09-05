@@ -1,0 +1,693 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+.wp-admin-app {
+  --wp-admin-green: #0d4f3c;
+  --wp-admin-green-deep: #073e30;
+  --wp-admin-green-bright: #126a53;
+  --wp-admin-green-soft: #e8f0eb;
+  --wp-admin-cream: #fbfaf5;
+  --wp-admin-paper: #fffdf9;
+  --wp-admin-text: #183f35;
+  --wp-admin-body: #344b44;
+  --wp-admin-muted: #7b8782;
+  --wp-admin-line: #dfe3dd;
+  --wp-admin-danger: #a33a35;
+
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  background:
+    radial-gradient(circle at 92% 2%, rgba(13,79,60,.035), transparent 24%),
+    linear-gradient(180deg, #fbfaf5 0%, #f4f3ed 100%);
+  color: var(--wp-admin-text);
+  font-family: 'Inter', sans-serif;
+}
+
+.wp-admin-app *,
+.wp-admin-app *::before,
+.wp-admin-app *::after {
+  box-sizing: border-box;
+}
+
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
+
+.wp-admin-sidebar {
+  position: sticky;
+  top: 0;
+  z-index: 1200;
+  min-height: 100vh;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 22px 16px 18px;
+  overflow-y: auto;
+  background:
+    radial-gradient(circle at 30% 102%, rgba(255,255,255,.09), transparent 22%),
+    linear-gradient(180deg, #0b4a39 0%, #073e30 100%);
+  color: #fff;
+  box-shadow: 10px 0 35px rgba(7,62,48,.10);
+}
+
+.wp-admin-sidebar::after {
+  content: '';
+  position: absolute;
+  left: -72px;
+  bottom: -55px;
+  width: 230px;
+  height: 310px;
+  pointer-events: none;
+  opacity: .08;
+  background: url('../assets/palm-left.jpg') left bottom / contain no-repeat;
+  mix-blend-mode: screen;
+}
+
+.wp-admin-brand {
+  position: relative;
+  z-index: 2;
+  padding: 3px 7px 22px;
+  border-bottom: 1px solid rgba(255,255,255,.13);
+}
+
+.wp-admin-brand-link {
+  display: block;
+}
+
+.wp-admin-brand-logo {
+  display: block;
+  width: 190px;
+  height: 54px;
+  object-fit: contain;
+  object-position: left center;
+}
+
+.wp-admin-portal-label {
+  display: block;
+  margin-top: 6px;
+  color: rgba(255,255,255,.58);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .18em;
+}
+
+.wp-admin-sidebar-nav {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  padding: 22px 0;
+}
+
+.wp-admin-nav-section {
+  display: block;
+  padding: 0 13px 9px;
+  color: rgba(255,255,255,.42);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .16em;
+}
+
+.wp-admin-nav-section-secondary {
+  margin-top: 27px;
+}
+
+.wp-admin-side-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  margin-bottom: 5px;
+  padding: 0 13px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: rgba(255,255,255,.79);
+  font-size: 11px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: .15s ease;
+}
+
+.wp-admin-side-link svg {
+  flex: 0 0 auto;
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.wp-admin-side-link:first-of-type svg {
+  fill: currentColor;
+  stroke: none;
+}
+
+.wp-admin-side-link:hover {
+  background: rgba(255,255,255,.08);
+  color: #fff;
+}
+
+.wp-admin-side-link.active {
+  border-color: rgba(255,255,255,.11);
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,.18),
+    rgba(255,255,255,.10)
+  );
+  color: #fff;
+  box-shadow: inset 3px 0 0 rgba(255,255,255,.72);
+}
+
+.wp-admin-side-badge {
+  min-width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--wp-admin-green);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.wp-admin-sidebar-footer {
+  position: relative;
+  z-index: 2;
+  padding-top: 17px;
+  border-top: 1px solid rgba(255,255,255,.13);
+}
+
+.wp-admin-sidebar-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 8px 13px;
+}
+
+.wp-admin-sidebar-profile img,
+.wp-admin-top-profile img {
+  object-fit: cover;
+  object-position: center;
+  border-radius: 50%;
+}
+
+.wp-admin-sidebar-profile img {
+  width: 34px;
+  height: 34px;
+  border: 2px solid rgba(255,255,255,.68);
+}
+
+.wp-admin-sidebar-profile div,
+.wp-admin-top-profile div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.wp-admin-sidebar-profile strong {
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.wp-admin-sidebar-profile span {
+  margin-top: 2px;
+  color: rgba(255,255,255,.52);
+  font-size: 8px;
+}
+
+.wp-admin-signout {
+  width: 100%;
+  min-height: 39px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: rgba(255,255,255,.68);
+  font: 600 10px 'Inter', sans-serif;
+  cursor: pointer;
+}
+
+.wp-admin-signout svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.wp-admin-signout:hover {
+  background: rgba(255,255,255,.08);
+  color: #fff;
+}
+
+.wp-admin-sidebar-tagline {
+  margin: 18px 9px 2px;
+  max-width: 110px;
+  color: rgba(255,255,255,.35);
+  font: 700 8px/1.7 'Inter', sans-serif;
+  letter-spacing: .18em;
+}
+
+/* =========================================================
+   MAIN + TOP BAR
+   ========================================================= */
+
+.wp-admin-main {
+  min-width: 0;
+  min-height: 100vh;
+}
+
+.wp-admin-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 0 30px;
+  border-bottom: 1px solid rgba(13,79,60,.10);
+  background: rgba(255,253,249,.96);
+  backdrop-filter: blur(14px);
+}
+
+.wp-admin-menu-toggle {
+  display: none;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--wp-admin-line);
+  border-radius: 9px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.wp-admin-menu-toggle span {
+  display: block;
+  width: 15px;
+  height: 1.5px;
+  margin: 3px auto;
+  background: var(--wp-admin-green);
+}
+
+.wp-admin-topbar-title {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.wp-admin-topbar-title > span {
+  color: var(--wp-admin-green);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .16em;
+}
+
+.wp-admin-topbar-title > strong {
+  color: var(--wp-admin-green-deep);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 21px;
+  line-height: 1;
+  font-weight: 600;
+}
+
+.wp-admin-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 19px;
+  margin-left: auto;
+}
+
+.wp-admin-date {
+  color: var(--wp-admin-muted);
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.wp-admin-top-profile {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding-left: 18px;
+  border-left: 1px solid var(--wp-admin-line);
+}
+
+.wp-admin-top-profile img {
+  width: 34px;
+  height: 34px;
+  border: 2px solid #dce8e2;
+}
+
+.wp-admin-top-profile strong {
+  color: var(--wp-admin-green-deep);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.wp-admin-top-profile span {
+  margin-top: 2px;
+  color: var(--wp-admin-muted);
+  font-size: 8px;
+}
+
+.wp-admin-content {
+  position: relative;
+  min-height: calc(100vh - 76px);
+  padding: 30px;
+}
+
+.wp-admin-content::after {
+  content: '';
+  position: fixed;
+  z-index: 0;
+  right: -85px;
+  top: 130px;
+  width: 280px;
+  height: 430px;
+  opacity: .045;
+  pointer-events: none;
+  background: url('../assets/palm-right.jpg') right top / contain no-repeat;
+  mix-blend-mode: multiply;
+}
+
+.wp-admin-content > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* =========================================================
+   BRIDGE EXISTING ADMIN PAGES INTO THE NEW SHELL
+   ========================================================= */
+
+.wp-admin-content .universal-admin-page {
+  min-height: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+/*
+  App.jsx wraps all admin pages in AdminShell already, so this protects
+  against old page wrappers trying to re-create a full-screen canvas.
+*/
+.wp-admin-content .admin-page,
+.wp-admin-content .activity-page,
+.wp-admin-content .tracker-page,
+.wp-admin-content .student-detail-page,
+.wp-admin-content .student-detail,
+.wp-admin-content .inquiry-page {
+  min-height: auto !important;
+  max-width: none !important;
+  margin: 0 !important;
+  background: transparent !important;
+}
+
+/* AdminDashboard's old internal header is not needed inside this shell. */
+.wp-admin-content .admin-topbar {
+  display: none !important;
+}
+
+/* Main cards/tables use the visual language from the generated concept. */
+.wp-admin-content .students-card,
+.wp-admin-content .activity-table-wrapper,
+.wp-admin-content .tracker-table-wrapper,
+.wp-admin-content .inquiry-table-card,
+.wp-admin-content .detail-form,
+.wp-admin-content .summary-card,
+.wp-admin-content .inquiry-stat {
+  border-color: rgba(13,79,60,.10) !important;
+  background: rgba(255,255,255,.91) !important;
+  box-shadow: 0 10px 28px rgba(13,79,60,.055) !important;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+.wp-admin-mobile-backdrop {
+  display: none;
+}
+
+@media (max-width: 940px) {
+  .wp-admin-app {
+    grid-template-columns: 210px minmax(0, 1fr);
+  }
+
+  .wp-admin-brand-logo {
+    width: 170px;
+  }
+
+  .wp-admin-topbar {
+    padding: 0 22px;
+  }
+
+  .wp-admin-content {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 760px) {
+  .wp-admin-app {
+    display: block;
+  }
+
+  .wp-admin-sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 245px;
+    transform: translateX(-102%);
+    transition: transform .18s ease;
+  }
+
+  .wp-admin-sidebar.open {
+    transform: translateX(0);
+  }
+
+  .wp-admin-mobile-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+    display: block;
+    border: 0;
+    background: rgba(7,62,48,.38);
+    backdrop-filter: blur(3px);
+  }
+
+  .wp-admin-menu-toggle {
+    display: block;
+    flex: 0 0 auto;
+  }
+
+  .wp-admin-topbar {
+    min-height: 68px;
+    padding: 0 18px;
+  }
+
+  .wp-admin-date {
+    display: none;
+  }
+
+  .wp-admin-top-profile {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .wp-admin-content {
+    min-height: calc(100vh - 68px);
+    padding: 20px 16px 28px;
+  }
+}
+
+@media (max-width: 480px) {
+  .wp-admin-topbar-title > span {
+    display: none;
+  }
+
+  .wp-admin-topbar-title > strong {
+    font-size: 18px;
+  }
+
+  .wp-admin-top-profile div {
+    display: none;
+  }
+
+  .wp-admin-top-profile img {
+    width: 32px;
+    height: 32px;
+  }
+
+  .wp-admin-content {
+    padding: 16px 12px 24px;
+  }
+}
+
+
+/* =========================================================
+   V3 LAYOUT REFINEMENTS
+   ========================================================= */
+
+.wp-admin-sidebar {
+  padding-top: 16px;
+}
+
+.wp-admin-brand {
+  padding: 0 4px 24px;
+}
+
+.wp-admin-brand-logo {
+  width: 218px;
+  height: 72px;
+}
+
+.wp-admin-sidebar-nav {
+  flex: 0 0 auto;
+  padding-bottom: 24px;
+}
+
+.wp-admin-sidebar-footer,
+.wp-admin-nav-section-secondary {
+  display: none !important;
+}
+
+.wp-admin-top-profile {
+  gap: 10px;
+  padding-left: 18px;
+}
+
+.wp-admin-top-signout {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 7px;
+  padding: 0 11px;
+  border: 1px solid #d9dfdc;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--wp-admin-green-deep);
+  font: 700 9px 'Inter', sans-serif;
+  cursor: pointer;
+  transition: .15s ease;
+}
+
+.wp-admin-top-signout svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.wp-admin-top-signout:hover {
+  border-color: var(--wp-admin-green);
+  background: var(--wp-admin-green);
+  color: #fff;
+}
+
+/* Payment Management is the layout authority: 1100px centered. */
+.wp-admin-content {
+  padding-left: 28px;
+  padding-right: 28px;
+}
+
+.wp-admin-content > * {
+  width: min(1100px, 100%) !important;
+  max-width: 1100px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.wp-admin-content .admin-page,
+.wp-admin-content .activity-page,
+.wp-admin-content .tracker-page,
+.wp-admin-content .student-detail-page,
+.wp-admin-content .student-detail,
+.wp-admin-content .inquiry-page,
+.wp-admin-content .detail-page {
+  width: 100% !important;
+  max-width: 1100px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+.wp-admin-content .students-card,
+.wp-admin-content .activity-table-wrapper,
+.wp-admin-content .tracker-table-card,
+.wp-admin-content .tracker-table-wrapper,
+.wp-admin-content .inquiry-table-card,
+.wp-admin-content .detail-form,
+.wp-admin-content .tracker-filter-card,
+.wp-admin-content .activity-filter-card,
+.wp-admin-content .inquiry-toolbar,
+.wp-admin-content .summary-grid,
+.wp-admin-content .tracker-summary,
+.wp-admin-content .activity-summary,
+.wp-admin-content .inquiry-stats {
+  width: 100% !important;
+  max-width: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  box-sizing: border-box;
+}
+
+.wp-admin-content .tracker-page {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+@media (max-width: 940px) {
+  .wp-admin-brand-logo {
+    width: 188px;
+    height: 64px;
+  }
+}
+
+@media (max-width: 760px) {
+  .wp-admin-brand-logo {
+    width: 205px;
+    height: 68px;
+  }
+
+  .wp-admin-content {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .wp-admin-top-profile {
+    gap: 7px;
+  }
+
+  .wp-admin-top-signout {
+    margin-left: 3px;
+  }
+}
+
+@media (max-width: 520px) {
+  .wp-admin-top-profile > div {
+    display: none;
+  }
+
+  .wp-admin-top-signout span {
+    display: none;
+  }
+
+  .wp-admin-top-signout {
+    width: 34px;
+    padding: 0;
+    justify-content: center;
+  }
+}

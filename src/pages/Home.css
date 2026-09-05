@@ -961,7 +961,7 @@
 
 .wp-header-logo {
   display: block !important;
-  width: 355px !important;
+  width: 365px !important;
   height: 100px !important;
   object-fit: contain !important;
   object-position: left center !important;
@@ -1672,4 +1672,26 @@
   .wp-contact-submit {
     width: 100%;
   }
+}
+.inquiry-modal-actions button.status-active {
+  font-weight: 700;
+  border-width: 1px;
+}
+
+.inquiry-modal-actions button.status-active.replied {
+  background: #edf5f1;
+  border-color: #8db8a8;
+  color: #2f6856;
+}
+
+.inquiry-modal-actions button.status-active.closed {
+  background: #f5f1e8;
+  border-color: #c5aa6a;
+  color: #806126;
+}
+
+.inquiry-modal-actions button.status-active.spam {
+  background: #f8eceb;
+  border-color: #d7a19c;
+  color: #a33c35;
 }

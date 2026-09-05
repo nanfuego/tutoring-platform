@@ -43,6 +43,7 @@ export default function InquiryTracker() {
   const [selected, setSelected] = useState(null)
   const [saving, setSaving] = useState(false)
   const [page, setPage] = useState(1)
+  const [actionMessage, setActionMessage] = useState('')
 
   async function loadInquiries() {
     setLoading(true)
@@ -131,6 +132,17 @@ export default function InquiryTracker() {
       current.map((item) => (item.id === data.id ? data : item)),
     )
     setSelected(data)
+    const messages = {
+  replied: 'Marked as Replied',
+  closed: 'Inquiry Closed',
+  spam: 'Marked as Spam',
+}
+
+setActionMessage(messages[nextStatus] || 'Status updated')
+
+setTimeout(() => {
+  setActionMessage('')
+}, 2200)
     setSaving(false)
   }
 
@@ -368,7 +380,14 @@ export default function InquiryTracker() {
               <span>Message</span>
               <p>{selected.message}</p>
             </div>
-
+{actionMessage && (
+  <div
+    className={`inquiry-action-feedback ${selected.status}`}
+  >
+    <span>✓</span>
+    {actionMessage}
+  </div>
+)}
             <div className="inquiry-modal-actions">
               <a
                 className="inquiry-primary"
@@ -382,29 +401,32 @@ export default function InquiryTracker() {
                 Reply by Email
               </a>
 
-              <button
-                type="button"
-                onClick={() => updateStatus(selected, 'replied')}
-                disabled={saving || selected.status === 'replied'}
-              >
-                Mark Replied
-              </button>
+<button
+  type="button"
+  className={selected.status === 'replied' ? 'status-active replied' : ''}
+  onClick={() => updateStatus(selected, 'replied')}
+  disabled={saving || selected.status === 'replied'}
+>
+  {selected.status === 'replied' ? '✓ Replied' : 'Mark Replied'}
+</button>
 
-              <button
-                type="button"
-                onClick={() => updateStatus(selected, 'closed')}
-                disabled={saving || selected.status === 'closed'}
-              >
-                Close
-              </button>
+<button
+  type="button"
+  className={selected.status === 'closed' ? 'status-active closed' : ''}
+  onClick={() => updateStatus(selected, 'closed')}
+  disabled={saving || selected.status === 'closed'}
+>
+  {selected.status === 'closed' ? '✓ Closed' : 'Close'}
+</button>
 
-              <button
-                type="button"
-                onClick={() => updateStatus(selected, 'spam')}
-                disabled={saving || selected.status === 'spam'}
-              >
-                Spam
-              </button>
+<button
+  type="button"
+  className={selected.status === 'spam' ? 'status-active spam' : ''}
+  onClick={() => updateStatus(selected, 'spam')}
+  disabled={saving || selected.status === 'spam'}
+>
+  {selected.status === 'spam' ? '✓ Spam' : 'Spam'}
+</button>
 
               <button
                 type="button"

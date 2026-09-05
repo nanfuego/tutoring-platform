@@ -1,719 +1,1526 @@
-/* =========================================================
-   UNIVERSAL ADMIN DESIGN
-   The AdminDashboard visual language is now the shared shell.
-   ========================================================= */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
 
-.universal-admin-page {
-  --ua-bg: #f8f7f3;
-  --ua-surface: #ffffff;
-  --ua-ink: #222;
-  --ua-muted: #777;
-  --ua-border: #dedbd4;
-  --ua-accent: #426b62;
-  --ua-accent-soft: #edf1ef;
-  --ua-danger: #b3423a;
+.wp-admin-app {
+  --wp-admin-green: #0d4f3c;
+  --wp-admin-green-deep: #073e30;
+  --wp-admin-green-bright: #126a53;
+  --wp-admin-green-soft: #e8f0eb;
+  --wp-admin-cream: #fbfaf5;
+  --wp-admin-paper: #fffdf9;
+  --wp-admin-text: #183f35;
+  --wp-admin-body: #344b44;
+  --wp-admin-muted: #7b8782;
+  --wp-admin-line: #dfe3dd;
+  --wp-admin-danger: #a33a35;
 
   min-height: 100vh;
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  background:
+    radial-gradient(circle at 92% 2%, rgba(13,79,60,.035), transparent 24%),
+    linear-gradient(180deg, #fbfaf5 0%, #f4f3ed 100%);
+  color: var(--wp-admin-text);
+  font-family: 'Inter', sans-serif;
+}
+
+.wp-admin-app *,
+.wp-admin-app *::before,
+.wp-admin-app *::after {
   box-sizing: border-box;
-  padding: 2rem;
-  background: var(--ua-bg);
-  color: var(--ua-ink);
 }
 
-.universal-admin-header,
-.universal-admin-content {
-  width: min(1400px, 100%);
-  margin: 0 auto;
-}
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
 
-.universal-admin-header {
+.wp-admin-sidebar {
+  position: sticky;
+  top: 0;
+  z-index: 1200;
+  min-height: 100vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-}
-
-.universal-admin-header-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.universal-admin-welcome {
-  margin: 0;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 1.6rem;
-  font-weight: 500;
-  color: var(--ua-ink);
-}
-
-.universal-admin-clock {
-  margin: .15rem 0 0;
-  font-family: Arial, sans-serif;
-  font-size: .8rem;
-  color: var(--ua-muted);
-}
-
-.universal-admin-logout {
-  border: none;
-  border-radius: 8px;
-  padding: .6rem 1rem;
-  background: var(--ua-danger);
+  padding: 22px 16px 18px;
+  overflow-y: auto;
+  background:
+    radial-gradient(circle at 30% 102%, rgba(255,255,255,.09), transparent 22%),
+    linear-gradient(180deg, #0b4a39 0%, #073e30 100%);
   color: #fff;
-  font: 500 .8rem Arial, sans-serif;
-  cursor: pointer;
+  box-shadow: 10px 0 35px rgba(7,62,48,.10);
 }
 
-.universal-admin-logout:hover {
-  background: #963630;
+.wp-admin-sidebar::after {
+  content: '';
+  position: absolute;
+  left: -72px;
+  bottom: -55px;
+  width: 230px;
+  height: 310px;
+  pointer-events: none;
+  opacity: .08;
+  background: url('../assets/palm-left.jpg') left bottom / contain no-repeat;
+  mix-blend-mode: screen;
 }
 
-.universal-admin-nav {
+.wp-admin-brand {
+  position: relative;
+  z-index: 2;
+  padding: 3px 7px 22px;
+  border-bottom: 1px solid rgba(255,255,255,.13);
+}
+
+.wp-admin-brand-link {
+  display: block;
+}
+
+.wp-admin-brand-logo {
+  display: block;
+  width: 190px;
+  height: 54px;
+  object-fit: contain;
+  object-position: left center;
+}
+
+.wp-admin-portal-label {
+  display: block;
+  margin-top: 6px;
+  color: rgba(255,255,255,.58);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .18em;
+}
+
+.wp-admin-sidebar-nav {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  padding: 22px 0;
+}
+
+.wp-admin-nav-section {
+  display: block;
+  padding: 0 13px 9px;
+  color: rgba(255,255,255,.42);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .16em;
+}
+
+.wp-admin-nav-section-secondary {
+  margin-top: 27px;
+}
+
+.wp-admin-side-link {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: .45rem;
-  min-height: 42px;
-  flex-wrap: wrap;
-}
-
-.universal-admin-nav-link {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: .35rem;
-  min-height: 38px;
-  box-sizing: border-box;
-  padding: .6rem .9rem;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--ua-muted);
-  font: 500 .85rem Arial, sans-serif;
+  gap: 12px;
+  min-height: 44px;
+  margin-bottom: 5px;
+  padding: 0 13px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: rgba(255,255,255,.79);
+  font-size: 11px;
+  font-weight: 500;
   text-decoration: none;
-  cursor: pointer;
   transition: .15s ease;
 }
 
-.universal-admin-nav-link:hover,
-.universal-admin-nav-link.active {
-  background: var(--ua-accent-soft);
-  color: var(--ua-accent);
+.wp-admin-side-link svg {
+  flex: 0 0 auto;
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
-.universal-admin-nav-link.active {
-  font-weight: 600;
+.wp-admin-side-link:first-of-type svg {
+  fill: currentColor;
+  stroke: none;
 }
 
-.universal-admin-nav-link .caret {
-  font-size: .72rem;
+.wp-admin-side-link:hover {
+  background: rgba(255,255,255,.08);
+  color: #fff;
 }
 
-.universal-admin-divider {
-  width: 1px;
-  height: 24px;
-  margin: 0 .2rem;
-  background: var(--ua-border);
+.wp-admin-side-link.active {
+  border-color: rgba(255,255,255,.11);
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,.18),
+    rgba(255,255,255,.10)
+  );
+  color: #fff;
+  box-shadow: inset 3px 0 0 rgba(255,255,255,.72);
 }
 
-.universal-admin-manager {
-  position: relative;
-}
-
-.universal-admin-manager-menu {
-  position: absolute;
-  z-index: 5000;
-  top: calc(100% + 5px);
-  left: 0;
-  width: 205px;
-  padding: .4rem;
-  border: 1px solid var(--ua-border);
-  border-radius: 9px;
+.wp-admin-side-badge {
+  min-width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  padding: 0 6px;
+  border-radius: 999px;
   background: #fff;
-  box-shadow: 0 15px 35px rgba(0,0,0,.12);
+  color: var(--wp-admin-green);
+  font-size: 9px;
+  font-weight: 800;
 }
 
-.universal-admin-manager-menu button {
+.wp-admin-sidebar-footer {
+  position: relative;
+  z-index: 2;
+  padding-top: 17px;
+  border-top: 1px solid rgba(255,255,255,.13);
+}
+
+.wp-admin-sidebar-profile {
   display: flex;
   align-items: center;
-  gap: .65rem;
+  gap: 10px;
+  padding: 4px 8px 13px;
+}
+
+.wp-admin-sidebar-profile img,
+.wp-admin-top-profile img {
+  object-fit: cover;
+  object-position: center;
+  border-radius: 50%;
+}
+
+.wp-admin-sidebar-profile img {
+  width: 34px;
+  height: 34px;
+  border: 2px solid rgba(255,255,255,.68);
+}
+
+.wp-admin-sidebar-profile div,
+.wp-admin-top-profile div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.wp-admin-sidebar-profile strong {
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.wp-admin-sidebar-profile span {
+  margin-top: 2px;
+  color: rgba(255,255,255,.52);
+  font-size: 8px;
+}
+
+.wp-admin-signout {
   width: 100%;
-  padding: .7rem .75rem;
+  min-height: 39px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 11px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 9px;
   background: transparent;
-  color: var(--ua-ink);
-  font: 500 .8rem Arial, sans-serif;
-  text-align: left;
+  color: rgba(255,255,255,.68);
+  font: 600 10px 'Inter', sans-serif;
   cursor: pointer;
 }
 
-.universal-admin-manager-menu button:hover {
-  background: var(--ua-accent-soft);
-  color: var(--ua-accent);
+.wp-admin-signout svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
-.menu-symbol {
-  width: 20px;
-  color: var(--ua-accent);
-  font-size: 1rem;
-  text-align: center;
+.wp-admin-signout:hover {
+  background: rgba(255,255,255,.08);
+  color: #fff;
 }
 
-.danger-symbol {
-  color: var(--ua-danger);
-}
-
-.universal-admin-content {
-  padding-top: 1.5rem;
-}
-
-/* Hide the old AdminDashboard chrome because AdminShell now owns it.
-   Its student table, filters and existing business logic remain intact. */
-.universal-admin-content > .admin-page {
-  min-height: auto;
-  padding: 0;
-  background: transparent;
-}
-
-.universal-admin-content > .admin-page .admin-topbar {
-  display: none;
-}
-
-/* Normalize the page wrappers underneath the shared header. */
-.universal-admin-content > .activity-page,
-.universal-admin-content > .tracker-page,
-.universal-admin-content > .student-detail-page,
-.universal-admin-content > .student-detail {
-  max-width: none;
-  margin: 0;
-  padding-top: 0;
-  background: transparent;
+.wp-admin-sidebar-tagline {
+  margin: 18px 9px 2px;
+  max-width: 110px;
+  color: rgba(255,255,255,.35);
+  font: 700 8px/1.7 'Inter', sans-serif;
+  letter-spacing: .18em;
 }
 
 /* =========================================================
-   GLOBAL MODALS
-   These work from Student Manager regardless of active panel.
+   MAIN + TOP BAR
    ========================================================= */
 
-.universal-modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 9000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  box-sizing: border-box;
-  background: rgba(28, 32, 30, .52);
-  backdrop-filter: blur(4px);
-}
-
-.universal-modal {
-  width: min(900px, calc(100vw - 48px));
-  max-height: calc(100vh - 48px);
-  overflow: auto;
-  box-sizing: border-box;
-  border: 1px solid var(--ua-border);
-  border-radius: 14px;
-  background: #fff;
-  box-shadow: 0 28px 80px rgba(0,0,0,.22);
-}
-
-.add-modal {
-  padding: 0;
-}
-
-.delete-modal {
-  width: min(720px, calc(100vw - 48px));
-  padding: 0;
-}
-
-.universal-modal-header {
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 24px 26px 20px;
-  border-bottom: 1px solid #e8e6e1;
-}
-
-.universal-modal-kicker {
-  display: block;
-  margin-bottom: 7px;
-  color: var(--ua-accent);
-  font: 650 .62rem Arial, sans-serif;
-  letter-spacing: .12em;
-}
-
-.universal-modal-kicker.danger-kicker {
-  color: var(--ua-danger);
-}
-
-.universal-modal-header h2 {
-  margin: 0 0 6px;
-  font: 500 1.55rem Georgia, "Times New Roman", serif;
-}
-
-.universal-modal-header p {
-  max-width: 650px;
-  margin: 0;
-  color: var(--ua-muted);
-  font: .8rem/1.5 Arial, sans-serif;
-}
-
-.universal-modal-close {
-  flex: 0 0 auto;
-  width: 34px;
-  height: 34px;
-  border: 1px solid var(--ua-border);
-  border-radius: 8px;
-  background: #fafaf8;
-  color: #66706b;
-  font-size: 23px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.universal-modal-close:hover {
-  background: #efefeb;
-}
-
-.universal-modal-error {
-  margin: 16px 26px 0;
-  padding: 10px 12px;
-  border: 1px solid #e2b6b2;
-  border-radius: 8px;
-  background: #fff3f2;
-  color: #8f302b;
-  font: .78rem/1.45 Arial, sans-serif;
-}
-
-.universal-form-section {
-  padding: 22px 26px;
-  border-bottom: 1px solid #eceae5;
-}
-
-.universal-section-title {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  margin-bottom: 18px;
-}
-
-.universal-section-title > span {
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: var(--ua-accent-soft);
-  color: var(--ua-accent);
-  font: 700 .68rem Arial, sans-serif;
-}
-
-.universal-section-title h3 {
-  margin: 0 0 3px;
-  font: 500 1.05rem Georgia, "Times New Roman", serif;
-}
-
-.universal-section-title p {
-  margin: 0;
-  color: var(--ua-muted);
-  font: .72rem/1.45 Arial, sans-serif;
-}
-
-.universal-form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-}
-
-.universal-form-grid label,
-.credential-card label {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  color: #69716d;
-  font: 500 .7rem Arial, sans-serif;
-}
-
-.universal-form-grid label.full {
-  grid-column: 1 / -1;
-}
-
-.universal-form-grid input,
-.universal-form-grid select,
-.credential-card input,
-.delete-toolbar input {
-  width: 100%;
-  min-height: 38px;
-  box-sizing: border-box;
-  padding: 8px 10px;
-  border: 1px solid #dcded9;
-  border-radius: 7px;
-  outline: none;
-  background: #fff;
-  color: var(--ua-ink);
-  font: .82rem Arial, sans-serif;
-}
-
-.universal-form-grid input:focus,
-.universal-form-grid select:focus,
-.credential-card input:focus,
-.delete-toolbar input:focus {
-  border-color: #8ea8a0;
-  box-shadow: 0 0 0 3px rgba(66,107,98,.07);
-}
-
-.credential-cards {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-}
-
-.credential-card {
-  padding: 16px;
-  border: 1px solid #e0e1dd;
-  border-radius: 10px;
-  background: #fafbf9;
-}
-
-.credential-card-heading {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 14px;
-}
-
-.credential-card-heading strong {
-  font: 500 1rem Georgia, "Times New Roman", serif;
-  color: var(--ua-ink);
-}
-
-.credential-card-heading span {
-  color: var(--ua-muted);
-  font: .62rem Arial, sans-serif;
-}
-
-.credential-card label + label {
-  margin-top: 11px;
-}
-
-.credential-password {
-  display: flex;
-  gap: 6px;
-}
-
-.credential-password input {
-  flex: 1;
-}
-
-.credential-password button {
-  min-width: 55px;
-  border: 1px solid #dcded9;
-  border-radius: 7px;
-  background: #fff;
-  color: #68716c;
-  font: .7rem Arial, sans-serif;
-  cursor: pointer;
-}
-
-.universal-modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 9px;
-  padding: 16px 26px;
-  background: #fafaf8;
-}
-
-.primary-button,
-.secondary-button,
-.danger-button {
-  min-height: 38px;
-  padding: 0 14px;
-  border-radius: 7px;
-  font: 600 .75rem Arial, sans-serif;
-  cursor: pointer;
-}
-
-.primary-button {
-  border: 1px solid var(--ua-accent);
-  background: var(--ua-accent);
-  color: #fff;
-}
-
-.primary-button:hover {
-  background: #365b53;
-}
-
-.secondary-button {
-  border: 1px solid #d8d9d5;
-  background: #fff;
-  color: #5e6762;
-}
-
-.secondary-button:hover {
-  background: #f1f1ed;
-}
-
-.danger-button {
-  border: 1px solid var(--ua-danger);
-  background: var(--ua-danger);
-  color: #fff;
-}
-
-.danger-button:hover {
-  background: #963630;
-}
-
-.primary-button:disabled,
-.secondary-button:disabled,
-.danger-button:disabled {
-  opacity: .5;
-  cursor: not-allowed;
-}
-
-/* Delete modal */
-.delete-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px 26px;
-  border-bottom: 1px solid #eceae5;
-}
-
-.delete-toolbar input {
-  flex: 1;
-}
-
-.delete-toolbar > span {
-  flex: 0 0 auto;
-  color: var(--ua-muted);
-  font: .7rem Arial, sans-serif;
-}
-
-.delete-list {
-  max-height: 430px;
-  overflow-y: auto;
-  padding: 8px 12px;
-}
-
-.delete-select-all,
-.delete-student-row {
-  width: 100%;
-  box-sizing: border-box;
-  border: 0;
-  text-align: left;
-  cursor: pointer;
-}
-
-.delete-select-all {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-bottom: 1px solid #eceae5;
-  background: transparent;
-  color: var(--ua-muted);
-  font: 600 .7rem Arial, sans-serif;
-}
-
-.delete-student-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  border-radius: 8px;
-  background: transparent;
-}
-
-.delete-student-row:hover,
-.delete-student-row.selected {
-  background: var(--ua-accent-soft);
-}
-
-.delete-checkbox {
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  width: 20px;
-  height: 20px;
-  box-sizing: border-box;
-  border: 1px solid #b7beb9;
-  border-radius: 5px;
-  background: #fff;
-  color: #fff;
-  font: 700 .75rem Arial, sans-serif;
-}
-
-.delete-checkbox.checked {
-  border-color: var(--ua-accent);
-  background: var(--ua-accent);
-}
-
-.delete-student-info {
-  display: flex;
-  flex: 1;
+.wp-admin-main {
   min-width: 0;
+  min-height: 100vh;
+}
+
+.wp-admin-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 0 30px;
+  border-bottom: 1px solid rgba(13,79,60,.10);
+  background: rgba(255,253,249,.96);
+  backdrop-filter: blur(14px);
+}
+
+.wp-admin-menu-toggle {
+  display: none;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--wp-admin-line);
+  border-radius: 9px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.wp-admin-menu-toggle span {
+  display: block;
+  width: 15px;
+  height: 1.5px;
+  margin: 3px auto;
+  background: var(--wp-admin-green);
+}
+
+.wp-admin-topbar-title {
+  display: flex;
   flex-direction: column;
   gap: 3px;
 }
 
-.delete-student-info strong {
-  overflow: hidden;
-  color: var(--ua-ink);
-  font: 600 .8rem Arial, sans-serif;
-  text-overflow: ellipsis;
+.wp-admin-topbar-title > span {
+  color: var(--wp-admin-green);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .16em;
+}
+
+.wp-admin-topbar-title > strong {
+  color: var(--wp-admin-green-deep);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 21px;
+  line-height: 1;
+  font-weight: 600;
+}
+
+.wp-admin-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 19px;
+  margin-left: auto;
+}
+
+.wp-admin-date {
+  color: var(--wp-admin-muted);
+  font-size: 9px;
   white-space: nowrap;
 }
 
-.delete-student-info span {
-  overflow: hidden;
-  color: var(--ua-muted);
-  font: .68rem Arial, sans-serif;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.wp-admin-top-profile {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding-left: 18px;
+  border-left: 1px solid var(--wp-admin-line);
 }
 
-.delete-active-state {
-  flex: 0 0 auto;
-  padding: 4px 7px;
-  border-radius: 999px;
-  font: 600 .6rem Arial, sans-serif;
+.wp-admin-top-profile img {
+  width: 34px;
+  height: 34px;
+  border: 2px solid #dce8e2;
 }
 
-.delete-active-state.active {
-  background: #edf5ef;
-  color: #39704b;
+.wp-admin-top-profile strong {
+  color: var(--wp-admin-green-deep);
+  font-size: 10px;
+  font-weight: 700;
 }
 
-.delete-active-state.inactive {
-  background: #f0f0ed;
-  color: #7a807c;
+.wp-admin-top-profile span {
+  margin-top: 2px;
+  color: var(--wp-admin-muted);
+  font-size: 8px;
 }
 
-.delete-empty {
-  padding: 40px 20px;
-  text-align: center;
-  color: var(--ua-muted);
-  font: .78rem Arial, sans-serif;
+.wp-admin-content {
+  position: relative;
+  min-height: calc(100vh - 76px);
+  padding: 30px;
+}
+
+.wp-admin-content::after {
+  content: '';
+  position: fixed;
+  z-index: 0;
+  right: -85px;
+  top: 130px;
+  width: 280px;
+  height: 430px;
+  opacity: .045;
+  pointer-events: none;
+  background: url('../assets/palm-right.jpg') right top / contain no-repeat;
+  mix-blend-mode: multiply;
+}
+
+.wp-admin-content > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* =========================================================
+   BRIDGE EXISTING ADMIN PAGES INTO THE NEW SHELL
+   ========================================================= */
+
+.wp-admin-content .universal-admin-page {
+  min-height: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+/*
+  App.jsx wraps all admin pages in AdminShell already, so this protects
+  against old page wrappers trying to re-create a full-screen canvas.
+*/
+.wp-admin-content .admin-page,
+.wp-admin-content .activity-page,
+.wp-admin-content .tracker-page,
+.wp-admin-content .student-detail-page,
+.wp-admin-content .student-detail,
+.wp-admin-content .inquiry-page {
+  min-height: auto !important;
+  max-width: none !important;
+  margin: 0 !important;
+  background: transparent !important;
+}
+
+/* AdminDashboard's old internal header is not needed inside this shell. */
+.wp-admin-content .admin-topbar {
+  display: none !important;
+}
+
+/* Main cards/tables use the visual language from the generated concept. */
+.wp-admin-content .students-card,
+.wp-admin-content .activity-table-wrapper,
+.wp-admin-content .tracker-table-wrapper,
+.wp-admin-content .inquiry-table-card,
+.wp-admin-content .detail-form,
+.wp-admin-content .summary-card,
+.wp-admin-content .inquiry-stat {
+  border-color: rgba(13,79,60,.10) !important;
+  background: rgba(255,255,255,.91) !important;
+  box-shadow: 0 10px 28px rgba(13,79,60,.055) !important;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+.wp-admin-mobile-backdrop {
+  display: none;
+}
+
+@media (max-width: 940px) {
+  .wp-admin-app {
+    grid-template-columns: 210px minmax(0, 1fr);
+  }
+
+  .wp-admin-brand-logo {
+    width: 170px;
+  }
+
+  .wp-admin-topbar {
+    padding: 0 22px;
+  }
+
+  .wp-admin-content {
+    padding: 24px;
+  }
 }
 
 @media (max-width: 760px) {
-  .universal-admin-page {
-    padding: 1.25rem;
+  .wp-admin-app {
+    display: block;
   }
 
-  .universal-admin-nav {
-    overflow-x: auto;
-    flex-wrap: nowrap;
+  .wp-admin-sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 245px;
+    transform: translateX(-102%);
+    transition: transform .18s ease;
   }
 
-  .universal-admin-nav-link {
+  .wp-admin-sidebar.open {
+    transform: translateX(0);
+  }
+
+  .wp-admin-mobile-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+    display: block;
+    border: 0;
+    background: rgba(7,62,48,.38);
+    backdrop-filter: blur(3px);
+  }
+
+  .wp-admin-menu-toggle {
+    display: block;
     flex: 0 0 auto;
-    font-size: .78rem;
   }
 
-  .universal-form-grid,
-  .credential-cards {
-    grid-template-columns: 1fr;
+  .wp-admin-topbar {
+    min-height: 68px;
+    padding: 0 18px;
   }
 
-  .universal-form-grid label.full {
-    grid-column: auto;
+  .wp-admin-date {
+    display: none;
   }
 
-  .universal-modal-overlay {
-    align-items: flex-end;
-    padding: 0;
+  .wp-admin-top-profile {
+    padding-left: 0;
+    border-left: 0;
   }
 
-  .universal-modal,
-  .delete-modal {
-    width: 100%;
-    max-width: none;
-    max-height: 94vh;
-    border-radius: 14px 14px 0 0;
-  }
-
-  .universal-modal-header,
-  .universal-form-section {
-    padding-left: 18px;
-    padding-right: 18px;
-  }
-
-  .universal-modal-footer {
-    padding-left: 18px;
-    padding-right: 18px;
-  }
-
-  .delete-toolbar {
-    padding-left: 18px;
-    padding-right: 18px;
+  .wp-admin-content {
+    min-height: calc(100vh - 68px);
+    padding: 20px 16px 28px;
   }
 }
 
 @media (max-width: 480px) {
-  .universal-admin-page {
-    padding: 1rem;
-  }
-
-  .universal-admin-welcome {
-    font-size: 1.3rem;
-  }
-
-  .universal-admin-header-row {
-    align-items: flex-start;
-  }
-
-  .universal-admin-logout {
-    padding: .5rem .75rem;
-  }
-
-  .universal-modal-header h2 {
-    font-size: 1.35rem;
-  }
-
-  .universal-modal-header p {
-    font-size: .72rem;
-  }
-
-  .universal-form-section {
-    padding-top: 18px;
-    padding-bottom: 18px;
-  }
-
-  .delete-active-state {
+  .wp-admin-topbar-title > span {
     display: none;
   }
+
+  .wp-admin-topbar-title > strong {
+    font-size: 18px;
+  }
+
+  .wp-admin-top-profile div {
+    display: none;
+  }
+
+  .wp-admin-top-profile img {
+    width: 32px;
+    height: 32px;
+  }
+
+  .wp-admin-content {
+    padding: 16px 12px 24px;
+  }
 }
+
+
 /* =========================================================
-   INQUIRY NOTIFICATION BADGE
+   V3 LAYOUT REFINEMENTS
    ========================================================= */
 
-.universal-admin-inquiry-badge {
+.wp-admin-sidebar {
+  padding-top: 16px;
+}
+
+.wp-admin-brand {
+  padding: 0 4px 24px;
+}
+
+.wp-admin-brand-logo {
+  width: 218px;
+  height: 72px;
+}
+
+.wp-admin-sidebar-nav {
+  flex: 0 0 auto;
+  padding-bottom: 24px;
+}
+
+.wp-admin-sidebar-footer,
+.wp-admin-nav-section-secondary {
+  display: none !important;
+}
+
+.wp-admin-top-profile {
+  gap: 10px;
+  padding-left: 18px;
+}
+
+.wp-admin-top-signout {
+  min-height: 34px;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-
+  gap: 6px;
+  margin-left: 7px;
+  padding: 0 11px;
+  border: 1px solid #d9dfdc;
   border-radius: 999px;
+  background: #fff;
+  color: var(--wp-admin-green-deep);
+  font: 700 9px 'Inter', sans-serif;
+  cursor: pointer;
+  transition: .15s ease;
+}
 
-  background: #b3423a;
+.wp-admin-top-signout svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.wp-admin-top-signout:hover {
+  border-color: var(--wp-admin-green);
+  background: var(--wp-admin-green);
   color: #fff;
+}
 
-  font-family: Arial, sans-serif;
-  font-size: 0.65rem;
-  font-weight: 700;
-  line-height: 1;
+/* Payment Management is the layout authority: 1100px centered. */
+.wp-admin-content {
+  padding-left: 28px;
+  padding-right: 28px;
+}
 
+.wp-admin-content > * {
+  width: min(1100px, 100%) !important;
+  max-width: 1100px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.wp-admin-content .admin-page,
+.wp-admin-content .activity-page,
+.wp-admin-content .tracker-page,
+.wp-admin-content .student-detail-page,
+.wp-admin-content .student-detail,
+.wp-admin-content .inquiry-page,
+.wp-admin-content .detail-page {
+  width: 100% !important;
+  max-width: 1100px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+.wp-admin-content .students-card,
+.wp-admin-content .activity-table-wrapper,
+.wp-admin-content .tracker-table-card,
+.wp-admin-content .tracker-table-wrapper,
+.wp-admin-content .inquiry-table-card,
+.wp-admin-content .detail-form,
+.wp-admin-content .tracker-filter-card,
+.wp-admin-content .activity-filter-card,
+.wp-admin-content .inquiry-toolbar,
+.wp-admin-content .summary-grid,
+.wp-admin-content .tracker-summary,
+.wp-admin-content .activity-summary,
+.wp-admin-content .inquiry-stats {
+  width: 100% !important;
+  max-width: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
   box-sizing: border-box;
 }
 
-.universal-admin-nav-link.active
-  .universal-admin-inquiry-badge {
-  background: var(--ua-accent);
+.wp-admin-content .tracker-page {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+@media (max-width: 940px) {
+  .wp-admin-brand-logo {
+    width: 188px;
+    height: 64px;
+  }
+}
+
+@media (max-width: 760px) {
+  .wp-admin-brand-logo {
+    width: 205px;
+    height: 68px;
+  }
+
+  .wp-admin-content {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .wp-admin-top-profile {
+    gap: 7px;
+  }
+
+  .wp-admin-top-signout {
+    margin-left: 3px;
+  }
+}
+
+@media (max-width: 520px) {
+  .wp-admin-top-profile > div {
+    display: none;
+  }
+
+  .wp-admin-top-signout span {
+    display: none;
+  }
+
+  .wp-admin-top-signout {
+    width: 34px;
+    padding: 0;
+    justify-content: center;
+  }
+}
+
+
+/* =========================================================
+   V4 ALIGNMENT + SIDEBAR REFINEMENTS
+   ========================================================= */
+
+/* All admin pages begin directly under "Operations Workspace". */
+.wp-admin-content {
+  padding-left: 30px !important;
+  padding-right: 30px !important;
+}
+
+.wp-admin-content > * {
+  width: min(1100px, 100%) !important;
+  max-width: 1100px !important;
+  margin-left: 0 !important;
+  margin-right: auto !important;
+}
+
+.wp-admin-content .admin-page,
+.wp-admin-content .activity-page,
+.wp-admin-content .tracker-page,
+.wp-admin-content .student-detail-page,
+.wp-admin-content .student-detail,
+.wp-admin-content .inquiry-page,
+.wp-admin-content .detail-page {
+  width: 100% !important;
+  max-width: 1100px !important;
+  margin-left: 0 !important;
+  margin-right: auto !important;
+}
+
+/* Keep all major panels locked to the same left/right edge. */
+.wp-admin-content .students-card,
+.wp-admin-content .activity-table-wrapper,
+.wp-admin-content .tracker-table-card,
+.wp-admin-content .tracker-table-wrapper,
+.wp-admin-content .inquiry-table-card,
+.wp-admin-content .detail-form,
+.wp-admin-content .tracker-filter-card,
+.wp-admin-content .activity-filter-card,
+.wp-admin-content .inquiry-toolbar,
+.wp-admin-content .summary-grid,
+.wp-admin-content .tracker-summary,
+.wp-admin-content .activity-summary,
+.wp-admin-content .inquiry-stats {
+  width: 100% !important;
+  max-width: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* Hide the sidebar scrollbar while keeping the menu scrollable if needed. */
+.wp-admin-sidebar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.wp-admin-sidebar::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* Larger centered WestPacific Desk logo. */
+.wp-admin-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2px 0 24px !important;
+  text-align: center;
+}
+
+.wp-admin-brand-link {
+  width: 100%;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+.wp-admin-brand-logo {
+  width: 232px !important;
+  max-width: 100%;
+  height: 92px !important;
+  object-fit: contain;
+  object-position: center center !important;
+  margin: 0 auto;
+}
+
+.wp-admin-portal-label {
+  width: 100%;
+  margin-top: 4px;
+  text-align: center;
+}
+
+@media (max-width: 940px) {
+  .wp-admin-content {
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+
+  .wp-admin-brand-logo {
+    width: 200px !important;
+    height: 82px !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .wp-admin-content {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  .wp-admin-brand-logo {
+    width: 220px !important;
+    height: 88px !important;
+  }
+}
+
+
+/* =========================================================
+   V5 — REMOVE EXTRA TOP SPACE
+   Dashboard + Student Progress now start at the same vertical
+   position as Payment Management.
+   ========================================================= */
+
+/* Page-level CSS files add their own top padding. The shared shell
+   already provides the correct spacing, so remove that duplication. */
+.wp-admin-content .admin-page,
+.wp-admin-content .activity-page,
+.wp-admin-content .tracker-page,
+.wp-admin-content .student-detail-page,
+.wp-admin-content .student-detail,
+.wp-admin-content .inquiry-page,
+.wp-admin-content .detail-page {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+/* Dashboard has padding declared in both AdminDashboard.css and
+   AdminDashboard.redesign.css. Reset the entire outer wrapper. */
+.wp-admin-content > .admin-page,
+.wp-admin-content .admin-page {
+  padding: 0 !important;
+}
+
+/* Student Progress currently declares 34px top padding. */
+.wp-admin-content > .activity-page,
+.wp-admin-content .activity-page {
+  padding-top: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* Payment Management is our vertical reference. */
+.wp-admin-content > .tracker-page,
+.wp-admin-content .tracker-page {
+  padding-top: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* Prevent first-child margins from creating apparent blank space. */
+.wp-admin-content .admin-page > :first-child,
+.wp-admin-content .activity-page > :first-child,
+.wp-admin-content .tracker-page > :first-child {
+  margin-top: 0 !important;
+}
+
+/* Keep the page headers aligned on the same baseline. */
+.wp-admin-content .activity-page-header,
+.wp-admin-content .activity-header,
+.wp-admin-content .tracker-header {
+  margin-top: 0 !important;
+}
+
+
+/* =========================================================
+   V7 — MODAL STACKING CONTEXT FIX
+   Fixed admin modals must be able to sit above the top toolbar.
+   ========================================================= */
+
+.wp-admin-content {
+  position: relative;
+  z-index: auto !important;
+  isolation: auto !important;
+  overflow: visible !important;
+}
+
+/*
+  Previous versions gave every page child z-index: 1. That creates a
+  stacking context which prevents a modal inside the page from escaping
+  above the sticky Operations Workspace toolbar.
+*/
+.wp-admin-content > * {
+  z-index: auto !important;
+}
+
+/* Keep the decorative palm behind the actual content without requiring
+   every page to become its own stacking context. */
+.wp-admin-content::after {
+  z-index: 0 !important;
+}
+
+.wp-admin-content > .admin-page,
+.wp-admin-content > .activity-page,
+.wp-admin-content > .tracker-page,
+.wp-admin-content > .inquiry-page,
+.wp-admin-content > .student-detail-page,
+.wp-admin-content > .student-detail,
+.wp-admin-content > .detail-page {
+  position: relative;
+  z-index: 1;
+}
+
+
+/* =========================================================
+   V11 — TOP-RIGHT ADMIN PROFILE SCALE
+   ========================================================= */
+
+.wp-admin-topbar {
+  min-height: 82px !important;
+}
+
+.wp-admin-topbar-right {
+  gap: 22px !important;
+}
+
+.wp-admin-date {
+  color: #6f7f79 !important;
+  font-size: 11px !important;
+  line-height: 1.35 !important;
+  font-weight: 500 !important;
+}
+
+.wp-admin-top-profile {
+  gap: 11px !important;
+  padding-left: 20px !important;
+}
+
+.wp-admin-top-profile img {
+  width: 42px !important;
+  height: 42px !important;
+  border-width: 2px !important;
+}
+
+.wp-admin-top-profile strong {
+  color: var(--wp-admin-green-deep) !important;
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+  font-weight: 700 !important;
+}
+
+.wp-admin-top-profile span {
+  margin-top: 3px !important;
+  color: var(--wp-admin-muted) !important;
+  font-size: 9px !important;
+  line-height: 1.2 !important;
+}
+
+.wp-admin-top-signout {
+  min-height: 38px !important;
+  padding: 0 13px !important;
+  gap: 7px !important;
+  font-size: 10px !important;
+}
+
+.wp-admin-top-signout svg {
+  width: 15px !important;
+  height: 15px !important;
+}
+
+@media (max-width: 760px) {
+  .wp-admin-topbar {
+    min-height: 72px !important;
+  }
+
+  .wp-admin-top-profile img {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  .wp-admin-date {
+    display: none !important;
+  }
+}
+
+
+/* =========================================================
+   V13 — FINISHING TOUCHES + RIGHT-SIDE TROPICAL BACKGROUND
+   ========================================================= */
+
+/*
+  The admin workspace remains left-aligned under Operations Workspace.
+  The unused right-side area now carries a subtle WestPacific tropical
+  illustration instead of feeling like dead space.
+*/
+.wp-admin-main {
+  position: relative !important;
+  isolation: isolate !important;
+  overflow: hidden !important;
+  background:
+    radial-gradient(circle at 78% 18%, rgba(13,79,60,.025), transparent 26%),
+    linear-gradient(180deg, #fbfaf5 0%, #f4f3ed 100%) !important;
+}
+
+.wp-admin-main::after {
+  content: '' !important;
+  position: fixed !important;
+  top: 92px !important;
+  right: 0 !important;
+  bottom: 0 !important;
+
+  width: clamp(300px, 25vw, 430px) !important;
+  height: calc(100vh - 92px) !important;
+
+  pointer-events: none !important;
+  z-index: 0 !important;
+
+  background-image: url('../assets/admin-palm-background.png') !important;
+  background-repeat: no-repeat !important;
+  background-position: right center !important;
+  background-size: cover !important;
+
+  opacity: .20 !important;
+  filter: saturate(.82) contrast(.96) brightness(1.03) !important;
+
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(0,0,0,.22) 16%,
+    rgba(0,0,0,.72) 46%,
+    #000 78%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(0,0,0,.22) 16%,
+    rgba(0,0,0,.72) 46%,
+    #000 78%
+  );
+}
+
+/* Keep real UI comfortably above decorative artwork. */
+.wp-admin-topbar,
+.wp-admin-content {
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+/* Remove the old smaller palm decoration so only one visual language remains. */
+.wp-admin-content::after {
+  display: none !important;
+}
+
+/* Slightly richer surface treatment for the content area. */
+.wp-admin-content {
+  background: transparent !important;
+}
+
+.wp-admin-content .students-card,
+.wp-admin-content .activity-table-card,
+.wp-admin-content .activity-table-wrapper,
+.wp-admin-content .tracker-table-card,
+.wp-admin-content .tracker-table-wrapper,
+.wp-admin-content .inquiry-table-card,
+.wp-admin-content .detail-form,
+.wp-admin-content .summary-card,
+.wp-admin-content .inquiry-stat {
+  backdrop-filter: blur(2px);
+}
+
+/* =========================================================
+   V13 — LARGER UPPER-RIGHT ADMIN SECTION
+   ========================================================= */
+
+.wp-admin-topbar {
+  min-height: 92px !important;
+  padding-left: 30px !important;
+  padding-right: 32px !important;
+}
+
+.wp-admin-topbar-right {
+  gap: 26px !important;
+}
+
+.wp-admin-date {
+  color: #61726c !important;
+  font-size: 12px !important;
+  line-height: 1.35 !important;
+  font-weight: 500 !important;
+  white-space: nowrap !important;
+}
+
+.wp-admin-top-profile {
+  gap: 12px !important;
+  padding-left: 24px !important;
+  border-left: 1px solid #d9dfdc !important;
+}
+
+.wp-admin-top-profile img {
+  width: 50px !important;
+  height: 50px !important;
+  flex: 0 0 50px !important;
+  border: 2px solid #cfe0d8 !important;
+  box-shadow: 0 3px 10px rgba(13,79,60,.08);
+}
+
+.wp-admin-top-profile > div {
+  min-width: 92px !important;
+}
+
+.wp-admin-top-profile strong {
+  color: var(--wp-admin-green-deep) !important;
+  font-size: 14px !important;
+  line-height: 1.15 !important;
+  font-weight: 700 !important;
+}
+
+.wp-admin-top-profile span {
+  margin-top: 4px !important;
+  color: var(--wp-admin-muted) !important;
+  font-size: 10px !important;
+  line-height: 1.15 !important;
+  font-weight: 500 !important;
+}
+
+.wp-admin-top-signout {
+  min-height: 42px !important;
+  padding: 0 15px !important;
+  gap: 8px !important;
+  margin-left: 6px !important;
+
+  border-color: #cfd8d3 !important;
+  border-radius: 999px !important;
+
+  font-size: 11px !important;
+  font-weight: 700 !important;
+}
+
+.wp-admin-top-signout svg {
+  width: 17px !important;
+  height: 17px !important;
+}
+
+/* Keep page geometry clean after the taller toolbar. */
+.wp-admin-content {
+  min-height: calc(100vh - 92px) !important;
+  padding-top: 30px !important;
+}
+
+/* =========================================================
+   RESPONSIVE CONTROL FOR THE DECORATIVE RIGHT PANEL
+   ========================================================= */
+
+@media (max-width: 1320px) {
+  .wp-admin-main::after {
+    width: clamp(220px, 20vw, 300px) !important;
+    opacity: .13 !important;
+  }
+}
+
+@media (max-width: 1120px) {
+  .wp-admin-main::after {
+    display: none !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .wp-admin-topbar {
+    min-height: 76px !important;
+    padding-left: 18px !important;
+    padding-right: 18px !important;
+  }
+
+  .wp-admin-top-profile {
+    padding-left: 0 !important;
+    border-left: 0 !important;
+  }
+
+  .wp-admin-top-profile img {
+    width: 40px !important;
+    height: 40px !important;
+    flex-basis: 40px !important;
+  }
+
+  .wp-admin-top-profile strong {
+    font-size: 12px !important;
+  }
+
+  .wp-admin-top-profile span {
+    font-size: 9px !important;
+  }
+
+  .wp-admin-top-signout {
+    min-height: 38px !important;
+    padding: 0 12px !important;
+    font-size: 10px !important;
+  }
+
+  .wp-admin-content {
+    min-height: calc(100vh - 76px) !important;
+  }
+}
+
+@media (max-width: 520px) {
+  .wp-admin-top-profile > div {
+    display: none !important;
+  }
+
+  .wp-admin-top-signout {
+    width: 38px !important;
+    min-width: 38px !important;
+    padding: 0 !important;
+    justify-content: center !important;
+  }
+
+  .wp-admin-top-signout span {
+    display: none !important;
+  }
+}
+
+
+/* =========================================================
+   V14 — GLOBAL WORKSPACE SEARCH
+   ========================================================= */
+
+.wp-admin-global-search {
+  position: relative;
+  flex: 0 1 390px;
+  min-width: 240px;
+  margin-left: auto;
+}
+
+.wp-admin-global-search > input {
+  width: 100%;
+  height: 42px;
+  padding: 0 40px 0 36px;
+
+  border: 1px solid #d9dfdc;
+  border-radius: 999px;
+  outline: none;
+
+  background: #fff;
+  color: #183f35;
+
+  font: 500 11px 'Inter', sans-serif;
+
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.wp-admin-global-search > input::placeholder {
+  color: #9aa5a0;
+}
+
+.wp-admin-global-search > input:focus {
+  border-color: #8eaca0;
+  box-shadow: 0 0 0 4px rgba(13,79,60,.06);
+}
+
+.wp-admin-global-search-icon {
+  position: absolute;
+  top: 50%;
+  left: 13px;
+  z-index: 2;
+  transform: translateY(-50%) rotate(-18deg);
+  color: #6f817a;
+  font-size: 17px;
+  pointer-events: none;
+}
+
+.wp-admin-global-search-clear {
+  position: absolute;
+  top: 50%;
+  right: 7px;
+  z-index: 3;
+  width: 28px;
+  height: 28px;
+  transform: translateY(-50%);
+  border: 0;
+  border-radius: 50%;
+  background: #f0f4f1;
+  color: #6e7d78;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.wp-admin-global-results {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 60000;
+  width: min(430px, calc(100vw - 32px));
+  max-height: 430px;
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid rgba(13,79,60,.12);
+  border-radius: 12px;
+  background: #fffdf9;
+  box-shadow: 0 20px 55px rgba(7,62,48,.18);
+}
+
+.wp-admin-global-result {
+  width: 100%;
+  min-height: 52px;
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 9px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.wp-admin-global-result:hover {
+  background: #f0f6f2;
+}
+
+.wp-admin-global-result-type {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: #e8f0eb;
+  color: #0d4f3c;
+  font: 800 8px 'Inter', sans-serif;
+  text-transform: uppercase;
+}
+
+.wp-admin-global-result-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.wp-admin-global-result-copy strong {
+  overflow: hidden;
+  color: #183f35;
+  font: 700 10px 'Inter', sans-serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wp-admin-global-result-copy span {
+  margin-top: 3px;
+  overflow: hidden;
+  color: #7b8782;
+  font: 9px 'Inter', sans-serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wp-admin-global-result-arrow {
+  color: #91a098;
+  font-size: 13px;
+}
+
+.wp-admin-global-result-state {
+  padding: 24px 14px;
+  color: #85918c;
+  font: 10px 'Inter', sans-serif;
+  text-align: center;
+}
+
+/* Operations overview sits directly above the existing dashboard. */
+.wp-admin-content > .ops-overview + .admin-page {
+  margin-top: 0 !important;
+}
+
+@media (max-width: 1180px) {
+  .wp-admin-global-search {
+    flex-basis: 300px;
+    min-width: 210px;
+  }
+
+  .wp-admin-date {
+    display: none !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .wp-admin-global-search {
+    display: none;
+  }
+}
+
+
+/* =========================================================
+   V16 — GLOBAL SEARCH RELIABILITY
+   ========================================================= */
+
+.wp-admin-topbar {
+  overflow: visible !important;
+}
+
+.wp-admin-global-search,
+.wp-admin-global-results {
+  overflow: visible;
+}
+
+.wp-admin-global-results {
+  z-index: 70000 !important;
+}
+
+
+/* =========================================================
+   V17 — GLOBAL SEARCH DROPDOWN + CLICK FIX
+   ========================================================= */
+
+/*
+  V13 gave both the sticky topbar and page content z-index: 2.
+  Because the dashboard content is painted later, Recent Activity could
+  sit above the search results and intercept clicks. Keep the topbar in
+  a clearly higher stacking layer than all page content.
+*/
+.wp-admin-topbar {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 40000 !important;
+  overflow: visible !important;
+}
+
+.wp-admin-content {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* Search creates its own local stacking layer above the toolbar. */
+.wp-admin-global-search {
+  position: relative !important;
+  z-index: 41000 !important;
+  overflow: visible !important;
+}
+
+.wp-admin-global-results {
+  position: absolute !important;
+  z-index: 42000 !important;
+  pointer-events: auto !important;
+  isolation: isolate;
+}
+
+/* Result rows themselves must receive the pointer, never a panel behind. */
+.wp-admin-global-result {
+  position: relative !important;
+  z-index: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* Keep dashboard overview underneath the toolbar/search dropdown. */
+.ops-overview-portal-host,
+.ops-overview,
+.ops-panel {
+  position: relative;
+  z-index: 1 !important;
+}
+
+/* Avoid any accidental overlay from the decorative tropical layer. */
+.wp-admin-main::after {
+  pointer-events: none !important;
+  z-index: 0 !important;
+}
+
+
+/* =========================================================
+   V18 — CLEAN TOP BAR AFTER GLOBAL SEARCH REMOVAL
+   ========================================================= */
+
+.wp-admin-topbar-title {
+  margin-right: auto !important;
+}
+
+.wp-admin-topbar-right {
+  margin-left: auto !important;
+}
+
+.wp-admin-global-search,
+.wp-admin-global-results {
+  display: none !important;
+}
+
+
+/* =========================================================
+   V19 — ADMIN LOGO + MODAL STACKING FIX
+   ========================================================= */
+
+/*
+  Keep the normal page content beneath the sticky topbar,
+  but DO NOT create a stacking context around the page itself.
+  That lets fixed modal overlays rise above the topbar again.
+*/
+.wp-admin-main {
+  position: relative !important;
+  isolation: isolate !important;
+  overflow: visible !important;
+}
+
+.wp-admin-content {
+  position: relative !important;
+  z-index: auto !important;
+  isolation: auto !important;
+  overflow: visible !important;
+}
+
+/* Remove page-level stacking contexts that trap modal overlays. */
+.wp-admin-content > *,
+.wp-admin-content > .admin-page,
+.wp-admin-content > .activity-page,
+.wp-admin-content > .tracker-page,
+.wp-admin-content > .inquiry-page,
+.wp-admin-content > .student-detail-page,
+.wp-admin-content > .student-detail,
+.wp-admin-content > .detail-page {
+  z-index: auto !important;
+  isolation: auto !important;
+}
+
+/* Topbar stays above ordinary content, but below true modal overlays. */
+.wp-admin-topbar {
+  z-index: 2000 !important;
+  overflow: visible !important;
+}
+
+/* Decorative background must never interfere with dialogs. */
+.wp-admin-main::after,
+.wp-admin-content::after {
+  pointer-events: none !important;
+  z-index: 0 !important;
 }
