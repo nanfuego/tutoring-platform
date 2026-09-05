@@ -17,7 +17,7 @@ const team = [
       `Lou Joyce Garcia-Galang, RN, MSN, is the founder and heart behind WestPacific Desk. As a registered nurse, educator, and mother of two, Joyce understands what it means to balance professional ambition, family responsibilities, and the realities of building a better future.`,
       `Her journey began in nursing, a profession she deeply respects, but one that also showed her how difficult it can be to build financial stability while working demanding hours in the Philippines. Like many professionals and parents, she wanted a way to continue using her skills while also being present for her family.`,
       `Working from home gave Joyce that opportunity. Over time, she began assisting nursing students with organization, coursework coordination, progress tracking, deadlines, and the everyday challenges that come with completing a demanding nursing program.`,
-      `What she discovered was that many capable students do not struggle because they lack ability. Sometimes they simply need structure, accountability, encouragement, and someone dependable in their corner. Helping students move closer to graduation became more than work — it became something deeply meaningful.`,
+      `What she discovered was that many capable students do not struggle because they lack ability. Sometimes they simply need structure, accountability, encouragement, and someone dependable in their corner. Helping students move closer to graduation became more than work, it became something deeply meaningful.`,
       `That experience became the foundation of WestPacific Desk: a service built around the belief that reliable support can give people more time, less stress, and a better opportunity to succeed.`,
       `Today, Joyce continues to work closely with students and clients while raising her two children, showing that professional growth and family life do not always have to compete with one another.`,
     ],
@@ -159,7 +159,7 @@ function About() {
             </p>
 
             <p>
-              From our desk in the Philippines to yours, wherever you may be —
+              From our desk in the Philippines to yours, wherever you may be,
               we’re here to support the work behind your goals.
             </p>
 
