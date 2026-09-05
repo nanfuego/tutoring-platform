@@ -1662,7 +1662,6 @@ function AdminDashboard() {
             className="activity-primary-button"
             onClick={openAddStudent}
           >
-            <span className="button-plus">+</span>
             Add Student
           </button>
 
