@@ -13,7 +13,7 @@ const ALLOWED_SERVICES = new Set([
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-function text(value) {
+function cleanText(value) {
   return typeof value === 'string' ? value.trim() : ''
 }
 
@@ -76,8 +76,7 @@ async function verifyTurnstile(token, ip) {
     {
       method: 'POST',
       headers: {
-        'Content-Type':
-          'application/x-www-form-urlencoded',
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: form,
     },
@@ -86,6 +85,7 @@ async function verifyTurnstile(token, ip) {
   if (!response.ok) {
     return {
       success: false,
+      upstreamStatus: response.status,
     }
   }
 
@@ -117,6 +117,10 @@ export async function POST(request) {
     if (!supabaseUrl || !serviceRoleKey) {
       console.error(
         'Missing Supabase server environment variables.',
+        {
+          hasSupabaseUrl: Boolean(supabaseUrl),
+          hasServiceRoleKey: Boolean(serviceRoleKey),
+        },
       )
 
       return json(
@@ -141,35 +145,13 @@ export async function POST(request) {
       )
     }
 
-    const name = text(body.name)
-
-    const email = text(body.email).toLowerCase()
-
-    const service = text(body.service)
-
-    const message = text(body.message)
-
-    const turnstileToken = text(
+    const name = cleanText(body.name)
+    const email = cleanText(body.email).toLowerCase()
+    const service = cleanText(body.service)
+    const message = cleanText(body.message)
+    const turnstileToken = cleanText(
       body.turnstileToken,
     )
-
-    const companyWebsite = text(
-      body.companyWebsite,
-    )
-
-    /*
-      Honeypot.
-
-      Bots often fill every form field.
-
-      We pretend the request succeeded,
-      but we do not save anything.
-    */
-    if (companyWebsite) {
-      return json({
-        ok: true,
-      })
-    }
 
     if (
       name.length < 2 ||
@@ -235,11 +217,10 @@ export async function POST(request) {
     let verification
 
     try {
-      verification =
-        await verifyTurnstile(
-          turnstileToken,
-          ip,
-        )
+      verification = await verifyTurnstile(
+        turnstileToken,
+        ip,
+      )
     } catch (error) {
       console.error(
         'Turnstile verification failed:',
@@ -255,9 +236,7 @@ export async function POST(request) {
       )
     }
 
-    if (
-      verification.configurationError
-    ) {
+    if (verification.configurationError) {
       console.error(
         'TURNSTILE_SECRET_KEY is not configured.',
       )
@@ -298,18 +277,15 @@ export async function POST(request) {
     )
 
     const ipHash = hashIp(ip)
-
     const now = Date.now()
 
-    const tenMinutesAgo =
-      new Date(
-        now - 10 * 60 * 1000,
-      ).toISOString()
+    const tenMinutesAgo = new Date(
+      now - 10 * 60 * 1000,
+    ).toISOString()
 
-    const oneDayAgo =
-      new Date(
-        now - 24 * 60 * 60 * 1000,
-      ).toISOString()
+    const oneDayAgo = new Date(
+      now - 24 * 60 * 60 * 1000,
+    ).toISOString()
 
     const [
       recentResult,
@@ -401,6 +377,7 @@ export async function POST(request) {
         ?.slice(0, 500) || null
 
     const {
+      data: insertedInquiry,
       error: insertError,
     } = await supabase
       .from('contact_inquiries')
@@ -413,6 +390,8 @@ export async function POST(request) {
         source: 'website',
         user_agent: userAgent,
       })
+      .select('id, created_at')
+      .single()
 
     if (insertError) {
       console.error(
@@ -429,9 +408,24 @@ export async function POST(request) {
       )
     }
 
+    if (!insertedInquiry?.id) {
+      console.error(
+        'Inquiry insert returned no row.',
+      )
+
+      return json(
+        {
+          error:
+            'We could not confirm your message was saved. Please try again.',
+        },
+        500,
+      )
+    }
+
     return json(
       {
         ok: true,
+        inquiryId: insertedInquiry.id,
       },
       201,
     )
