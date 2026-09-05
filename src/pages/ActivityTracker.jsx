@@ -1315,7 +1315,7 @@ function ActivityTracker() {
             onClick={openSubjectManager}
           >
             <span className="button-plus">+</span>
-            Manage Subjects
+            Manage Activity
           </button>
 
           <button
@@ -1323,7 +1323,6 @@ function ActivityTracker() {
             className="activity-primary-button"
             onClick={openAssignActivity}
           >
-            <span className="button-plus">+</span>
             Assign Activity
           </button>
 

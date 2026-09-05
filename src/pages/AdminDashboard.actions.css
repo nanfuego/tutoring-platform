@@ -1,0 +1,108 @@
+/* ============================================================
+   DASHBOARD — ADD / DELETE STUDENT ACTIONS
+   Append to src/pages/AdminDashboard.redesign.css
+   ============================================================ */
+
+/* PageHeader already places .page-header-actions on the right.
+   These rules make Dashboard match Activity / Payment actions. */
+
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.page-header-main,
+.page-header-content {
+  min-width: 0;
+}
+
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.dashboard-add-student-button,
+.dashboard-delete-student-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 13px;
+  box-sizing: border-box;
+  border-radius: 7px;
+  font-family: var(--font-body, 'Inter', Arial, sans-serif);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+/* ADD = GREEN */
+.dashboard-add-student-button {
+  border: 1px solid #174c3a;
+  background: #174c3a;
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(23, 76, 58, 0.12);
+}
+
+.dashboard-add-student-button:hover {
+  border-color: #123d30;
+  background: #123d30;
+}
+
+.dashboard-action-plus {
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 0.8;
+}
+
+/* DELETE = RED */
+.dashboard-delete-student-button {
+  border: 1px solid #b44943;
+  background: #b44943;
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(180, 73, 67, 0.12);
+}
+
+.dashboard-delete-student-button:hover {
+  border-color: #963b36;
+  background: #963b36;
+}
+
+.dashboard-add-student-button:active,
+.dashboard-delete-student-button:active {
+  transform: translateY(1px);
+}
+
+.dashboard-add-student-button:focus-visible,
+.dashboard-delete-student-button:focus-visible {
+  outline: 3px solid rgba(23, 76, 58, 0.16);
+  outline-offset: 2px;
+}
+
+.dashboard-delete-student-button:focus-visible {
+  outline-color: rgba(180, 73, 67, 0.18);
+}
+
+@media (max-width: 700px) {
+  .page-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .page-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}

@@ -1,0 +1,95 @@
+ADMIN DASHBOARD ACTION BUTTON UPDATE
+
+Use the current src/pages/AdminDashboard.jsx.
+
+1) REMOVE the Student Manager dropdown from the TOP BAR.
+
+Find this entire block inside:
+  <div className="student-action-buttons">
+
+and remove ONLY the manager-dropdown portion:
+
+------------------------------------------------------------
+<div className="manager-dropdown" ref={managerRef}>
+  <button
+    type="button"
+    className="manager-button"
+    onClick={() => setShowManagerMenu((prev) => !prev)}
+  >
+    Student Manager <span className="manager-caret">▾</span>
+  </button>
+
+  {showManagerMenu && (
+    <div className="manager-menu">
+      <button type="button" onClick={openAddStudent}>
+        + Add Student
+      </button>
+      <button type="button" onClick={openDeleteStudents}>
+        Delete Students
+      </button>
+    </div>
+  )}
+</div>
+------------------------------------------------------------
+
+Keep:
+  Student Progress
+  Payment Management
+
+2) REPLACE the current Dashboard page-header block:
+
+------------------------------------------------------------
+<div className="page-header">
+  <div className="page-header-content">
+    <div className="page-eyebrow">STUDENT MANAGEMENT</div>
+
+    <h1 className="page-title">Dashboard</h1>
+
+    <p className="page-description">
+      Monitor students, activity progress, and overall platform activity.
+    </p>
+  </div>
+</div>
+------------------------------------------------------------
+
+WITH:
+
+------------------------------------------------------------
+<div className="page-header dashboard-page-header">
+  <div className="page-header-content">
+    <div className="page-eyebrow">STUDENT MANAGEMENT</div>
+
+    <h1 className="page-title">Dashboard</h1>
+
+    <p className="page-description">
+      Monitor students, activity progress, and overall platform activity.
+    </p>
+  </div>
+
+  <div className="dashboard-page-actions">
+    <button
+      type="button"
+      className="dashboard-add-student-button"
+      onClick={openAddStudent}
+    >
+      <span>+</span>
+      Add Student
+    </button>
+
+    <button
+      type="button"
+      className="dashboard-delete-student-button"
+      onClick={openDeleteStudents}
+    >
+      Delete Students
+    </button>
+  </div>
+</div>
+------------------------------------------------------------
+
+3) Add the contents of AdminDashboard.actions.css to the END of:
+   src/pages/AdminDashboard.redesign.css
+
+OPTIONAL CLEANUP:
+The old showManagerMenu / managerRef state can remain temporarily; it is harmless.
+After testing, it can be removed.

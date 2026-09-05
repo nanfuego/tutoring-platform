@@ -819,3 +819,67 @@
     padding: 9px 13px;
   }
 }
+
+
+/* ============================================================
+   EXPLICIT SAVE PROGRESS
+   ============================================================ */
+
+.sa-footer-status {
+  min-width: 0;
+  color: #7f8996;
+  font-size: 9px;
+}
+
+.sa-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.sa-save-button {
+  min-height: 32px;
+  padding: 0 13px;
+  border: 1px solid #174c3a;
+  border-radius: 7px;
+  background: #174c3a;
+  color: #fff;
+  font: 700 10px var(--font-body, 'Inter', Arial, sans-serif);
+  cursor: pointer;
+}
+
+.sa-save-button:hover:not(:disabled) {
+  background: #123d30;
+}
+
+.sa-save-button:disabled {
+  border-color: #cfd8d3;
+  background: #dfe6e2;
+  color: #85918b;
+  cursor: default;
+}
+
+.sa-done-button {
+  border-color: #d8dee2;
+  background: #fff;
+  color: #536071;
+}
+
+.sa-done-button:hover:not(:disabled) {
+  background: #f7f9fa;
+}
+
+@media (max-width: 520px) {
+  .sa-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .sa-footer-actions {
+    width: 100%;
+  }
+
+  .sa-footer-actions button {
+    flex: 1;
+  }
+}

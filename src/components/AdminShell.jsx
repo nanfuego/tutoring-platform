@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../supabaseClient'
 import './AdminShell.css'
 import './UniversalAdminTheme.css'
+import './AdminShell.signout.css'
 
 function formatNow() {
   const now = new Date()
@@ -36,7 +37,6 @@ const EMPTY_FORM = {
 export default function AdminShell({ children }) {
   const location = useLocation()
   const [currentTime, setCurrentTime] = useState(() => formatNow())
-  const [managerOpen, setManagerOpen] = useState(false)
 
   const [modal, setModal] = useState(null)
   const [students, setStudents] = useState([])
@@ -53,10 +53,6 @@ export default function AdminShell({ children }) {
     const timer = setInterval(() => setCurrentTime(formatNow()), 30000)
     return () => clearInterval(timer)
   }, [])
-
-  useEffect(() => {
-    setManagerOpen(false)
-  }, [location.pathname])
 
   useEffect(() => {
     if (!modal) return
@@ -82,7 +78,6 @@ export default function AdminShell({ children }) {
   }
 
   function openAddStudent() {
-    setManagerOpen(false)
     setError('')
     setForm({ ...EMPTY_FORM })
     setShowCanvasPassword(false)
@@ -91,7 +86,6 @@ export default function AdminShell({ children }) {
   }
 
   async function openDeleteStudents() {
-    setManagerOpen(false)
     setError('')
     setSelectedIds([])
     setDeleteSearch('')
@@ -115,6 +109,7 @@ export default function AdminShell({ children }) {
 
   function handleFormChange(event) {
     const { name, value, type, checked } = event.target
+
     setForm((current) => ({
       ...current,
       [name]: type === 'checkbox' ? checked : value,
@@ -157,12 +152,14 @@ export default function AdminShell({ children }) {
       return
     }
 
+    setSaving(false)
     closeModal()
     window.location.reload()
   }
 
   const visibleDeleteStudents = useMemo(() => {
     const query = deleteSearch.trim().toLowerCase()
+
     if (!query) return students
 
     return students.filter((student) =>
@@ -171,7 +168,9 @@ export default function AdminShell({ children }) {
         student.email,
         student.university,
         student.program,
-      ].some((value) => value?.toLowerCase().includes(query))
+      ].some((value) =>
+        value?.toLowerCase().includes(query)
+      )
     )
   }, [students, deleteSearch])
 
@@ -184,8 +183,13 @@ export default function AdminShell({ children }) {
   }
 
   function toggleAllVisible() {
-    const ids = visibleDeleteStudents.map((student) => student.id)
-    const allSelected = ids.length > 0 && ids.every((id) => selectedIds.includes(id))
+    const ids = visibleDeleteStudents.map(
+      (student) => student.id
+    )
+
+    const allSelected =
+      ids.length > 0 &&
+      ids.every((id) => selectedIds.includes(id))
 
     setSelectedIds((current) =>
       allSelected
@@ -198,7 +202,9 @@ export default function AdminShell({ children }) {
     if (!selectedIds.length) return
 
     const selectedNames = students
-      .filter((student) => selectedIds.includes(student.id))
+      .filter((student) =>
+        selectedIds.includes(student.id)
+      )
       .map((student) => student.name)
       .join(', ')
 
@@ -222,6 +228,7 @@ export default function AdminShell({ children }) {
       return
     }
 
+    setSaving(false)
     closeModal()
     window.location.reload()
   }
@@ -235,11 +242,20 @@ export default function AdminShell({ children }) {
       <header className="universal-admin-header">
         <div className="universal-admin-header-row">
           <div>
-            <p className="universal-admin-welcome">Welcome, Joyce!</p>
-            <p className="universal-admin-clock">{currentTime}</p>
+            <p className="universal-admin-welcome">
+              Welcome, Joyce!
+            </p>
+
+            <p className="universal-admin-clock">
+              {currentTime}
+            </p>
           </div>
 
-          <button type="button" className="universal-admin-logout" onClick={handleLogout}>
+          <button
+            type="button"
+            className="universal-admin-logout"
+            onClick={handleLogout}
+          >
             Sign Out
           </button>
         </div>
@@ -247,111 +263,168 @@ export default function AdminShell({ children }) {
         <nav className="universal-admin-nav">
           <Link
             to="/admin"
-            className={`universal-admin-nav-link ${isDashboard ? 'active' : ''}`}
+            className={`universal-admin-nav-link ${
+              isDashboard ? 'active' : ''
+            }`}
           >
             Dashboard
           </Link>
 
           <span className="universal-admin-divider" />
 
-          <div className="universal-admin-manager">
-            <button
-              type="button"
-              className={`universal-admin-nav-link manager ${isDashboard ? 'active' : ''}`}
-              onClick={() => setManagerOpen((current) => !current)}
-              aria-expanded={managerOpen}
-            >
-              Student Manager <span className="caret">▾</span>
-            </button>
-
-            {managerOpen && (
-              <div className="universal-admin-manager-menu">
-                <button type="button" onClick={openAddStudent}>
-                  <span className="menu-symbol">＋</span>
-                  Add Student
-                </button>
-                <button type="button" onClick={openDeleteStudents}>
-                  <span className="menu-symbol danger-symbol">−</span>
-                  Delete Students
-                </button>
-              </div>
-            )}
-          </div>
-
           <Link
             to="/admin/activity"
-            className={`universal-admin-nav-link ${isActivity ? 'active' : ''}`}
+            className={`universal-admin-nav-link ${
+              isActivity ? 'active' : ''
+            }`}
           >
             Student Progress
           </Link>
 
           <Link
             to="/admin/payments"
-            className={`universal-admin-nav-link ${isPayments ? 'active' : ''}`}
+            className={`universal-admin-nav-link ${
+              isPayments ? 'active' : ''
+            }`}
           >
             Payment Management
           </Link>
         </nav>
       </header>
 
-      <main className="universal-admin-content">{children}</main>
+      <main className="universal-admin-content">
+        {children}
+      </main>
 
       {modal === 'add' && (
-        <div className="universal-modal-overlay" onMouseDown={(event) => {
-          if (event.target === event.currentTarget) closeModal()
-        }}>
-          <form className="universal-modal add-modal" onSubmit={handleAddStudent} onMouseDown={(event) => event.stopPropagation()}>
+        <div
+          className="universal-modal-overlay"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              closeModal()
+            }
+          }}
+        >
+          <form
+            className="universal-modal add-modal"
+            onSubmit={handleAddStudent}
+            onMouseDown={(event) =>
+              event.stopPropagation()
+            }
+          >
             <div className="universal-modal-header">
               <div>
-                <span className="universal-modal-kicker">STUDENT MANAGER</span>
+                <span className="universal-modal-kicker">
+                  STUDENT MANAGER
+                </span>
+
                 <h2>Add Student</h2>
-                <p>Create a student profile and optionally save both learning-system credentials.</p>
+
+                <p>
+                  Create a student profile and optionally
+                  save both learning-system credentials.
+                </p>
               </div>
-              <button type="button" className="universal-modal-close" onClick={closeModal}>×</button>
+
+              <button
+                type="button"
+                className="universal-modal-close"
+                onClick={closeModal}
+              >
+                ×
+              </button>
             </div>
 
-            {error && <div className="universal-modal-error">{error}</div>}
+            {error && (
+              <div className="universal-modal-error">
+                {error}
+              </div>
+            )}
 
             <section className="universal-form-section">
               <div className="universal-section-title">
                 <span>01</span>
+
                 <div>
                   <h3>Student Information</h3>
-                  <p>Basic information used throughout the platform.</p>
+                  <p>
+                    Basic information used throughout
+                    the platform.
+                  </p>
                 </div>
               </div>
 
               <div className="universal-form-grid">
                 <label className="full">
                   <span>Full Name *</span>
-                  <input name="name" value={form.name} onChange={handleFormChange} required autoFocus />
+                  <input
+                    name="name"
+                    value={form.name}
+                    onChange={handleFormChange}
+                    required
+                    autoFocus
+                  />
                 </label>
+
                 <label>
                   <span>Email</span>
-                  <input type="email" name="email" value={form.email} onChange={handleFormChange} />
+                  <input
+                    type="email"
+                    name="email"
+                    value={form.email}
+                    onChange={handleFormChange}
+                  />
                 </label>
+
                 <label>
                   <span>Phone</span>
-                  <input name="phone" value={form.phone} onChange={handleFormChange} />
+                  <input
+                    name="phone"
+                    value={form.phone}
+                    onChange={handleFormChange}
+                  />
                 </label>
+
                 <label>
                   <span>School</span>
-                  <select name="university" value={form.university} onChange={handleFormChange}>
+                  <select
+                    name="university"
+                    value={form.university}
+                    onChange={handleFormChange}
+                  >
                     <option value="AUHS">AUHS</option>
-                    <option value="PACIFIC">PACIFIC</option>
+                    <option value="PACIFIC">
+                      PACIFIC
+                    </option>
                   </select>
                 </label>
+
                 <label>
                   <span>Program / Course</span>
-                  <input name="program" value={form.program} onChange={handleFormChange} />
+                  <input
+                    name="program"
+                    value={form.program}
+                    onChange={handleFormChange}
+                  />
                 </label>
+
                 <label>
                   <span>Subject</span>
-                  <input name="subject" value={form.subject} onChange={handleFormChange} />
+                  <input
+                    name="subject"
+                    value={form.subject}
+                    onChange={handleFormChange}
+                  />
                 </label>
+
                 <label className="full">
                   <span>Status Page Slug</span>
-                  <input name="slug" value={form.slug} onChange={handleFormChange} placeholder="optional" />
+                  <input
+                    name="slug"
+                    value={form.slug}
+                    onChange={handleFormChange}
+                    placeholder="optional"
+                  />
                 </label>
               </div>
             </section>
@@ -359,9 +432,13 @@ export default function AdminShell({ children }) {
             <section className="universal-form-section">
               <div className="universal-section-title">
                 <span>02</span>
+
                 <div>
                   <h3>Learning Systems</h3>
-                  <p>Optional credentials for the student's online systems.</p>
+                  <p>
+                    Optional credentials for the
+                    student's online systems.
+                  </p>
                 </div>
               </div>
 
@@ -371,22 +448,44 @@ export default function AdminShell({ children }) {
                     <strong>Canvas</strong>
                     <span>Learning System</span>
                   </div>
+
                   <label>
                     <span>Username</span>
-                    <input name="canvas_un" value={form.canvas_un} onChange={handleFormChange} autoComplete="off" />
+                    <input
+                      name="canvas_un"
+                      value={form.canvas_un}
+                      onChange={handleFormChange}
+                      autoComplete="off"
+                    />
                   </label>
+
                   <label>
                     <span>Password</span>
+
                     <div className="credential-password">
                       <input
-                        type={showCanvasPassword ? 'text' : 'password'}
+                        type={
+                          showCanvasPassword
+                            ? 'text'
+                            : 'password'
+                        }
                         name="canvas_pw"
                         value={form.canvas_pw}
                         onChange={handleFormChange}
                         autoComplete="off"
                       />
-                      <button type="button" onClick={() => setShowCanvasPassword((value) => !value)}>
-                        {showCanvasPassword ? 'Hide' : 'Show'}
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setShowCanvasPassword(
+                            (value) => !value
+                          )
+                        }
+                      >
+                        {showCanvasPassword
+                          ? 'Hide'
+                          : 'Show'}
                       </button>
                     </div>
                   </label>
@@ -397,22 +496,44 @@ export default function AdminShell({ children }) {
                     <strong>CORELMS</strong>
                     <span>Learning System</span>
                   </div>
+
                   <label>
                     <span>Username</span>
-                    <input name="corelms_un" value={form.corelms_un} onChange={handleFormChange} autoComplete="off" />
+                    <input
+                      name="corelms_un"
+                      value={form.corelms_un}
+                      onChange={handleFormChange}
+                      autoComplete="off"
+                    />
                   </label>
+
                   <label>
                     <span>Password</span>
+
                     <div className="credential-password">
                       <input
-                        type={showCorelmsPassword ? 'text' : 'password'}
+                        type={
+                          showCorelmsPassword
+                            ? 'text'
+                            : 'password'
+                        }
                         name="corelms_pw"
                         value={form.corelms_pw}
                         onChange={handleFormChange}
                         autoComplete="off"
                       />
-                      <button type="button" onClick={() => setShowCorelmsPassword((value) => !value)}>
-                        {showCorelmsPassword ? 'Hide' : 'Show'}
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setShowCorelmsPassword(
+                            (value) => !value
+                          )
+                        }
+                      >
+                        {showCorelmsPassword
+                          ? 'Hide'
+                          : 'Show'}
                       </button>
                     </div>
                   </label>
@@ -421,11 +542,23 @@ export default function AdminShell({ children }) {
             </section>
 
             <div className="universal-modal-footer">
-              <button type="button" className="secondary-button" onClick={closeModal} disabled={saving}>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={closeModal}
+                disabled={saving}
+              >
                 Cancel
               </button>
-              <button type="submit" className="primary-button" disabled={saving}>
-                {saving ? 'Saving...' : 'Add Student'}
+
+              <button
+                type="submit"
+                className="primary-button"
+                disabled={saving}
+              >
+                {saving
+                  ? 'Saving...'
+                  : 'Add Student'}
               </button>
             </div>
           </form>
@@ -433,79 +566,205 @@ export default function AdminShell({ children }) {
       )}
 
       {modal === 'delete' && (
-        <div className="universal-modal-overlay" onMouseDown={(event) => {
-          if (event.target === event.currentTarget) closeModal()
-        }}>
-          <div className="universal-modal delete-modal" onMouseDown={(event) => event.stopPropagation()}>
+        <div
+          className="universal-modal-overlay"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              closeModal()
+            }
+          }}
+        >
+          <div
+            className="universal-modal delete-modal"
+            onMouseDown={(event) =>
+              event.stopPropagation()
+            }
+          >
             <div className="universal-modal-header">
               <div>
-                <span className="universal-modal-kicker danger-kicker">STUDENT MANAGER</span>
+                <span className="universal-modal-kicker danger-kicker">
+                  STUDENT MANAGER
+                </span>
+
                 <h2>Delete Students</h2>
-                <p>Select one or more students to permanently remove.</p>
+
+                <p>
+                  Select one or more students to
+                  permanently remove.
+                </p>
               </div>
-              <button type="button" className="universal-modal-close" onClick={closeModal}>×</button>
+
+              <button
+                type="button"
+                className="universal-modal-close"
+                onClick={closeModal}
+              >
+                ×
+              </button>
             </div>
 
-            {error && <div className="universal-modal-error">{error}</div>}
+            {error && (
+              <div className="universal-modal-error">
+                {error}
+              </div>
+            )}
 
             <div className="delete-toolbar">
               <input
                 value={deleteSearch}
-                onChange={(event) => setDeleteSearch(event.target.value)}
+                onChange={(event) =>
+                  setDeleteSearch(
+                    event.target.value
+                  )
+                }
                 placeholder="Search students..."
               />
-              <span>{selectedIds.length} selected</span>
+
+              <span>
+                {selectedIds.length} selected
+              </span>
             </div>
 
             <div className="delete-list">
-              <button type="button" className="delete-select-all" onClick={toggleAllVisible}>
-                <span className={`delete-checkbox ${visibleDeleteStudents.length > 0 && visibleDeleteStudents.every((student) => selectedIds.includes(student.id)) ? 'checked' : ''}`}>
-                  {visibleDeleteStudents.length > 0 && visibleDeleteStudents.every((student) => selectedIds.includes(student.id)) ? '✓' : ''}
+              <button
+                type="button"
+                className="delete-select-all"
+                onClick={toggleAllVisible}
+              >
+                <span
+                  className={`delete-checkbox ${
+                    visibleDeleteStudents.length >
+                      0 &&
+                    visibleDeleteStudents.every(
+                      (student) =>
+                        selectedIds.includes(
+                          student.id
+                        )
+                    )
+                      ? 'checked'
+                      : ''
+                  }`}
+                >
+                  {visibleDeleteStudents.length >
+                    0 &&
+                  visibleDeleteStudents.every(
+                    (student) =>
+                      selectedIds.includes(
+                        student.id
+                      )
+                  )
+                    ? '✓'
+                    : ''}
                 </span>
-                <span>Select visible students</span>
+
+                <span>
+                  Select visible students
+                </span>
               </button>
 
               {loadingStudents ? (
-                <div className="delete-empty">Loading students...</div>
-              ) : visibleDeleteStudents.length === 0 ? (
-                <div className="delete-empty">No students found.</div>
+                <div className="delete-empty">
+                  Loading students...
+                </div>
+              ) : visibleDeleteStudents.length ===
+                0 ? (
+                <div className="delete-empty">
+                  No students found.
+                </div>
               ) : (
-                visibleDeleteStudents.map((student) => {
-                  const checked = selectedIds.includes(student.id)
-                  return (
-                    <button
-                      type="button"
-                      key={student.id}
-                      className={`delete-student-row ${checked ? 'selected' : ''}`}
-                      onClick={() => toggleDeleteStudent(student.id)}
-                    >
-                      <span className={`delete-checkbox ${checked ? 'checked' : ''}`}>
-                        {checked ? '✓' : ''}
-                      </span>
-                      <span className="delete-student-info">
-                        <strong>{student.name || 'Unnamed student'}</strong>
-                        <span>{student.program || 'General'} · {student.university || '—'}</span>
-                      </span>
-                      <span className={`delete-active-state ${student.active ? 'active' : 'inactive'}`}>
-                        {student.active ? 'Active' : 'Inactive'}
-                      </span>
-                    </button>
-                  )
-                })
+                visibleDeleteStudents.map(
+                  (student) => {
+                    const checked =
+                      selectedIds.includes(
+                        student.id
+                      )
+
+                    return (
+                      <button
+                        type="button"
+                        key={student.id}
+                        className={`delete-student-row ${
+                          checked
+                            ? 'selected'
+                            : ''
+                        }`}
+                        onClick={() =>
+                          toggleDeleteStudent(
+                            student.id
+                          )
+                        }
+                      >
+                        <span
+                          className={`delete-checkbox ${
+                            checked
+                              ? 'checked'
+                              : ''
+                          }`}
+                        >
+                          {checked ? '✓' : ''}
+                        </span>
+
+                        <span className="delete-student-info">
+                          <strong>
+                            {student.name ||
+                              'Unnamed student'}
+                          </strong>
+
+                          <span>
+                            {student.program ||
+                              'General'}{' '}
+                            ·{' '}
+                            {student.university ||
+                              '—'}
+                          </span>
+                        </span>
+
+                        <span
+                          className={`delete-active-state ${
+                            student.active
+                              ? 'active'
+                              : 'inactive'
+                          }`}
+                        >
+                          {student.active
+                            ? 'Active'
+                            : 'Inactive'}
+                        </span>
+                      </button>
+                    )
+                  }
+                )
               )}
             </div>
 
             <div className="universal-modal-footer">
-              <button type="button" className="secondary-button" onClick={closeModal} disabled={saving}>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={closeModal}
+                disabled={saving}
+              >
                 Cancel
               </button>
+
               <button
                 type="button"
                 className="danger-button"
                 onClick={handleDeleteStudents}
-                disabled={saving || selectedIds.length === 0}
+                disabled={
+                  saving ||
+                  selectedIds.length === 0
+                }
               >
-                {saving ? 'Deleting...' : `Delete ${selectedIds.length || ''} Student${selectedIds.length === 1 ? '' : 's'}`}
+                {saving
+                  ? 'Deleting...'
+                  : `Delete ${
+                      selectedIds.length || ''
+                    } Student${
+                      selectedIds.length === 1
+                        ? ''
+                        : 's'
+                    }`}
               </button>
             </div>
           </div>

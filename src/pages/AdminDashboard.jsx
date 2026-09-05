@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom'
-import { useEffect, useMemo, useState, useRef } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../supabaseClient'
-import PageHeader from '../components/PageHeader'
 import './AdminDashboard.css'
 import './AdminDashboard.redesign.css'
+import './ActivityTracker.css'
 
 function formatNow() {
   const now = new Date()
@@ -134,27 +134,21 @@ function AdminDashboard() {
   const [currentPage, setCurrentPage] = useState(1)
   const STUDENTS_PER_PAGE = 10
 
-  // Student Manager dropdown
-  const [showManagerMenu, setShowManagerMenu] = useState(false)
   const [openActionMenu, setOpenActionMenu] = useState(null)
   const [actionMenuPosition, setActionMenuPosition] = useState(null)
   const [contactStudent, setContactStudent] = useState(null)
   const [contactMode, setContactMode] = useState('compose')
   const [contactSubject, setContactSubject] = useState('')
   const [contactMessage, setContactMessage] = useState('')
-  const managerRef = useRef(null)
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(formatNow()), 30000)
     return () => clearInterval(timer)
   }, [])
 
-  // Close dropdown when clicking outside
+  // Close student row action menu when clicking outside
   useEffect(() => {
     function handleClickOutside(event) {
-      if (managerRef.current && !managerRef.current.contains(event.target)) {
-        setShowManagerMenu(false)
-      }
       if (!event.target.closest('.student-row-actions')) {
         setOpenActionMenu(null)
         setActionMenuPosition(null)
@@ -184,10 +178,8 @@ function AdminDashboard() {
     email: '',
     university: 'AUHS',
     subject: '',
-    program: '',
     phone: '',
     slug: '',
-    active: true,
     canvas_un: '',
     canvas_pw: '',
     corelms_un: '',
@@ -383,7 +375,6 @@ function AdminDashboard() {
   }
 
   function openAddStudent() {
-    setShowManagerMenu(false)
     setError('')
 
     setForm({
@@ -391,10 +382,8 @@ function AdminDashboard() {
       email: '',
       university: 'AUHS',
       subject: '',
-      program: '',
       phone: '',
       slug: '',
-      active: true,
       canvas_un: '',
       canvas_pw: '',
       corelms_un: '',
@@ -407,7 +396,6 @@ function AdminDashboard() {
   }
 
   function openDeleteStudents() {
-    setShowManagerMenu(false)
     setError('')
     setSelectedStudents([])
     setDeleteSearch('')
@@ -433,10 +421,9 @@ function AdminDashboard() {
       email: form.email.trim() || null,
       university: form.university,
       subject: form.subject.trim() || null,
-      program: form.program.trim() || null,
       phone: form.phone.trim() || null,
       slug: form.slug.trim() || null,
-      active: form.active,
+      active: true,
       canvas_un: form.canvas_un.trim() || null,
       canvas_pw: form.canvas_pw || null,
       corelms_un: form.corelms_un.trim() || null,
@@ -798,69 +785,896 @@ function AdminDashboard() {
 
   return (
     <div className="admin-page">
-      {/* TOP BAR */}
-      <div className="admin-topbar">
-        <div className="admin-topbar-row">
-          <div className="admin-heading">
-            <p className="admin-welcome">Welcome, Joyce!</p>
-            <p className="admin-clock">{currentTime}</p>
-          </div>
 
-          <button onClick={handleLogout} className="logout-button">
-            Sign Out
-          </button>
-        </div>
+      <style>{`
+        .dashboard-matched-header {
+          margin-bottom: 28px;
+        }
 
-        <div className="student-action-buttons">
-          <div className="manager-dropdown" ref={managerRef}>
-            <button
-              type="button"
-              className="manager-button"
-              onClick={() => setShowManagerMenu((prev) => !prev)}
-            >
-              Student Manager <span className="manager-caret">▾</span>
-            </button>
+        @media (max-width: 760px) {
+          .dashboard-matched-header {
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 18px;
+          }
 
-            {showManagerMenu && (
-              <div className="manager-menu">
-                <button type="button" onClick={openAddStudent}>
-                  + Add Student
-                </button>
-                <button type="button" onClick={openDeleteStudents}>
-                  Delete Students
-                </button>
-              </div>
-            )}
-          </div>
+          .dashboard-matched-header .activity-page-actions {
+            width: 100%;
+            flex-wrap: wrap;
+          }
+        }
 
-          <Link to="/admin/activity" className="nav-button">
-            Student Progress
-          </Link>
 
-          <Link to="/admin/payments" className="nav-button">
-            Payment Management
-          </Link>
-        </div>
+        /* --------------------------------------------------------
+           ADD STUDENT MODAL V3
+        -------------------------------------------------------- */
+        .add-student-overlay-v3 {
+          padding: 24px;
+          background: rgba(15, 23, 42, 0.48);
+          backdrop-filter: blur(7px);
+        }
 
-        <hr className="admin-divider" />
-      </div>
+        .add-student-modal-v3 {
+          width: min(760px, calc(100vw - 32px));
+          max-height: min(90vh, 780px);
+          overflow-y: auto;
+          border: 1px solid #e1e6e9;
+          border-radius: 16px;
+          background: #ffffff;
+          box-shadow: 0 30px 75px rgba(15, 23, 42, 0.26);
+          color: #253044;
+        }
 
+        .add-student-v3-header {
+          position: sticky;
+          top: 0;
+          z-index: 3;
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 20px;
+          padding: 20px 22px 17px;
+          border-bottom: 1px solid #e9edf0;
+          background: rgba(255, 255, 255, 0.97);
+          backdrop-filter: blur(8px);
+        }
+
+        .add-student-v3-eyebrow {
+          display: block;
+          margin-bottom: 5px;
+          color: #748093;
+          font-size: 9px;
+          line-height: 1.2;
+          font-weight: 800;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+        }
+
+        .add-student-v3-header h2 {
+          margin: 0;
+          color: #182235;
+          font-size: 22px;
+          line-height: 1.2;
+          font-weight: 750;
+          letter-spacing: -0.025em;
+        }
+
+        .add-student-v3-header p {
+          margin: 5px 0 0;
+          max-width: 520px;
+          color: #7a8595;
+          font-size: 11px;
+          line-height: 1.5;
+        }
+
+        .add-student-v3-close {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 32px;
+          height: 32px;
+          padding: 0;
+          flex: 0 0 32px;
+          border: 1px solid #dce2e7;
+          border-radius: 8px;
+          background: #ffffff;
+          color: #657182;
+          font-size: 19px;
+          line-height: 1;
+          cursor: pointer;
+        }
+
+        .add-student-v3-error {
+          margin: 14px 22px 0;
+        }
+
+        .add-student-v3-form {
+          padding: 18px 22px 0;
+        }
+
+        .add-student-v3-section + .add-student-v3-section {
+          margin-top: 20px;
+          padding-top: 19px;
+          border-top: 1px solid #edf0f2;
+        }
+
+        .add-student-v3-section-heading {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          margin-bottom: 13px;
+        }
+
+        .add-student-v3-section-heading > span {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 27px;
+          height: 27px;
+          flex: 0 0 27px;
+          border-radius: 8px;
+          background: #edf3f0;
+          color: #174c3a;
+          font-size: 9px;
+          font-weight: 800;
+        }
+
+        .add-student-v3-section-heading h3 {
+          margin: 0;
+          color: #344055;
+          font-size: 12px;
+          line-height: 1.35;
+          font-weight: 750;
+        }
+
+        .add-student-v3-section-heading p {
+          margin: 2px 0 0;
+          color: #8791a0;
+          font-size: 9px;
+          line-height: 1.45;
+        }
+
+        .add-student-v3-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 12px 14px;
+        }
+
+        .add-student-v3-grid label,
+        .add-student-v3-system-card label {
+          display: flex;
+          min-width: 0;
+          flex-direction: column;
+          gap: 5px;
+          color: #596579;
+          font-size: 9px;
+          font-weight: 700;
+        }
+
+        .add-student-v3-grid label > span,
+        .add-student-v3-system-card label > span {
+          display: block;
+        }
+
+        .add-student-v3-grid b,
+        .add-student-v3-required b {
+          color: #a83d36;
+        }
+
+        .add-student-v3-wide {
+          grid-column: 1 / -1;
+        }
+
+        .add-student-v3-grid input,
+        .add-student-v3-grid select,
+        .add-student-v3-system-card input {
+          width: 100%;
+          height: 36px;
+          box-sizing: border-box;
+          padding: 0 10px;
+          border: 1px solid #dce2e7;
+          border-radius: 7px;
+          background: #ffffff;
+          color: #344055;
+          font-family: inherit;
+          font-size: 10px;
+          outline: none;
+          transition:
+            border-color 0.15s ease,
+            box-shadow 0.15s ease;
+        }
+
+        .add-student-v3-grid input:focus,
+        .add-student-v3-grid select:focus,
+        .add-student-v3-system-card input:focus {
+          border-color: #9cb8ad;
+          box-shadow: 0 0 0 3px rgba(23, 76, 58, 0.08);
+        }
+
+        .add-student-v3-system-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 14px;
+        }
+
+        .add-student-v3-system-card {
+          display: flex;
+          min-width: 0;
+          flex-direction: column;
+          gap: 11px;
+          padding: 14px;
+          border: 1px solid #e0e6e3;
+          border-radius: 10px;
+          background: #f8faf9;
+        }
+
+        .add-student-v3-system-title {
+          display: flex;
+          align-items: center;
+          gap: 9px;
+          padding-bottom: 2px;
+        }
+
+        .add-student-v3-system-icon {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 30px;
+          height: 30px;
+          flex: 0 0 30px;
+          border-radius: 8px;
+          background: #e7f0ec;
+          color: #174c3a;
+          font-size: 11px;
+          font-weight: 800;
+        }
+
+        .add-student-v3-system-icon.corelms {
+          background: #eef0f5;
+          color: #475569;
+        }
+
+        .add-student-v3-system-title strong,
+        .add-student-v3-system-title small {
+          display: block;
+        }
+
+        .add-student-v3-system-title strong {
+          color: #344055;
+          font-size: 11px;
+        }
+
+        .add-student-v3-system-title small {
+          margin-top: 2px;
+          color: #8d97a5;
+          font-size: 8px;
+        }
+
+        .add-student-v3-password {
+          display: flex;
+          min-width: 0;
+        }
+
+        .add-student-v3-password input {
+          min-width: 0;
+          border-top-right-radius: 0;
+          border-bottom-right-radius: 0;
+        }
+
+        .add-student-v3-password button {
+          min-width: 54px;
+          padding: 0 9px;
+          border: 1px solid #dce2e7;
+          border-left: 0;
+          border-radius: 0 7px 7px 0;
+          background: #ffffff;
+          color: #536071;
+          font-family: inherit;
+          font-size: 9px;
+          font-weight: 700;
+          cursor: pointer;
+        }
+
+        .add-student-v3-footer {
+          position: sticky;
+          bottom: 0;
+          z-index: 2;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 14px;
+          margin: 20px -22px 0;
+          padding: 12px 22px;
+          border-top: 1px solid #e9edf0;
+          background: rgba(250, 251, 251, 0.97);
+          backdrop-filter: blur(8px);
+        }
+
+        .add-student-v3-required {
+          color: #8993a0;
+          font-size: 8px;
+        }
+
+        .add-student-v3-footer-actions {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .add-student-v3-cancel,
+        .add-student-v3-submit {
+          min-height: 36px;
+          padding: 0 14px;
+          border-radius: 7px;
+          font-family: inherit;
+          font-size: 10px;
+          font-weight: 700;
+          cursor: pointer;
+        }
+
+        .add-student-v3-cancel {
+          border: 1px solid #d8dfe7;
+          background: #ffffff;
+          color: #536071;
+        }
+
+        .add-student-v3-submit {
+          border: 1px solid #174c3a;
+          background: #174c3a;
+          color: #ffffff;
+          box-shadow: 0 3px 8px rgba(23, 76, 58, 0.13);
+        }
+
+        .add-student-v3-submit:hover:not(:disabled) {
+          border-color: #123f30;
+          background: #123f30;
+        }
+
+        .add-student-v3-cancel:disabled,
+        .add-student-v3-submit:disabled,
+        .add-student-v3-close:disabled {
+          opacity: 0.55;
+          cursor: not-allowed;
+        }
+
+        @media (max-width: 640px) {
+          .add-student-overlay-v3 {
+            padding: 8px;
+          }
+
+          .add-student-modal-v3 {
+            width: 100%;
+            max-height: 96vh;
+            border-radius: 12px;
+          }
+
+          .add-student-v3-grid,
+          .add-student-v3-system-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .add-student-v3-wide {
+            grid-column: auto;
+          }
+
+          .add-student-v3-footer {
+            align-items: stretch;
+            flex-direction: column;
+          }
+
+          .add-student-v3-footer-actions {
+            width: 100%;
+          }
+
+          .add-student-v3-footer-actions button {
+            flex: 1;
+          }
+        }
+
+
+        /* --------------------------------------------------------
+           DELETE STUDENT MODAL V3
+        -------------------------------------------------------- */
+        .delete-student-overlay-v3 {
+          padding: 24px;
+          background: rgba(15, 23, 42, 0.48);
+          backdrop-filter: blur(7px);
+        }
+
+        .delete-student-modal-v3 {
+          width: min(820px, calc(100vw - 32px));
+          max-height: min(90vh, 820px);
+          overflow-y: auto;
+          border: 1px solid #e1e6e9;
+          border-radius: 16px;
+          background: #ffffff;
+          box-shadow: 0 30px 75px rgba(15, 23, 42, 0.26);
+          color: #253044;
+        }
+
+        .delete-student-v3-header {
+          position: sticky;
+          top: 0;
+          z-index: 3;
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 20px;
+          padding: 20px 22px 17px;
+          border-bottom: 1px solid #e9edf0;
+          background: rgba(255, 255, 255, 0.97);
+          backdrop-filter: blur(8px);
+        }
+
+        .delete-student-v3-eyebrow {
+          display: block;
+          margin-bottom: 5px;
+          color: #748093;
+          font-size: 9px;
+          line-height: 1.2;
+          font-weight: 800;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+        }
+
+        .delete-student-v3-header h2 {
+          margin: 0;
+          color: #182235;
+          font-size: 22px;
+          line-height: 1.2;
+          font-weight: 750;
+          letter-spacing: -0.025em;
+        }
+
+        .delete-student-v3-header p {
+          margin: 5px 0 0;
+          max-width: 560px;
+          color: #7a8595;
+          font-size: 11px;
+          line-height: 1.5;
+        }
+
+        .delete-student-v3-close {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 32px;
+          height: 32px;
+          padding: 0;
+          flex: 0 0 32px;
+          border: 1px solid #dce2e7;
+          border-radius: 8px;
+          background: #ffffff;
+          color: #657182;
+          font-size: 19px;
+          line-height: 1;
+          cursor: pointer;
+        }
+
+        .delete-student-v3-error {
+          margin: 14px 22px 0;
+        }
+
+        .delete-student-v3-body {
+          padding: 18px 22px 0;
+        }
+
+        .delete-student-v3-section + .delete-student-v3-section {
+          margin-top: 20px;
+          padding-top: 19px;
+          border-top: 1px solid #edf0f2;
+        }
+
+        .delete-student-v3-section-heading {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          margin-bottom: 13px;
+        }
+
+        .delete-student-v3-section-heading > span {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 27px;
+          height: 27px;
+          flex: 0 0 27px;
+          border-radius: 8px;
+          background: #f5eceb;
+          color: #a83d36;
+          font-size: 9px;
+          font-weight: 800;
+        }
+
+        .delete-student-v3-section-heading h3 {
+          margin: 0;
+          color: #344055;
+          font-size: 12px;
+          line-height: 1.35;
+          font-weight: 750;
+        }
+
+        .delete-student-v3-section-heading p {
+          margin: 2px 0 0;
+          color: #8791a0;
+          font-size: 9px;
+          line-height: 1.45;
+        }
+
+        .delete-student-v3-toolbar {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) 150px 150px;
+          gap: 10px;
+        }
+
+        .delete-student-v3-search {
+          display: flex;
+          align-items: center;
+          min-width: 0;
+          height: 36px;
+          padding: 0 10px;
+          box-sizing: border-box;
+          border: 1px solid #dce2e7;
+          border-radius: 7px;
+          background: #ffffff;
+        }
+
+        .delete-student-v3-search > span {
+          margin-right: 7px;
+          color: #8b95a3;
+          font-size: 13px;
+        }
+
+        .delete-student-v3-search input {
+          width: 100%;
+          min-width: 0;
+          height: 32px;
+          padding: 0;
+          border: 0;
+          background: transparent;
+          color: #344055;
+          font-family: inherit;
+          font-size: 10px;
+          outline: none;
+        }
+
+        .delete-student-v3-toolbar select {
+          width: 100%;
+          height: 36px;
+          padding: 0 9px;
+          box-sizing: border-box;
+          border: 1px solid #dce2e7;
+          border-radius: 7px;
+          background: #ffffff;
+          color: #344055;
+          font-family: inherit;
+          font-size: 10px;
+          outline: none;
+        }
+
+        .delete-student-v3-selection-bar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          margin-bottom: 9px;
+          padding: 9px 11px;
+          border: 1px solid #e1e6e9;
+          border-radius: 8px;
+          background: #f8faf9;
+        }
+
+        .delete-student-v3-selection-bar label {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          color: #526071;
+          font-size: 9px;
+          font-weight: 700;
+          cursor: pointer;
+        }
+
+        .delete-student-v3-selection-bar > div {
+          display: flex;
+          align-items: center;
+          gap: 11px;
+          color: #8993a0;
+          font-size: 8px;
+        }
+
+        .delete-student-v3-selection-bar strong {
+          color: #a83d36;
+          font-size: 9px;
+        }
+
+        .delete-student-v3-list {
+          max-height: 330px;
+          overflow-y: auto;
+          border: 1px solid #e1e6e9;
+          border-radius: 10px;
+          background: #ffffff;
+        }
+
+        .delete-student-v3-row {
+          display: grid;
+          grid-template-columns: 18px 34px minmax(0, 1fr) auto 24px;
+          align-items: center;
+          gap: 9px;
+          min-height: 56px;
+          padding: 8px 11px;
+          border-bottom: 1px solid #edf0f2;
+          box-sizing: border-box;
+          cursor: pointer;
+          transition:
+            background 0.15s ease,
+            border-color 0.15s ease;
+        }
+
+        .delete-student-v3-row:last-child {
+          border-bottom: 0;
+        }
+
+        .delete-student-v3-row:hover {
+          background: #fafbfb;
+        }
+
+        .delete-student-v3-row.selected {
+          background: #fff7f6;
+        }
+
+        .delete-student-v3-avatar {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 32px;
+          height: 32px;
+          border-radius: 8px;
+          background: #edf3f0;
+          color: #174c3a;
+          font-size: 9px;
+          font-weight: 800;
+        }
+
+        .delete-student-v3-main {
+          display: flex;
+          min-width: 0;
+          flex-direction: column;
+          gap: 2px;
+        }
+
+        .delete-student-v3-main strong {
+          overflow: hidden;
+          color: #344055;
+          font-size: 10px;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .delete-student-v3-main small {
+          overflow: hidden;
+          color: #8a95a4;
+          font-size: 8px;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .delete-student-v3-tags {
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          gap: 5px;
+          flex-wrap: wrap;
+        }
+
+        .delete-student-v3-tag {
+          display: inline-flex;
+          align-items: center;
+          min-height: 20px;
+          padding: 0 7px;
+          border-radius: 999px;
+          background: #f1f4f6;
+          color: #667384;
+          font-size: 8px;
+          font-weight: 700;
+          white-space: nowrap;
+        }
+
+        .delete-student-v3-tag.school {
+          background: #edf3f0;
+          color: #174c3a;
+        }
+
+        .delete-student-v3-tag.complete {
+          background: #e9f4ee;
+          color: #215e47;
+        }
+
+        .delete-student-v3-tag.progress {
+          background: #f5f1e5;
+          color: #8a7041;
+        }
+
+        .delete-student-v3-check {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 20px;
+          height: 20px;
+          border-radius: 6px;
+          background: #a83d36;
+          color: #ffffff;
+          font-size: 9px;
+          font-weight: 800;
+          opacity: 0;
+        }
+
+        .delete-student-v3-row.selected .delete-student-v3-check {
+          opacity: 1;
+        }
+
+        .delete-student-v3-empty {
+          display: flex;
+          min-height: 180px;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          color: #8d97a4;
+          text-align: center;
+        }
+
+        .delete-student-v3-empty > div {
+          margin-bottom: 7px;
+          font-size: 18px;
+        }
+
+        .delete-student-v3-empty strong {
+          color: #536071;
+          font-size: 11px;
+        }
+
+        .delete-student-v3-empty span {
+          margin-top: 3px;
+          font-size: 9px;
+        }
+
+        .delete-student-v3-footer {
+          position: sticky;
+          bottom: 0;
+          z-index: 2;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 14px;
+          margin-top: 20px;
+          padding: 12px 22px;
+          border-top: 1px solid #e9edf0;
+          background: rgba(250, 251, 251, 0.97);
+          backdrop-filter: blur(8px);
+        }
+
+        .delete-student-v3-summary {
+          color: #8993a0;
+          font-size: 8px;
+        }
+
+        .delete-student-v3-actions {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .delete-student-v3-cancel,
+        .delete-student-v3-submit {
+          min-height: 36px;
+          padding: 0 14px;
+          border-radius: 7px;
+          font-family: inherit;
+          font-size: 10px;
+          font-weight: 700;
+          cursor: pointer;
+        }
+
+        .delete-student-v3-cancel {
+          border: 1px solid #d8dfe7;
+          background: #ffffff;
+          color: #536071;
+        }
+
+        .delete-student-v3-submit {
+          border: 1px solid #a83d36;
+          background: #a83d36;
+          color: #ffffff;
+          box-shadow: 0 3px 8px rgba(168, 61, 54, 0.18);
+        }
+
+        .delete-student-v3-submit:hover:not(:disabled) {
+          border-color: #8e302a;
+          background: #8e302a;
+        }
+
+        .delete-student-v3-cancel:disabled,
+        .delete-student-v3-submit:disabled,
+        .delete-student-v3-close:disabled {
+          opacity: 0.55;
+          cursor: not-allowed;
+        }
+
+        @media (max-width: 720px) {
+          .delete-student-overlay-v3 {
+            padding: 8px;
+          }
+
+          .delete-student-modal-v3 {
+            width: 100%;
+            max-height: 96vh;
+            border-radius: 12px;
+          }
+
+          .delete-student-v3-toolbar {
+            grid-template-columns: 1fr;
+          }
+
+          .delete-student-v3-row {
+            grid-template-columns: 18px 34px minmax(0, 1fr) 24px;
+          }
+
+          .delete-student-v3-tags {
+            grid-column: 3 / -1;
+            justify-content: flex-start;
+          }
+
+          .delete-student-v3-selection-bar,
+          .delete-student-v3-footer {
+            align-items: flex-start;
+            flex-direction: column;
+          }
+
+          .delete-student-v3-actions {
+            width: 100%;
+          }
+
+          .delete-student-v3-actions button {
+            flex: 1;
+          }
+        }
+      `}</style>
       {error && !showAddStudent && !showDeleteStudents && (
         <div className="dashboard-error">{error}</div>
       )}
 
-      {/* Search + School Filter + Status Tabs */}
-      <div className="page-header">
-  <div className="page-header-content">
-    <div className="page-eyebrow">STUDENT MANAGEMENT</div>
+      {/* Dashboard header — intentionally matches Student Progress */}
+      <section className="activity-page-header dashboard-matched-header">
+        <div className="activity-page-header-copy">
+          <span className="activity-eyebrow">
+            STUDENT MANAGEMENT
+          </span>
 
-    <h1 className="page-title">Dashboard</h1>
+          <h1>Dashboard</h1>
 
-    <p className="page-description">
-      Monitor students, activity progress, and overall platform activity.
-    </p>
-  </div>
-</div>
+          <p>
+            Monitor students, activity progress, and overall platform activity.
+          </p>
+        </div>
+
+        <div className="activity-page-actions">
+          <button
+            type="button"
+            className="activity-primary-button"
+            onClick={openAddStudent}
+          >
+            <span className="button-plus">+</span>
+            Add Student
+          </button>
+
+          <button
+            type="button"
+            className="activity-danger-button"
+            onClick={openDeleteStudents}
+          >
+            Delete Student
+          </button>
+        </div>
+      </section>
       <section className="dashboard-filter-card">
 
         <div className="dashboard-filter-search">
@@ -1283,7 +2097,7 @@ function AdminDashboard() {
       {/* ADD STUDENT MODAL */}
       {showAddStudent && (
         <div
-          className="modal-overlay"
+          className="modal-overlay add-student-overlay-v3"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) {
               closeAddStudent()
@@ -1291,108 +2105,267 @@ function AdminDashboard() {
           }}
         >
           <div
-            className="add-student-modal"
+            className="add-student-modal add-student-modal-v3"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="add-student-title"
             onMouseDown={(event) => event.stopPropagation()}
           >
-            <div className="modal-header">
+            <div className="add-student-v3-header">
               <div>
-                <h2>Add Student</h2>
-                <p>Enter the student's information below.</p>
+                <span className="add-student-v3-eyebrow">
+                  STUDENT MANAGEMENT
+                </span>
+
+                <h2 id="add-student-title">Add Student</h2>
+
+                <p>
+                  Create the student profile and optionally save
+                  learning-system credentials.
+                </p>
               </div>
+
               <button
                 type="button"
-                className="modal-close-button"
+                className="add-student-v3-close"
                 onClick={closeAddStudent}
                 disabled={saving}
+                aria-label="Close Add Student"
               >
                 ×
               </button>
             </div>
 
-            {error && <div className="modal-error">{error}</div>}
-
-            <form onSubmit={handleAddStudent} className="add-student-form">
-              <div className="modal-section-heading">
-                <span className="modal-section-number">1</span>
-                <div>
-                  <h3>Student Information</h3>
-                  <p>Basic information used throughout the student profile.</p>
-                </div>
+            {error && (
+              <div className="modal-error add-student-v3-error">
+                {error}
               </div>
+            )}
 
-              <div className="modal-form-grid">
-                <label className="modal-field-wide">
-                  Name <span className="required-mark">*</span>
-                  <input type="text" name="name" value={form.name} onChange={handleChange} required autoFocus placeholder="Student full name" />
-                </label>
+            <form
+              onSubmit={handleAddStudent}
+              className="add-student-v3-form"
+            >
+              <section className="add-student-v3-section">
+                <div className="add-student-v3-section-heading">
+                  <span>01</span>
 
-                <label>
-                  Email
-                  <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="student@example.com" />
-                </label>
-
-                <label>
-                  University <span className="required-mark">*</span>
-                  <select name="university" value={form.university} onChange={handleChange} required>
-                    <option value="AUHS">AUHS</option>
-                    <option value="PACIFIC">PACIFIC</option>
-                  </select>
-                </label>
-
-                <label>
-                  Program
-                  <input type="text" name="program" value={form.program} onChange={handleChange} placeholder="Program or course" />
-                </label>
-
-                <label>
-                  Phone
-                  <input type="text" name="phone" value={form.phone} onChange={handleChange} placeholder="Phone number" />
-                </label>
-
-                <label>
-                  Status Page Slug
-                  <input type="text" name="slug" value={form.slug} onChange={handleChange} placeholder="john-smith" />
-                </label>
-
-                <label className="modal-status-label">
-                  Status
-                  <span className="modal-checkbox-row">
-                    <input type="checkbox" name="active" checked={form.active} onChange={handleChange} />
-                    <span className="modal-toggle-text"><strong>Active student</strong><small>Student is currently being tutored</small></span>
-                  </span>
-                </label>
-              </div>
-
-              <div className="modal-section-heading credentials-heading">
-                <span className="modal-section-number">2</span>
-                <div>
-                  <h3>Learning Systems</h3>
-                  <p>Optional login credentials. You can add these later from Student Details.</p>
-                </div>
-              </div>
-
-              <div className="modal-learning-grid">
-                <div className="modal-system-card">
-                  <div className="modal-system-title"><span className="system-icon">C</span><div><strong>Canvas</strong><small>Learning System</small></div></div>
-                  <div className="modal-system-fields">
-                    <label>Username<input type="text" name="canvas_un" value={form.canvas_un} onChange={handleChange} autoComplete="off" placeholder="Canvas username" /></label>
-                    <label>Password<div className="modal-password-field"><input type={showCanvasPassword ? 'text' : 'password'} name="canvas_pw" value={form.canvas_pw} onChange={handleChange} autoComplete="new-password" placeholder="Canvas password" /><button type="button" className="show-password-button" onClick={() => setShowCanvasPassword(current => !current)}>{showCanvasPassword ? 'Hide' : 'Show'}</button></div></label>
+                  <div>
+                    <h3>Student Information</h3>
+                    <p>
+                      Basic details used across the tutoring platform.
+                    </p>
                   </div>
                 </div>
 
-                <div className="modal-system-card">
-                  <div className="modal-system-title"><span className="system-icon corelms">L</span><div><strong>CORELMS</strong><small>Learning System</small></div></div>
-                  <div className="modal-system-fields">
-                    <label>Username<input type="text" name="corelms_un" value={form.corelms_un} onChange={handleChange} autoComplete="off" placeholder="CORELMS username" /></label>
-                    <label>Password<div className="modal-password-field"><input type={showCorelmsPassword ? 'text' : 'password'} name="corelms_pw" value={form.corelms_pw} onChange={handleChange} autoComplete="new-password" placeholder="CORELMS password" /><button type="button" className="show-password-button" onClick={() => setShowCorelmsPassword(current => !current)}>{showCorelmsPassword ? 'Hide' : 'Show'}</button></div></label>
+                <div className="add-student-v3-grid">
+                  <label className="add-student-v3-wide">
+                    <span>
+                      Full Name <b>*</b>
+                    </span>
+
+                    <input
+                      type="text"
+                      name="name"
+                      value={form.name}
+                      onChange={handleChange}
+                      required
+                      autoFocus
+                      placeholder="Student full name"
+                    />
+                  </label>
+
+                  <label>
+                    <span>Email</span>
+
+                    <input
+                      type="email"
+                      name="email"
+                      value={form.email}
+                      onChange={handleChange}
+                      placeholder="student@example.com"
+                    />
+                  </label>
+
+                  <label>
+                    <span>Phone</span>
+
+                    <input
+                      type="text"
+                      name="phone"
+                      value={form.phone}
+                      onChange={handleChange}
+                      placeholder="Phone number"
+                    />
+                  </label>
+
+                  <label>
+                    <span>
+                      University <b>*</b>
+                    </span>
+
+                    <select
+                      name="university"
+                      value={form.university}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="AUHS">AUHS</option>
+                      <option value="PACIFIC">PACIFIC</option>
+                    </select>
+                  </label>
+
+                  <label>
+                    <span>Status Page Slug</span>
+
+                    <input
+                      type="text"
+                      name="slug"
+                      value={form.slug}
+                      onChange={handleChange}
+                      placeholder="john-smith"
+                    />
+                  </label>
+                </div>
+              </section>
+
+              <section className="add-student-v3-section add-student-v3-systems-section">
+                <div className="add-student-v3-section-heading">
+                  <span>02</span>
+
+                  <div>
+                    <h3>Learning Systems</h3>
+                    <p>
+                      Optional credentials. These can also be added later
+                      from the student's profile.
+                    </p>
                   </div>
                 </div>
-              </div>
 
-              <div className="modal-actions">
-                <div className="modal-required-hint"><span className="required-mark">*</span> Required fields</div>
-                <button type="button" className="cancel-button" onClick={closeAddStudent} disabled={saving}>Cancel</button>
-                <button type="submit" className="primary-button modal-submit-button" disabled={saving}>{saving ? 'Adding Student...' : 'Add Student'}</button>
+                <div className="add-student-v3-system-grid">
+                  <div className="add-student-v3-system-card">
+                    <div className="add-student-v3-system-title">
+                      <span className="add-student-v3-system-icon">C</span>
+
+                      <div>
+                        <strong>Canvas</strong>
+                        <small>Learning System</small>
+                      </div>
+                    </div>
+
+                    <label>
+                      <span>Username</span>
+
+                      <input
+                        type="text"
+                        name="canvas_un"
+                        value={form.canvas_un}
+                        onChange={handleChange}
+                        autoComplete="off"
+                        placeholder="Canvas username"
+                      />
+                    </label>
+
+                    <label>
+                      <span>Password</span>
+
+                      <div className="add-student-v3-password">
+                        <input
+                          type={showCanvasPassword ? 'text' : 'password'}
+                          name="canvas_pw"
+                          value={form.canvas_pw}
+                          onChange={handleChange}
+                          autoComplete="new-password"
+                          placeholder="Canvas password"
+                        />
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowCanvasPassword((current) => !current)
+                          }
+                        >
+                          {showCanvasPassword ? 'Hide' : 'Show'}
+                        </button>
+                      </div>
+                    </label>
+                  </div>
+
+                  <div className="add-student-v3-system-card">
+                    <div className="add-student-v3-system-title">
+                      <span className="add-student-v3-system-icon corelms">
+                        L
+                      </span>
+
+                      <div>
+                        <strong>CORELMS</strong>
+                        <small>Learning System</small>
+                      </div>
+                    </div>
+
+                    <label>
+                      <span>Username</span>
+
+                      <input
+                        type="text"
+                        name="corelms_un"
+                        value={form.corelms_un}
+                        onChange={handleChange}
+                        autoComplete="off"
+                        placeholder="CORELMS username"
+                      />
+                    </label>
+
+                    <label>
+                      <span>Password</span>
+
+                      <div className="add-student-v3-password">
+                        <input
+                          type={showCorelmsPassword ? 'text' : 'password'}
+                          name="corelms_pw"
+                          value={form.corelms_pw}
+                          onChange={handleChange}
+                          autoComplete="new-password"
+                          placeholder="CORELMS password"
+                        />
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowCorelmsPassword((current) => !current)
+                          }
+                        >
+                          {showCorelmsPassword ? 'Hide' : 'Show'}
+                        </button>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              </section>
+
+              <div className="add-student-v3-footer">
+                <div className="add-student-v3-required">
+                  <b>*</b> Required fields
+                </div>
+
+                <div className="add-student-v3-footer-actions">
+                  <button
+                    type="button"
+                    className="add-student-v3-cancel"
+                    onClick={closeAddStudent}
+                    disabled={saving}
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="submit"
+                    className="add-student-v3-submit"
+                    disabled={saving}
+                  >
+                    {saving ? 'Adding Student...' : 'Add Student'}
+                  </button>
+                </div>
               </div>
             </form>
           </div>
@@ -1402,7 +2375,7 @@ function AdminDashboard() {
       {/* DELETE STUDENTS MODAL */}
       {showDeleteStudents && (
         <div
-          className="modal-overlay delete-modal-overlay"
+          className="modal-overlay delete-student-overlay-v3"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget && !deleting) {
               setShowDeleteStudents(false)
@@ -1412,22 +2385,29 @@ function AdminDashboard() {
           }}
         >
           <div
-            className="delete-students-modal delete-modal-v2"
+            className="delete-student-modal-v3"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-student-title"
             onMouseDown={(event) => event.stopPropagation()}
           >
-            <div className="delete-modal-header">
-              <div className="delete-modal-title-wrap">
-                <div className="delete-modal-icon">⌫</div>
-                <div>
-                  <div className="delete-modal-kicker">STUDENT MANAGER</div>
-                  <h2>Delete Students</h2>
-                  <p>Choose the student records you want to permanently remove.</p>
-                </div>
+            <div className="delete-student-v3-header">
+              <div>
+                <span className="delete-student-v3-eyebrow">
+                  STUDENT MANAGEMENT
+                </span>
+
+                <h2 id="delete-student-title">Delete Students</h2>
+
+                <p>
+                  Select one or more student records to permanently remove
+                  from the tutoring platform.
+                </p>
               </div>
 
               <button
                 type="button"
-                className="modal-close-button"
+                className="delete-student-v3-close"
                 onClick={() => {
                   if (deleting) return
                   setShowDeleteStudents(false)
@@ -1435,140 +2415,210 @@ function AdminDashboard() {
                   setError('')
                 }}
                 disabled={deleting}
-                aria-label="Close delete students"
+                aria-label="Close Delete Students"
               >
                 ×
               </button>
             </div>
 
-            <div className="delete-danger-banner">
-              <strong>Permanent deletion</strong>
-              <span>Deleted student records cannot be recovered from this dashboard.</span>
-            </div>
-
-            {error && <div className="modal-error">{error}</div>}
-
-            <div className="delete-toolbar">
-              <div className="delete-search-wrap">
-                <span className="delete-search-icon">⌕</span>
-                <input
-                  type="text"
-                  value={deleteSearch}
-                  onChange={(event) => setDeleteSearch(event.target.value)}
-                  placeholder="Search students..."
-                  disabled={deleting}
-                />
+            {error && (
+              <div className="modal-error delete-student-v3-error">
+                {error}
               </div>
+            )}
 
-              <select
-                value={deleteSchoolFilter}
-                onChange={(event) => setDeleteSchoolFilter(event.target.value)}
-                disabled={deleting}
-                aria-label="Filter by school"
-              >
-                <option value="all">All Schools</option>
-                <option value="AUHS">AUHS</option>
-                <option value="PACIFIC">PACIFIC</option>
-              </select>
+            <div className="delete-student-v3-body">
+              <section className="delete-student-v3-section">
+                <div className="delete-student-v3-section-heading">
+                  <span>01</span>
 
-              <select
-                value={deleteStatusFilter}
-                onChange={(event) => setDeleteStatusFilter(event.target.value)}
-                disabled={deleting}
-                aria-label="Filter by status"
-              >
-                <option value="all">All Status</option>
-                <option value="in-progress">In Progress</option>
-                <option value="completed">Completed</option>
-              </select>
-            </div>
-
-            <div className="delete-selection-bar">
-              <label className="delete-select-all">
-                <input
-                  type="checkbox"
-                  checked={allVisibleDeleteSelected}
-                  onChange={toggleVisibleDeleteSelection}
-                  disabled={deleting || deleteFilteredStudents.length === 0}
-                />
-                <span>Select visible</span>
-              </label>
-
-              <div className="delete-selection-meta">
-                <span>{deleteFilteredStudents.length} shown</span>
-                <strong>{selectedStudents.length} selected</strong>
-              </div>
-            </div>
-
-            <div className="delete-student-list-v2">
-              {deleteFilteredStudents.length === 0 ? (
-                <div className="delete-empty-v2">
-                  <div className="delete-empty-icon">⌕</div>
-                  <strong>No students found</strong>
-                  <span>Try changing your search or filters.</span>
+                  <div>
+                    <h3>Find Students</h3>
+                    <p>
+                      Search and filter the student list before selecting
+                      records to delete.
+                    </p>
+                  </div>
                 </div>
-              ) : (
-                deleteFilteredStudents.map((student) => {
-                  const isSelected = selectedStudents.includes(student.id)
-                  const metric = studentMetrics[student.id] || { status: 'in-progress' }
 
-                  return (
-                    <label
-                      key={student.id}
-                      className={
-                        isSelected
-                          ? 'delete-student-row-v2 selected'
-                          : 'delete-student-row-v2'
+                <div className="delete-student-v3-toolbar">
+                  <div className="delete-student-v3-search">
+                    <span>⌕</span>
+
+                    <input
+                      type="text"
+                      value={deleteSearch}
+                      onChange={(event) =>
+                        setDeleteSearch(event.target.value)
                       }
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => toggleStudentSelection(student.id)}
-                        disabled={deleting}
-                      />
+                      placeholder="Search students..."
+                      disabled={deleting}
+                    />
+                  </div>
 
-                      <span className="delete-student-avatar">
-                        {getInitials(student.name)}
-                      </span>
+                  <select
+                    value={deleteSchoolFilter}
+                    onChange={(event) =>
+                      setDeleteSchoolFilter(event.target.value)
+                    }
+                    disabled={deleting}
+                    aria-label="Filter by school"
+                  >
+                    <option value="all">All Schools</option>
+                    <option value="AUHS">AUHS</option>
+                    <option value="PACIFIC">PACIFIC</option>
+                  </select>
 
-                      <span className="delete-student-main">
-                        <span className="delete-student-name">{student.name}</span>
-                        <span className="delete-student-subline">
-                          {student.email || 'No email address'}
-                        </span>
-                      </span>
+                  <select
+                    value={deleteStatusFilter}
+                    onChange={(event) =>
+                      setDeleteStatusFilter(event.target.value)
+                    }
+                    disabled={deleting}
+                    aria-label="Filter by status"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                  </select>
+                </div>
+              </section>
 
-                      <span className="delete-student-tags">
-                        <span className="delete-tag school">{student.university || '—'}</span>
-                        {student.program && (
-                          <span className="delete-tag">{student.program}</span>
-                        )}
-                        <span className={`delete-tag ${metric.status === 'completed' ? 'complete' : 'progress'}`}>
-                          {metric.status === 'completed' ? 'Completed' : 'In Progress'}
-                        </span>
-                      </span>
+              <section className="delete-student-v3-section">
+                <div className="delete-student-v3-section-heading">
+                  <span>02</span>
 
-                      <span className="delete-row-indicator" aria-hidden="true">
-                        {isSelected ? '✓' : ''}
+                  <div>
+                    <h3>Select Students</h3>
+                    <p>
+                      Choose the records you want to permanently delete.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="delete-student-v3-selection-bar">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={allVisibleDeleteSelected}
+                      onChange={toggleVisibleDeleteSelection}
+                      disabled={
+                        deleting ||
+                        deleteFilteredStudents.length === 0
+                      }
+                    />
+
+                    <span>Select visible students</span>
+                  </label>
+
+                  <div>
+                    <span>
+                      {deleteFilteredStudents.length} shown
+                    </span>
+
+                    <strong>
+                      {selectedStudents.length} selected
+                    </strong>
+                  </div>
+                </div>
+
+                <div className="delete-student-v3-list">
+                  {deleteFilteredStudents.length === 0 ? (
+                    <div className="delete-student-v3-empty">
+                      <div>⌕</div>
+                      <strong>No students found</strong>
+                      <span>
+                        Try changing your search or filters.
                       </span>
-                    </label>
-                  )
-                })
-              )}
+                    </div>
+                  ) : (
+                    deleteFilteredStudents.map((student) => {
+                      const isSelected =
+                        selectedStudents.includes(student.id)
+
+                      const metric =
+                        studentMetrics[student.id] || {
+                          status: 'in-progress',
+                        }
+
+                      return (
+                        <label
+                          key={student.id}
+                          className={
+                            isSelected
+                              ? 'delete-student-v3-row selected'
+                              : 'delete-student-v3-row'
+                          }
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() =>
+                              toggleStudentSelection(student.id)
+                            }
+                            disabled={deleting}
+                          />
+
+                          <span className="delete-student-v3-avatar">
+                            {getInitials(student.name)}
+                          </span>
+
+                          <span className="delete-student-v3-main">
+                            <strong>{student.name}</strong>
+
+                            <small>
+                              {student.email || 'No email address'}
+                            </small>
+                          </span>
+
+                          <span className="delete-student-v3-tags">
+                            <span className="delete-student-v3-tag school">
+                              {student.university || '—'}
+                            </span>
+
+                            {student.program && (
+                              <span className="delete-student-v3-tag">
+                                {student.program}
+                              </span>
+                            )}
+
+                            <span
+                              className={
+                                metric.status === 'completed'
+                                  ? 'delete-student-v3-tag complete'
+                                  : 'delete-student-v3-tag progress'
+                              }
+                            >
+                              {metric.status === 'completed'
+                                ? 'Completed'
+                                : 'In Progress'}
+                            </span>
+                          </span>
+
+                          <span className="delete-student-v3-check">
+                            {isSelected ? '✓' : ''}
+                          </span>
+                        </label>
+                      )
+                    })
+                  )}
+                </div>
+              </section>
             </div>
 
-            <div className="delete-modal-footer">
-              <div className="delete-footer-warning">
+            <div className="delete-student-v3-footer">
+              <div className="delete-student-v3-summary">
                 {selectedStudents.length > 0
-                  ? `${selectedStudents.length} student${selectedStudents.length === 1 ? '' : 's'} will be deleted.`
-                  : 'No students selected.'}
+                  ? `${selectedStudents.length} student${
+                      selectedStudents.length === 1 ? '' : 's'
+                    } selected`
+                  : 'No students selected'}
               </div>
 
-              <div className="delete-footer-actions">
+              <div className="delete-student-v3-actions">
                 <button
                   type="button"
-                  className="cancel-button"
+                  className="delete-student-v3-cancel"
                   onClick={() => {
                     if (deleting) return
                     setShowDeleteStudents(false)
@@ -1582,13 +2632,20 @@ function AdminDashboard() {
 
                 <button
                   type="button"
-                  className="delete-selected-button delete-button-v2"
+                  className="delete-student-v3-submit"
                   onClick={handleDeleteSelected}
-                  disabled={deleting || selectedStudents.length === 0}
+                  disabled={
+                    deleting ||
+                    selectedStudents.length === 0
+                  }
                 >
                   {deleting
                     ? 'Deleting...'
-                    : `Delete ${selectedStudents.length > 0 ? `Selected (${selectedStudents.length})` : 'Selected'}`}
+                    : `Delete Selected${
+                        selectedStudents.length > 0
+                          ? ` (${selectedStudents.length})`
+                          : ''
+                      }`}
                 </button>
               </div>
             </div>

@@ -91,12 +91,15 @@ function StudentActivityModal({
     requirementsByWeek,
     getActivity,
     toggleRequirement,
+    saveProgressChanges,
     updateNote,
     deleteActivity,
   } = useStudentActivity(student?.id)
 
-  const [savingId, setSavingId] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
+  const [savingProgress, setSavingProgress] = useState(false)
+  const [saveMessage, setSaveMessage] = useState('')
+  const [draftCompleted, setDraftCompleted] = useState({})
   const [viewFilter, setViewFilter] = useState('all')
   const [expandedWeeks, setExpandedWeeks] =
     useState(() => new Set())
@@ -107,13 +110,53 @@ function StudentActivityModal({
     setViewFilter('all')
   }, [selectedSubjectId])
 
+  useEffect(() => {
+    const nextDraft = {}
+
+    requirements.forEach((requirement) => {
+      nextDraft[requirement.id] = Boolean(
+        getActivity(requirement.id)?.completed
+      )
+    })
+
+    setDraftCompleted(nextDraft)
+    setSaveMessage('')
+  }, [selectedSubjectId, requirements, getActivity])
+
+  const hasUnsavedChanges = useMemo(() => {
+    return requirements.some((requirement) => {
+      const saved = Boolean(
+        getActivity(requirement.id)?.completed
+      )
+
+      const draft = Boolean(
+        draftCompleted[requirement.id]
+      )
+
+      return saved !== draft
+    })
+  }, [requirements, getActivity, draftCompleted])
+
+  function requestClose() {
+    if (
+      hasUnsavedChanges &&
+      !window.confirm(
+        'You have unsaved progress changes. Close without saving?'
+      )
+    ) {
+      return
+    }
+
+    onClose()
+  }
+
   const weekStatuses = useMemo(() => {
     const map = {}
 
     requirementsByWeek.forEach((group) => {
       const completed = group.items.filter(
         (requirement) =>
-          getActivity(requirement.id)?.completed
+          Boolean(draftCompleted[requirement.id])
       ).length
 
       map[group.week] = {
@@ -127,7 +170,7 @@ function StudentActivityModal({
     })
 
     return map
-  }, [requirementsByWeek, getActivity])
+  }, [requirementsByWeek, draftCompleted])
 
   useEffect(() => {
     if (!requirementsByWeek.length) return
@@ -206,24 +249,74 @@ function StudentActivityModal({
     if (viewFilter === 'completed') {
       return items.filter(
         (requirement) =>
-          getActivity(requirement.id)?.completed
+          Boolean(draftCompleted[requirement.id])
       )
     }
 
     if (viewFilter === 'todo') {
       return items.filter(
         (requirement) =>
-          !getActivity(requirement.id)?.completed
+          !Boolean(draftCompleted[requirement.id])
       )
     }
 
     return items
   }
 
-  async function handleToggle(requirementId) {
-    setSavingId(requirementId)
-    await toggleRequirement(requirementId)
-    setSavingId(null)
+  function handleToggle(requirementId) {
+    setDraftCompleted((current) => ({
+      ...current,
+      [requirementId]: !Boolean(
+        current[requirementId]
+      ),
+    }))
+
+    setSaveMessage('')
+  }
+
+  async function handleSaveProgress() {
+    if (savingProgress) return
+
+    if (!hasUnsavedChanges) {
+      setSaveMessage('No changes to save.')
+      return
+    }
+
+    setSavingProgress(true)
+    setSaveMessage('')
+
+    try {
+      const changes = {}
+
+      requirements.forEach((requirement) => {
+        const saved = Boolean(
+          getActivity(requirement.id)?.completed
+        )
+
+        const draft = Boolean(
+          draftCompleted[requirement.id]
+        )
+
+        if (saved !== draft) {
+          changes[requirement.id] = draft
+        }
+      })
+
+      const result =
+        await saveProgressChanges(changes)
+
+      const savedCount = result?.saved || 0
+
+      setSaveMessage(
+        savedCount === 1
+          ? '1 progress change saved.'
+          : `${savedCount} progress changes saved.`
+      )
+    } catch {
+      // Hook already exposes the Supabase error in the modal.
+    } finally {
+      setSavingProgress(false)
+    }
   }
 
   async function handleDelete(requirement) {
@@ -267,7 +360,7 @@ function StudentActivityModal({
       className="sa-overlay"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
-          onClose()
+          requestClose()
         }
       }}
     >
@@ -373,7 +466,7 @@ function StudentActivityModal({
               <button
                 type="button"
                 className="sa-close"
-                onClick={onClose}
+                onClick={requestClose}
                 aria-label="Close"
               >
                 ×
@@ -704,7 +797,9 @@ function StudentActivityModal({
 
                                 const completed =
                                   Boolean(
-                                    item?.completed
+                                    draftCompleted[
+                                      requirement.id
+                                    ]
                                   )
 
                                 return (
@@ -722,8 +817,7 @@ function StudentActivityModal({
                                       type="button"
                                       className="sa-activity-check"
                                       disabled={
-                                        savingId ===
-                                        requirement.id
+                                        savingProgress
                                       }
                                       onClick={() =>
                                         handleToggle(
@@ -819,19 +913,41 @@ function StudentActivityModal({
         </div>
 
         <footer className="sa-footer">
-          <span>
-            {selectedSubject?.name
-              ? `${selectedSubject.name} progress`
-              : 'Student progress'}
-          </span>
+          <div className="sa-footer-status">
+            <span>
+              {hasUnsavedChanges
+                ? 'Unsaved progress changes'
+                : saveMessage ||
+                  (selectedSubject?.name
+                    ? `${selectedSubject.name} progress is up to date`
+                    : 'Student progress is up to date')}
+            </span>
+          </div>
 
-          <button
-            type="button"
-            className="sa-done-button"
-            onClick={onClose}
-          >
-            Done
-          </button>
+          <div className="sa-footer-actions">
+            <button
+              type="button"
+              className="sa-save-button"
+              disabled={
+                savingProgress ||
+                !hasUnsavedChanges
+              }
+              onClick={handleSaveProgress}
+            >
+              {savingProgress
+                ? 'Saving...'
+                : 'Save Progress'}
+            </button>
+
+            <button
+              type="button"
+              className="sa-done-button"
+              onClick={requestClose}
+              disabled={savingProgress}
+            >
+              Done
+            </button>
+          </div>
         </footer>
       </div>
     </div>

@@ -1,33 +1,24 @@
-PER-SUBJECT PROGRESS & TIMELINE — INSTALL
+DASHBOARD STUDENT ACTIONS
 
-Replace:
-  src/hooks/useStudentActivity.js
-  src/pages/StudentActivityModal.jsx
-  src/pages/StudentActivityModal.css
-  src/pages/ActivityTracker.jsx
+The current AdminDashboard.jsx already contains the Add Student and
+Delete Students modals. This update only exposes those existing modals
+using right-aligned page-header buttons.
 
-Keep / make sure these exist:
-  src/pages/SubjectActivityManager.jsx
-  src/pages/SubjectActivityManager.css
+Result:
 
-Database:
-  Run subject_activity_migration.sql first if you have not already.
+STUDENT MANAGEMENT
 
-Behavior:
-- 1 assigned subject:
-    Progress & Timeline opens directly on that subject.
-    No unnecessary subject dropdown.
-- 2+ assigned subjects:
-    Subject selector appears.
-    Each subject has its own progress percentage and completed/total count.
-    Switching subject recalculates:
-      timeline
-      current week
-      current activity
-      completion percentage
-      weekly checklist
-      notes count
-- Main ActivityTracker Subject column uses normalized student_subjects/subjects data.
-- Existing unassigned legacy activities:
-    * If student has exactly one subject, they temporarily count under that subject.
-    * If student has multiple subjects, they appear as Legacy / Unassigned until moved.
+Dashboard                         [+ Add Student] [Delete Student]
+Monitor students...
+
+Add Student:
+- Green
+- Opens existing Add Student modal
+
+Delete Student:
+- Red
+- Opens existing multi-student Delete Students modal
+
+Files:
+1. Follow AdminDashboard.PATCH.txt
+2. Append AdminDashboard.actions.css to AdminDashboard.redesign.css

@@ -637,6 +637,117 @@ export function useStudentActivity(studentId) {
     )
   }
 
+
+  async function saveProgressChanges(changes) {
+    if (!changes || typeof changes !== 'object') {
+      return { saved: 0 }
+    }
+
+    const entries = Object.entries(changes).filter(
+      ([requirementId]) =>
+        requirements.some(
+          (requirement) =>
+            String(requirement.id) === String(requirementId)
+        )
+    )
+
+    if (entries.length === 0) {
+      return { saved: 0 }
+    }
+
+    setError('')
+
+    try {
+      let saved = 0
+      const nextActivity = [...activity]
+
+      for (const [requirementId, completed] of entries) {
+        const requirement = requirements.find(
+          (item) =>
+            String(item.id) === String(requirementId)
+        )
+
+        if (!requirement) continue
+
+        const existing = nextActivity.find(
+          (item) =>
+            item.requirement_id === requirement.id
+        )
+
+        if (existing) {
+          if (
+            Boolean(existing.completed) ===
+            Boolean(completed)
+          ) {
+            continue
+          }
+
+          const { data, error: updateError } =
+            await supabase
+              .from('student_activity')
+              .update({
+                completed: Boolean(completed),
+                updated_at:
+                  new Date().toISOString(),
+              })
+              .eq('id', existing.id)
+              .select()
+              .single()
+
+          if (updateError) throw updateError
+
+          const index = nextActivity.findIndex(
+            (item) => item.id === existing.id
+          )
+
+          if (index >= 0) {
+            nextActivity[index] = data
+          }
+
+          saved += 1
+          continue
+        }
+
+        // No existing row and draft is unchecked:
+        // there is nothing to persist.
+        if (!completed) continue
+
+        const { data, error: insertError } =
+          await supabase
+            .from('student_activity')
+            .insert({
+              student_id: studentId,
+              requirement_id: requirement.id,
+              completed: true,
+            })
+            .select()
+            .single()
+
+        if (insertError) throw insertError
+
+        nextActivity.push(data)
+        saved += 1
+      }
+
+      setActivity(nextActivity)
+
+      return { saved }
+    } catch (err) {
+      console.error(
+        'Error saving progress changes:',
+        err
+      )
+
+      setError(
+        err.message ||
+          'Unable to save progress changes.'
+      )
+
+      throw err
+    }
+  }
+
+
   return {
     student,
     subjects,
@@ -657,6 +768,7 @@ export function useStudentActivity(studentId) {
 
     getActivity,
     toggleRequirement,
+    saveProgressChanges,
     updateNote,
     addActivity,
     deleteActivity,

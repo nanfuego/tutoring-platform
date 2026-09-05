@@ -1,0 +1,153 @@
+ADMIN DASHBOARD — ADD / DELETE STUDENT ACTIONS
+
+Current file:
+  src/pages/AdminDashboard.jsx
+
+The Add Student and Delete Student modals ALREADY exist in this file.
+We are only adding visible Dashboard buttons that open them.
+
+============================================================
+1. REMOVE THE OLD STUDENT MANAGER DROPDOWN FROM THE DASHBOARD TOP BAR
+============================================================
+
+Find this block:
+
+<div className="student-action-buttons">
+  <div className="manager-dropdown" ref={managerRef}>
+    <button
+      type="button"
+      className="manager-button"
+      onClick={() => setShowManagerMenu((prev) => !prev)}
+    >
+      Student Manager <span className="manager-caret">▾</span>
+    </button>
+
+    {showManagerMenu && (
+      <div className="manager-menu">
+        <button type="button" onClick={openAddStudent}>
+          + Add Student
+        </button>
+        <button type="button" onClick={openDeleteStudents}>
+          Delete Students
+        </button>
+      </div>
+    )}
+  </div>
+
+  <Link to="/admin/activity" className="nav-button">
+    Student Progress
+  </Link>
+
+  <Link to="/admin/payments" className="nav-button">
+    Payment Management
+  </Link>
+</div>
+
+Replace it with:
+
+<div className="student-action-buttons">
+  <Link to="/admin/activity" className="nav-button">
+    Student Progress
+  </Link>
+
+  <Link to="/admin/payments" className="nav-button">
+    Payment Management
+  </Link>
+</div>
+
+
+============================================================
+2. REPLACE THE DASHBOARD PAGE HEADER
+============================================================
+
+Find:
+
+<div className="page-header">
+  <div className="page-header-content">
+    <div className="page-eyebrow">STUDENT MANAGEMENT</div>
+
+    <h1 className="page-title">Dashboard</h1>
+
+    <p className="page-description">
+      Monitor students, activity progress, and overall platform activity.
+    </p>
+  </div>
+</div>
+
+Replace with:
+
+<PageHeader
+  eyebrow="STUDENT MANAGEMENT"
+  title="Dashboard"
+  description="Monitor students, activity progress, and overall platform activity."
+  actions={
+    <>
+      <button
+        type="button"
+        className="dashboard-add-student-button"
+        onClick={openAddStudent}
+      >
+        <span className="dashboard-action-plus">+</span>
+        Add Student
+      </button>
+
+      <button
+        type="button"
+        className="dashboard-delete-student-button"
+        onClick={openDeleteStudents}
+      >
+        Delete Student
+      </button>
+    </>
+  }
+/>
+
+
+============================================================
+3. OPTIONAL DEAD-CODE CLEANUP
+============================================================
+
+At the top change:
+
+import { useEffect, useMemo, useState, useRef } from 'react'
+
+to:
+
+import { useEffect, useMemo, useState } from 'react'
+
+
+Remove:
+
+const [showManagerMenu, setShowManagerMenu] = useState(false)
+
+const managerRef = useRef(null)
+
+
+In the click-outside useEffect, remove only:
+
+if (managerRef.current && !managerRef.current.contains(event.target)) {
+  setShowManagerMenu(false)
+}
+
+
+In openAddStudent(), remove:
+
+setShowManagerMenu(false)
+
+
+In openDeleteStudents(), remove:
+
+setShowManagerMenu(false)
+
+
+KEEP all of these:
+- showAddStudent
+- showDeleteStudents
+- openAddStudent()
+- openDeleteStudents()
+- handleAddStudent()
+- handleDeleteSelected()
+- existing Add Student modal JSX
+- existing Delete Students modal JSX
+
+Those are the actual working modal implementations.
