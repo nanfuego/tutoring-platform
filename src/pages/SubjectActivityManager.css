@@ -721,3 +721,119 @@
     min-width: 650px;
   }
 }
+
+
+/* ============================================================
+   SUBJECT ASSIGNMENT FIX + BULK ASSIGN
+   ============================================================ */
+
+.subject-manager-bulk-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 14px;
+  padding: 13px 14px;
+  border: 1px solid #dfe6e2;
+  border-radius: 10px;
+  background: #f7faf8;
+}
+
+.subject-manager-bulk-copy {
+  min-width: 0;
+}
+
+.subject-manager-bulk-eyebrow {
+  display: block;
+  margin-bottom: 4px;
+  color: #6f8279;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.subject-manager-bulk-copy strong {
+  display: block;
+  color: #2c3a34;
+  font-size: 11px;
+}
+
+.subject-manager-bulk-copy p {
+  margin: 4px 0 0;
+  color: #85918b;
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.subject-manager-bulk-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.subject-manager-bulk-controls select {
+  width: 220px;
+  height: 34px;
+  padding: 0 10px;
+  box-sizing: border-box;
+  border: 1px solid #d8e0dc;
+  border-radius: 7px;
+  background: #fff;
+  color: #405047;
+  font: 600 10px var(--font-body, 'Inter', Arial, sans-serif);
+  outline: none;
+}
+
+.subject-manager-assignment-option.is-selected {
+  border-color: #9eb9ae;
+  background: #eef5f2;
+}
+
+.subject-manager-assignment-option input {
+  cursor: pointer;
+}
+
+.subject-manager-assignment-summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 9px 10px;
+  border: 1px solid #e3e8e5;
+  border-radius: 8px;
+  background: #fafcfb;
+}
+
+.subject-manager-assignment-summary span {
+  color: #3d4b45;
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.subject-manager-assignment-summary small {
+  color: #909992;
+  font-size: 8px;
+}
+
+@media (max-width: 760px) {
+  .subject-manager-bulk-card {
+    grid-template-columns: 1fr;
+  }
+
+  .subject-manager-bulk-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .subject-manager-bulk-controls select,
+  .subject-manager-bulk-controls button {
+    width: 100%;
+  }
+
+  .subject-manager-assignment-summary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

@@ -39,6 +39,11 @@ function SubjectActivityManager({ onClose, onChanged }) {
   const [editingActivity, setEditingActivity] = useState(null)
 
   const [assignmentStudent, setAssignmentStudent] = useState(null)
+  const [assignmentDraftIds, setAssignmentDraftIds] = useState([])
+  const [assignmentSaving, setAssignmentSaving] = useState(false)
+
+  const [bulkSubjectId, setBulkSubjectId] = useState('')
+  const [bulkAssigning, setBulkAssigning] = useState(false)
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -528,50 +533,145 @@ function SubjectActivityManager({ onClose, onChanged }) {
       .map((assignment) => assignment.subject_id)
   }
 
-  async function toggleStudentSubject(student, subject) {
-    const existing = assignments.find(
-      (assignment) =>
-        assignment.student_id === student.id &&
-        assignment.subject_id === subject.id
-    )
+  function openStudentAssignments(student) {
+    const currentIds = studentSubjectIds(student.id)
 
-    setSaving(true)
+    setAssignmentStudent(student)
+    setAssignmentDraftIds(currentIds)
+    setError('')
+  }
+
+  function toggleAssignmentDraft(subjectId) {
+    setAssignmentDraftIds((current) =>
+      current.includes(subjectId)
+        ? current.filter((id) => id !== subjectId)
+        : [...current, subjectId]
+    )
+  }
+
+  async function saveStudentAssignments() {
+    if (!assignmentStudent) return
+
+    setAssignmentSaving(true)
     setError('')
 
     try {
-      if (existing?.active !== false) {
+      const existingIds = new Set(
+        studentSubjectIds(assignmentStudent.id)
+      )
+      const draftIds = new Set(assignmentDraftIds)
+
+      const toInsert = [...draftIds].filter(
+        (id) => !existingIds.has(id)
+      )
+
+      const toDelete = [...existingIds].filter(
+        (id) => !draftIds.has(id)
+      )
+
+      if (toInsert.length > 0) {
+        const rows = toInsert.map((subjectId) => ({
+          student_id: assignmentStudent.id,
+          subject_id: subjectId,
+          active: true,
+          assigned_at: new Date().toISOString(),
+        }))
+
+        const { error: insertError } = await supabase
+          .from('student_subjects')
+          .upsert(rows, {
+            onConflict: 'student_id,subject_id',
+          })
+
+        if (insertError) throw insertError
+      }
+
+      if (toDelete.length > 0) {
         const { error: deleteError } = await supabase
           .from('student_subjects')
           .delete()
-          .eq('student_id', student.id)
-          .eq('subject_id', subject.id)
+          .eq('student_id', assignmentStudent.id)
+          .in('subject_id', toDelete)
 
         if (deleteError) throw deleteError
-      } else {
-        const { error: upsertError } = await supabase
-          .from('student_subjects')
-          .upsert(
-            {
-              student_id: student.id,
-              subject_id: subject.id,
-              active: true,
-              assigned_at: new Date().toISOString(),
-            },
-            {
-              onConflict: 'student_id,subject_id',
-            }
-          )
-
-        if (upsertError) throw upsertError
       }
 
       await loadData()
       onChanged?.()
+      setAssignmentStudent(null)
+      setAssignmentDraftIds([])
     } catch (err) {
-      console.error('Assign subject error:', err)
-      setError(err.message || 'Unable to update subject assignment.')
+      console.error('Save student assignments error:', err)
+      setError(
+        err.message || 'Unable to save subject assignments.'
+      )
     } finally {
-      setSaving(false)
+      setAssignmentSaving(false)
+    }
+  }
+
+  async function assignSubjectToAllEligibleStudents() {
+    if (!bulkSubjectId) {
+      setError('Choose a subject to assign.')
+      return
+    }
+
+    const subject = subjects.find(
+      (item) => String(item.id) === String(bulkSubjectId)
+    )
+
+    if (!subject) {
+      setError('The selected subject could not be found.')
+      return
+    }
+
+    const eligibleStudents = students.filter(
+      (student) =>
+        !subject.university ||
+        student.university === subject.university
+    )
+
+    if (eligibleStudents.length === 0) {
+      setError(
+        `No students are eligible for ${subject.name}.`
+      )
+      return
+    }
+
+    const confirmed = window.confirm(
+      `Assign "${subject.name}" to all ${eligibleStudents.length} eligible students${subject.university ? ` in ${subject.university}` : ''}?`
+    )
+
+    if (!confirmed) return
+
+    setBulkAssigning(true)
+    setError('')
+
+    try {
+      const rows = eligibleStudents.map((student) => ({
+        student_id: student.id,
+        subject_id: subject.id,
+        active: true,
+        assigned_at: new Date().toISOString(),
+      }))
+
+      const { error: upsertError } = await supabase
+        .from('student_subjects')
+        .upsert(rows, {
+          onConflict: 'student_id,subject_id',
+        })
+
+      if (upsertError) throw upsertError
+
+      await loadData()
+      onChanged?.()
+    } catch (err) {
+      console.error('Bulk subject assignment error:', err)
+      setError(
+        err.message || 'Unable to assign subject to all students.'
+      )
+    } finally {
+      setBulkAssigning(false)
     }
   }
 
@@ -890,6 +990,55 @@ function SubjectActivityManager({ onClose, onChanged }) {
               </select>
             </div>
 
+            <div className="subject-manager-bulk-card">
+              <div className="subject-manager-bulk-copy">
+                <span className="subject-manager-bulk-eyebrow">
+                  BULK ASSIGN
+                </span>
+                <strong>Assign a subject to all eligible students</strong>
+                <p>
+                  The subject's school determines which students are eligible.
+                  Existing assignments are kept and duplicates are ignored.
+                </p>
+              </div>
+
+              <div className="subject-manager-bulk-controls">
+                <select
+                  value={bulkSubjectId}
+                  disabled={bulkAssigning}
+                  onChange={(event) =>
+                    setBulkSubjectId(event.target.value)
+                  }
+                >
+                  <option value="">Choose subject...</option>
+                  {subjects
+                    .filter((subject) => subject.active !== false)
+                    .map((subject) => (
+                      <option
+                        key={subject.id}
+                        value={subject.id}
+                      >
+                        {subject.name}
+                        {subject.university
+                          ? ` · ${subject.university}`
+                          : ''}
+                      </option>
+                    ))}
+                </select>
+
+                <button
+                  type="button"
+                  className="subject-manager-primary"
+                  disabled={!bulkSubjectId || bulkAssigning}
+                  onClick={assignSubjectToAllEligibleStudents}
+                >
+                  {bulkAssigning
+                    ? 'Assigning...'
+                    : 'Assign to All'}
+                </button>
+              </div>
+            </div>
+
             <div className="subject-manager-student-table-wrap">
               <table className="subject-manager-student-table">
                 <thead>
@@ -925,7 +1074,7 @@ function SubjectActivityManager({ onClose, onChanged }) {
                             type="button"
                             className="subject-manager-secondary"
                             onClick={() =>
-                              setAssignmentStudent(student)
+                              openStudentAssignments(student)
                             }
                           >
                             Manage
@@ -1168,7 +1317,11 @@ function SubjectActivityManager({ onClose, onChanged }) {
 
                 <button
                   type="button"
-                  onClick={() => setAssignmentStudent(null)}
+                  onClick={() => {
+                    if (assignmentSaving) return
+                    setAssignmentStudent(null)
+                    setAssignmentDraftIds([])
+                  }}
                 >
                   ×
                 </button>
@@ -1181,25 +1334,28 @@ function SubjectActivityManager({ onClose, onChanged }) {
                   </div>
                 ) : (
                   assignmentSubjects.map((subject) => {
-                    const checked = studentSubjectIds(
-                      assignmentStudent.id
-                    ).includes(subject.id)
+                    const checked = assignmentDraftIds.includes(
+                      subject.id
+                    )
 
                     return (
                       <label
                         key={subject.id}
-                        className="subject-manager-assignment-option"
+                        className={
+                          checked
+                            ? 'subject-manager-assignment-option is-selected'
+                            : 'subject-manager-assignment-option'
+                        }
+                        onClick={(event) => event.stopPropagation()}
                       >
                         <input
                           type="checkbox"
                           checked={checked}
-                          disabled={saving}
-                          onChange={() =>
-                            toggleStudentSubject(
-                              assignmentStudent,
-                              subject
-                            )
-                          }
+                          disabled={assignmentSaving}
+                          onChange={(event) => {
+                            event.stopPropagation()
+                            toggleAssignmentDraft(subject.id)
+                          }}
                         />
 
                         <div>
@@ -1216,13 +1372,40 @@ function SubjectActivityManager({ onClose, onChanged }) {
                 )}
               </div>
 
+              <div className="subject-manager-assignment-summary">
+                <span>
+                  {assignmentDraftIds.length}{' '}
+                  {assignmentDraftIds.length === 1
+                    ? 'subject selected'
+                    : 'subjects selected'}
+                </span>
+                <small>
+                  Changes are saved only when you click Save Assignments.
+                </small>
+              </div>
+
               <div className="subject-manager-form-actions">
                 <button
                   type="button"
-                  className="subject-manager-primary"
-                  onClick={() => setAssignmentStudent(null)}
+                  className="subject-manager-secondary"
+                  disabled={assignmentSaving}
+                  onClick={() => {
+                    setAssignmentStudent(null)
+                    setAssignmentDraftIds([])
+                  }}
                 >
-                  Done
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  className="subject-manager-primary"
+                  disabled={assignmentSaving}
+                  onClick={saveStudentAssignments}
+                >
+                  {assignmentSaving
+                    ? 'Saving...'
+                    : 'Save Assignments'}
                 </button>
               </div>
             </div>

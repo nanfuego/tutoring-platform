@@ -1323,6 +1323,7 @@ function ActivityTracker() {
             className="activity-primary-button"
             onClick={openAssignActivity}
           >
+            <span className="button-plus">+</span>
             Assign Activity
           </button>
 
