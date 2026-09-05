@@ -37,7 +37,7 @@ const EMPTY_FORM = {
 export default function AdminShell({ children }) {
   const location = useLocation()
   const [currentTime, setCurrentTime] = useState(() => formatNow())
-
+  const [newInquiryCount, setNewInquiryCount] = useState(0)
   const [modal, setModal] = useState(null)
   const [students, setStudents] = useState([])
   const [loadingStudents, setLoadingStudents] = useState(false)
@@ -64,7 +64,52 @@ export default function AdminShell({ children }) {
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [modal, saving])
+useEffect(() => {
+  let channel
 
+  async function loadNewInquiryCount() {
+    const { count, error: countError } = await supabase
+      .from('contact_inquiries')
+      .select('*', {
+        count: 'exact',
+        head: true,
+      })
+      .eq('status', 'new')
+
+    if (countError) {
+      console.error(
+        'Unable to load new inquiry count:',
+        countError,
+      )
+      return
+    }
+
+    setNewInquiryCount(count || 0)
+  }
+
+  loadNewInquiryCount()
+
+  channel = supabase
+    .channel('admin-inquiry-count')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'contact_inquiries',
+      },
+      () => {
+        loadNewInquiryCount()
+      },
+    )
+    .subscribe()
+
+  return () => {
+    if (channel) {
+      supabase.removeChannel(channel)
+    }
+  }
+}, [])
   async function handleLogout() {
     await supabase.auth.signOut()
   }
@@ -295,7 +340,16 @@ export default function AdminShell({ children }) {
     isInquiries ? 'active' : ''
   }`}
 >
-  Inquiries
+  <span>Inquiries</span>
+
+  {newInquiryCount > 0 && (
+    <span
+      className="universal-admin-inquiry-badge"
+      aria-label={`${newInquiryCount} new inquiries`}
+    >
+      {newInquiryCount > 99 ? '99+' : newInquiryCount}
+    </span>
+  )}
 </Link>
         </nav>
       </header>

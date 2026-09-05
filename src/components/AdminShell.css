@@ -687,3 +687,33 @@
     display: none;
   }
 }
+/* =========================================================
+   INQUIRY NOTIFICATION BADGE
+   ========================================================= */
+
+.universal-admin-inquiry-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+
+  border-radius: 999px;
+
+  background: #b3423a;
+  color: #fff;
+
+  font-family: Arial, sans-serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1;
+
+  box-sizing: border-box;
+}
+
+.universal-admin-nav-link.active
+  .universal-admin-inquiry-badge {
+  background: var(--ua-accent);
+}
