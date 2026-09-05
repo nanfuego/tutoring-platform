@@ -6,7 +6,6 @@ function getInitials(name = '') {
   const parts = name.trim().split(/\s+/).filter(Boolean)
 
   if (parts.length === 0) return '?'
-
   if (parts.length === 1) {
     return parts[0].slice(0, 2).toUpperCase()
   }
@@ -19,29 +18,23 @@ function getInitials(name = '') {
 
 function CircularProgress({
   percentage = 0,
-  size = 112,
+  size = 110,
   stroke = 10,
 }) {
   const radius = (size - stroke) / 2
-  const circumference =
-    2 * Math.PI * radius
-
+  const circumference = 2 * Math.PI * radius
+  const normalized = Math.min(
+    100,
+    Math.max(0, percentage)
+  )
   const offset =
     circumference -
-    (Math.min(
-      100,
-      Math.max(0, percentage)
-    ) /
-      100) *
-      circumference
+    (normalized / 100) * circumference
 
   return (
     <div
       className="sa-gauge"
-      style={{
-        width: size,
-        height: size,
-      }}
+      style={{ width: size, height: size }}
     >
       <svg
         width={size}
@@ -56,7 +49,6 @@ function CircularProgress({
           strokeWidth={stroke}
           fill="none"
         />
-
         <circle
           className="sa-gauge-fill"
           cx={size / 2}
@@ -74,10 +66,8 @@ function CircularProgress({
       </svg>
 
       <div className="sa-gauge-label">
-        <strong>{percentage}%</strong>
-        <span>
-          Overall Completion
-        </span>
+        <strong>{normalized}%</strong>
+        <span>Completion</span>
       </div>
     </div>
   )
@@ -88,10 +78,16 @@ function StudentActivityModal({
   onClose,
 }) {
   const {
+    subjects,
+    selectedSubject,
+    selectedSubjectId,
+    setSelectedSubjectId,
+    subjectProgress,
     requirements,
     loading,
     error,
     progress,
+    currentActivity,
     requirementsByWeek,
     getActivity,
     toggleRequirement,
@@ -99,70 +95,42 @@ function StudentActivityModal({
     deleteActivity,
   } = useStudentActivity(student?.id)
 
-  const [savingId, setSavingId] =
-    useState(null)
+  const [savingId, setSavingId] = useState(null)
+  const [deletingId, setDeletingId] = useState(null)
+  const [viewFilter, setViewFilter] = useState('all')
+  const [expandedWeeks, setExpandedWeeks] =
+    useState(() => new Set())
 
-  const [deletingId, setDeletingId] =
-    useState(null)
-
-  const [viewFilter, setViewFilter] =
-    useState('all')
-
-  const [
-    expandedWeeks,
-    setExpandedWeeks,
-  ] = useState(() => new Set())
-
-  const [
-    activeWeekTab,
-    setActiveWeekTab,
-  ] = useState({})
-
-  const [
-    openMenuId,
-    setOpenMenuId,
-  ] = useState(null)
+  // Changing subject resets the view to that subject's current week.
+  useEffect(() => {
+    setExpandedWeeks(new Set())
+    setViewFilter('all')
+  }, [selectedSubjectId])
 
   const weekStatuses = useMemo(() => {
     const map = {}
 
-    requirementsByWeek.forEach(
-      (group) => {
-        const total =
-          group.items.length
+    requirementsByWeek.forEach((group) => {
+      const completed = group.items.filter(
+        (requirement) =>
+          getActivity(requirement.id)?.completed
+      ).length
 
-        const completed =
-          group.items.filter(
-            (requirement) =>
-              getActivity(
-                requirement.id
-              )?.completed
-          ).length
-
-        map[group.week] = {
-          total,
-          completed,
-          allDone:
-            total > 0 &&
-            completed === total,
-          hasAny: completed > 0,
-        }
+      map[group.week] = {
+        total: group.items.length,
+        completed,
+        allDone:
+          group.items.length > 0 &&
+          completed === group.items.length,
+        hasAny: completed > 0,
       }
-    )
+    })
 
     return map
-  }, [
-    requirementsByWeek,
-    getActivity,
-  ])
+  }, [requirementsByWeek, getActivity])
 
   useEffect(() => {
-    if (
-      requirementsByWeek.length ===
-      0
-    ) {
-      return
-    }
+    if (!requirementsByWeek.length) return
 
     setExpandedWeeks((previous) => {
       if (previous.size > 0) {
@@ -171,41 +139,19 @@ function StudentActivityModal({
 
       const firstOpen =
         requirementsByWeek.find(
-          (group) => {
-            const status =
-              weekStatuses[
-                group.week
-              ]
+          (group) =>
+            !weekStatuses[group.week]?.allDone
+        ) || requirementsByWeek[0]
 
-            return (
-              status &&
-              !status.allDone
-            )
-          }
-        ) ||
-        requirementsByWeek[0]
-
-      return new Set([
-        firstOpen.week,
-      ])
+      return new Set([firstOpen.week])
     })
-  }, [
-    requirementsByWeek,
-    weekStatuses,
-  ])
+  }, [requirementsByWeek, weekStatuses])
 
   const currentWeek = useMemo(() => {
     const open =
       requirementsByWeek.find(
-        (group) => {
-          const status =
-            weekStatuses[group.week]
-
-          return (
-            status &&
-            !status.allDone
-          )
-        }
+        (group) =>
+          !weekStatuses[group.week]?.allDone
       )
 
     return (
@@ -215,200 +161,112 @@ function StudentActivityModal({
       ]?.week ??
       0
     )
-  }, [
-    requirementsByWeek,
-    weekStatuses,
-  ])
+  }, [requirementsByWeek, weekStatuses])
 
-  const noteCount = useMemo(() => {
-    return requirements.reduce(
-      (count, requirement) => {
-        const note =
-          getActivity(
-            requirement.id
-          )?.note
+  const timelineWeeks = useMemo(() => {
+    const weeks = requirementsByWeek
+      .map((group) => group.week)
+      .filter((week) => week > 0)
+      .sort((a, b) => a - b)
 
-        return (
-          count +
-          (note && note.trim()
-            ? 1
-            : 0)
-        )
-      },
-      0
-    )
-  }, [
-    requirements,
-    getActivity,
-  ])
+    return weeks.length
+      ? weeks
+      : [1, 2, 3, 4, 5, 6, 7, 8]
+  }, [requirementsByWeek])
+
+  const noteCount = useMemo(
+    () =>
+      requirements.reduce(
+        (count, requirement) => {
+          const note =
+            getActivity(requirement.id)?.note
+
+          return (
+            count +
+            (note && note.trim() ? 1 : 0)
+          )
+        },
+        0
+      ),
+    [requirements, getActivity]
+  )
 
   const paceLabel = useMemo(() => {
-    if (!progress.total) {
-      return '—'
-    }
-
-    if (
-      progress.percentage >= 75
-    ) {
+    if (!progress.total) return '—'
+    if (progress.percentage >= 75) {
       return 'On Track'
     }
-
-    if (
-      progress.percentage >= 40
-    ) {
+    if (progress.percentage >= 40) {
       return 'Needs Attention'
     }
-
     return 'Behind'
   }, [progress])
 
-  async function handleToggle(
-    requirementId
-  ) {
+  function filterItems(items) {
+    if (viewFilter === 'completed') {
+      return items.filter(
+        (requirement) =>
+          getActivity(requirement.id)?.completed
+      )
+    }
+
+    if (viewFilter === 'todo') {
+      return items.filter(
+        (requirement) =>
+          !getActivity(requirement.id)?.completed
+      )
+    }
+
+    return items
+  }
+
+  async function handleToggle(requirementId) {
     setSavingId(requirementId)
-
-    await toggleRequirement(
-      requirementId
-    )
-
+    await toggleRequirement(requirementId)
     setSavingId(null)
   }
 
-  async function handleDelete(
-    requirement
-  ) {
-    const confirmed =
-      window.confirm(
-        `Remove "${requirement.label}" for ${student.name}?`
-      )
-
-    if (!confirmed) {
-      return
-    }
-
-    setDeletingId(
-      requirement.id
+  async function handleDelete(requirement) {
+    const confirmed = window.confirm(
+      `Remove "${requirement.label}" for ${student.name}?`
     )
 
-    await deleteActivity(
-      requirement
-    )
+    if (!confirmed) return
 
+    setDeletingId(requirement.id)
+    await deleteActivity(requirement)
     setDeletingId(null)
-    setOpenMenuId(null)
   }
 
   function toggleWeek(week) {
-    setExpandedWeeks(
-      (previous) => {
-        const next =
-          new Set(previous)
+    setExpandedWeeks((previous) => {
+      const next = new Set(previous)
 
-        if (next.has(week)) {
-          next.delete(week)
-        } else {
-          next.add(week)
-        }
-
-        return next
-      }
-    )
-  }
-
-  function setWeekTab(
-    week,
-    tab
-  ) {
-    setActiveWeekTab(
-      (previous) => ({
-        ...previous,
-        [week]: tab,
-      })
-    )
-  }
-
-  function filterItems(items) {
-    if (
-      viewFilter === 'all'
-    ) {
-      return items
-    }
-
-    if (
-      viewFilter ===
-      'completed'
-    ) {
-      return items.filter(
-        (requirement) =>
-          getActivity(
-            requirement.id
-          )?.completed
-      )
-    }
-
-    return items.filter(
-      (requirement) =>
-        !getActivity(
-          requirement.id
-        )?.completed
-    )
-  }
-
-  const timelineWeeks =
-    useMemo(() => {
-      const weeks =
-        requirementsByWeek
-          .map(
-            (group) =>
-              group.week
-          )
-          .filter(
-            (week) =>
-              week > 0
-          )
-          .sort(
-            (a, b) =>
-              a - b
-          )
-
-      if (
-        weeks.length > 0
-      ) {
-        return weeks
+      if (next.has(week)) {
+        next.delete(week)
+      } else {
+        next.add(week)
       }
 
-      return [
-        1, 2, 3, 4,
-        5, 6, 7, 8,
-      ]
-    }, [
-      requirementsByWeek,
-    ])
+      return next
+    })
+  }
 
-  const initials =
-    getInitials(
-      student?.name
-    )
+  const assignedSubjectSummary = useMemo(() => {
+    if (!subjects.length) {
+      return 'No subject assigned'
+    }
 
-  const subtitle = [
-    student?.program ||
-      student?.subject ||
-      'Student Activity',
-    student?.university,
-  ]
-    .filter(Boolean)
-    .join(' · ')
+    return subjects
+      .map((subject) => subject.name)
+      .join(', ')
+  }, [subjects])
 
   return (
     <div
       className="sa-overlay"
-      onMouseDown={(
-        event
-      ) => {
-        if (
-          event.target ===
-          event.currentTarget
-        ) {
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) {
           onClose()
         }
       }}
@@ -418,90 +276,172 @@ function StudentActivityModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="sa-title"
-        onMouseDown={(
-          event
-        ) =>
+        onMouseDown={(event) =>
           event.stopPropagation()
         }
       >
-        {/* =========================
-            HEADER
-        ========================== */}
-
         <header className="sa-header">
           <div className="sa-identity">
-            <div
-              className="sa-avatar"
-              aria-hidden="true"
-            >
-              {initials}
+            <div className="sa-avatar">
+              {getInitials(student?.name)}
             </div>
 
             <div className="sa-identity-text">
               <h2 id="sa-title">
-                {student?.name ||
-                  'Student'}
+                {student?.name || 'Student'}
               </h2>
 
               <p>
-                {subtitle}
+                {[
+                  student?.program,
+                  student?.university,
+                ]
+                  .filter(Boolean)
+                  .join(' · ') || 'Student Activity'}
               </p>
-
-              <span className="sa-status-pill">
-                <span className="sa-status-dot" />
-                Active
-              </span>
             </div>
+
+            <div className="sa-subject-control">
+              <span className="sa-subject-label">
+                SUBJECT
+              </span>
+
+              {subjects.length > 1 ? (
+                <select
+                  className="sa-subject-select"
+                  value={
+                    selectedSubjectId ?? ''
+                  }
+                  onChange={(event) =>
+                    setSelectedSubjectId(
+                      event.target.value
+                    )
+                  }
+                >
+                  {subjects.map((subject) => (
+                    <option
+                      key={subject.id}
+                      value={subject.id}
+                    >
+                      {subject.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div className="sa-subject-single">
+                  <strong>
+                    {selectedSubject?.name ||
+                      student?.subject ||
+                      'No subject assigned'}
+                  </strong>
+                  <span>
+                    Current subject
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {subjects.length > 1 && (
+              <div className="sa-subject-overview">
+                <span>
+                  Assigned subjects
+                </span>
+                <strong>
+                  {assignedSubjectSummary}
+                </strong>
+              </div>
+            )}
+
+            <span className="sa-status-pill">
+              <span className="sa-status-dot" />
+              Active
+            </span>
           </div>
 
           <div className="sa-progress-panel">
             <div className="sa-progress-panel-top">
-              <h3>
-                Progress &amp;
-                Timeline
-              </h3>
+              <div>
+                <span className="sa-progress-kicker">
+                  {selectedSubject?.name ||
+                    'Subject'}
+                </span>
+                <h3>
+                  Progress &amp; Timeline
+                </h3>
+              </div>
 
               <button
                 type="button"
                 className="sa-close"
-                onClick={
-                  onClose
-                }
+                onClick={onClose}
                 aria-label="Close"
               >
                 ×
               </button>
             </div>
 
-            {/* =========================
-                TIMELINE
-            ========================== */}
+            {subjects.length > 1 && (
+              <div className="sa-subject-progress-strip">
+                {subjectProgress.map(
+                  (subject) => (
+                    <button
+                      key={subject.id}
+                      type="button"
+                      className={
+                        String(
+                          selectedSubjectId
+                        ) ===
+                        String(subject.id)
+                          ? 'sa-subject-progress-card is-active'
+                          : 'sa-subject-progress-card'
+                      }
+                      onClick={() =>
+                        setSelectedSubjectId(
+                          subject.id
+                        )
+                      }
+                    >
+                      <span>
+                        {subject.name}
+                      </span>
+                      <strong>
+                        {
+                          subject.progress
+                            .percentage
+                        }
+                        %
+                      </strong>
+                      <small>
+                        {
+                          subject.progress
+                            .completed
+                        }
+                        /
+                        {
+                          subject.progress
+                            .total
+                        }
+                      </small>
+                    </button>
+                  )
+                )}
+              </div>
+            )}
 
             <div
               className="sa-timeline"
               role="list"
             >
               {timelineWeeks.map(
-                (
-                  week,
-                  index
-                ) => {
+                (week, index) => {
                   const status =
-                    weekStatuses[
-                      week
-                    ] || {
-                      allDone:
-                        false,
-                      hasAny:
-                        false,
+                    weekStatuses[week] || {
+                      allDone: false,
+                      hasAny: false,
                     }
 
                   const isCurrent =
-                    week ===
-                    currentWeek
-
-                  const isPast =
-                    status.allDone
+                    week === currentWeek
 
                   return (
                     <div
@@ -509,61 +449,36 @@ function StudentActivityModal({
                       role="listitem"
                       className={[
                         'sa-timeline-step',
-                        isPast
+                        status.allDone
                           ? 'is-done'
                           : '',
                         isCurrent
                           ? 'is-current'
                           : '',
                       ]
-                        .filter(
-                          Boolean
-                        )
+                        .filter(Boolean)
                         .join(' ')}
                     >
                       <div className="sa-timeline-node">
-                        {isPast ? (
-                          <svg
-                            width="12"
-                            height="12"
-                            viewBox="0 0 12 12"
-                            fill="none"
-                          >
-                            <path
-                              d="M2.5 6.2L4.8 8.5L9.5 3.5"
-                              stroke="currentColor"
-                              strokeWidth="1.8"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        ) : (
-                          <span className="sa-timeline-dot" />
-                        )}
+                        {status.allDone
+                          ? '✓'
+                          : ''}
                       </div>
 
                       <span className="sa-timeline-label">
-                        Week{' '}
-                        {week}
+                        Week {week}
                       </span>
 
                       {index <
                         timelineWeeks.length -
                           1 && (
-                        <span
-                          className="sa-timeline-connector"
-                          aria-hidden="true"
-                        />
+                        <span className="sa-timeline-connector" />
                       )}
                     </div>
                   )
                 }
               )}
             </div>
-
-            {/* =========================
-                PROGRESS GAUGE
-            ========================== */}
 
             <div className="sa-gauge-row">
               <CircularProgress
@@ -575,44 +490,36 @@ function StudentActivityModal({
               <div className="sa-gauge-meta">
                 <div className="sa-meta-card">
                   <span className="sa-meta-dot" />
-
                   <div>
                     <strong>
-                      Overall
+                      {selectedSubject?.name ||
+                        'Subject'}{' '}
                       Completion
                     </strong>
-
                     <span>
-                      {
-                        progress.completed
-                      }
-                      /
-                      {
-                        progress.total
-                      }
+                      {progress.completed}/
+                      {progress.total}{' '}
+                      activities
                     </span>
                   </div>
                 </div>
 
                 <div className="sa-meta-card">
                   <span className="sa-meta-dot muted" />
-
                   <div>
                     <strong>
-                      Last updated
+                      Current Activity
                     </strong>
-
                     <span>
-                      Just now
+                      {currentActivity?.label ||
+                        (progress.total
+                          ? 'All complete'
+                          : 'No activities')}
                     </span>
                   </div>
                 </div>
               </div>
             </div>
-
-            {/* =========================
-                INSIGHTS
-            ========================== */}
 
             <div className="sa-insights">
               <span className="sa-insights-label">
@@ -628,11 +535,10 @@ function StudentActivityModal({
                 </div>
 
                 <div className="sa-chip">
-                  Avg. Activity
-                  Score:{' '}
+                  Current Week:{' '}
                   <strong>
-                    {progress.percentage
-                      ? `${progress.percentage}%`
+                    {currentWeek
+                      ? `Week ${currentWeek}`
                       : '—'}
                   </strong>
                 </div>
@@ -654,89 +560,67 @@ function StudentActivityModal({
           </div>
         )}
 
-        {/* =========================
-            BODY
-        ========================== */}
-
         <div className="sa-body">
           <div className="sa-section-bar">
-            <span className="sa-section-title">
-              Activity by Week
-            </span>
+            <div>
+              <span className="sa-section-title">
+                Activity by Week
+              </span>
+              <p className="sa-section-subtitle">
+                {selectedSubject?.name ||
+                  student?.subject ||
+                  'Selected subject'}
+              </p>
+            </div>
 
-            <div className="sa-section-actions">
-              <div
-                className="sa-filter-tabs"
-                role="tablist"
-              >
-                {[
-                  {
-                    id: 'all',
-                    label:
-                      'View All',
-                  },
-                  {
-                    id: 'todo',
-                    label:
-                      'To Do',
-                  },
-                  {
-                    id: 'completed',
-                    label:
-                      'Completed',
-                  },
-                ].map(
-                  (tab) => (
-                    <button
-                      key={
-                        tab.id
-                      }
-                      type="button"
-                      role="tab"
-                      aria-selected={
-                        viewFilter ===
-                        tab.id
-                      }
-                      className={
-                        viewFilter ===
-                        tab.id
-                          ? 'sa-filter-tab is-active'
-                          : 'sa-filter-tab'
-                      }
-                      onClick={() =>
-                        setViewFilter(
-                          tab.id
-                        )
-                      }
-                    >
-                      {
-                        tab.label
-                      }
-                    </button>
-                  )
-                )}
-              </div>
+            <div className="sa-filter-tabs">
+              {[
+                ['all', 'View All'],
+                ['todo', 'To Do'],
+                ['completed', 'Completed'],
+              ].map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={
+                    viewFilter === id
+                      ? 'sa-filter-tab is-active'
+                      : 'sa-filter-tab'
+                  }
+                  onClick={() =>
+                    setViewFilter(id)
+                  }
+                >
+                  {label}
+                </button>
+              ))}
             </div>
           </div>
 
           {loading ? (
             <div className="sa-empty">
-              Loading
-              checklist…
+              Loading checklist…
             </div>
-          ) : requirements.length ===
-            0 ? (
+          ) : subjects.length === 0 ? (
             <div className="sa-empty">
               <strong>
-                No assigned
-                activities yet
+                No subject assigned
               </strong>
-
               <span>
-                Assign activities
-                from the Activity
-                Tracker to get
-                started.
+                Assign a subject from Activity
+                Management first.
+              </span>
+            </div>
+          ) : requirements.length === 0 ? (
+            <div className="sa-empty">
+              <strong>
+                No activities for{' '}
+                {selectedSubject?.name ||
+                  'this subject'}
+              </strong>
+              <span>
+                Add activities to this subject
+                in Activity Management.
               </span>
             </div>
           ) : (
@@ -744,14 +628,10 @@ function StudentActivityModal({
               {requirementsByWeek.map(
                 (group) => {
                   const status =
-                    weekStatuses[
-                      group.week
-                    ] || {
+                    weekStatuses[group.week] || {
                       total: 0,
-                      completed:
-                        0,
-                      allDone:
-                        false,
+                      completed: 0,
+                      allDone: false,
                     }
 
                   const isExpanded =
@@ -759,509 +639,174 @@ function StudentActivityModal({
                       group.week
                     )
 
-                  const tab =
-                    activeWeekTab[
-                      group.week
-                    ] ||
-                    'activities'
-
                   const visibleItems =
-                    filterItems(
-                      group.items
-                    )
-
-                  const notesInWeek =
-                    group.items.filter(
-                      (
-                        requirement
-                      ) => {
-                        const note =
-                          getActivity(
-                            requirement.id
-                          )?.note
-
-                        return (
-                          note &&
-                          note.trim()
-                        )
-                      }
-                    ).length
+                    filterItems(group.items)
 
                   return (
                     <section
-                      key={
-                        group.week
-                      }
+                      key={group.week}
                       className={[
                         'sa-week',
-                        status.allDone
-                          ? 'is-complete'
-                          : '',
                         isExpanded
                           ? 'is-open'
                           : '',
+                        status.allDone
+                          ? 'is-complete'
+                          : '',
                       ]
-                        .filter(
-                          Boolean
-                        )
+                        .filter(Boolean)
                         .join(' ')}
                     >
-                      {/* =========================
-                          WEEK HEADER
-                      ========================== */}
-
                       <button
                         type="button"
                         className="sa-week-header"
                         onClick={() =>
-                          toggleWeek(
-                            group.week
-                          )
-                        }
-                        aria-expanded={
-                          isExpanded
+                          toggleWeek(group.week)
                         }
                       >
-                        <span
-                          className="sa-week-check"
-                          aria-hidden="true"
-                        >
-                          {status.allDone ? (
-                            <svg
-                              width="14"
-                              height="14"
-                              viewBox="0 0 14 14"
-                              fill="none"
-                            >
-                              <path
-                                d="M2.5 7.2L5.5 10.2L11.5 3.8"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
-                          ) : (
-                            <span className="sa-week-check-empty" />
-                          )}
+                        <span className="sa-week-check">
+                          {status.allDone
+                            ? '✓'
+                            : ''}
                         </span>
 
                         <span className="sa-week-title">
-                          {status.allDone
-                            ? `Completed (${status.completed} task${
-                                status.completed ===
-                                1
-                                  ? ''
-                                  : 's'
-                              })`
-                            : group.label}
+                          {group.label}
                         </span>
 
-                        {status.allDone && (
-                          <span className="sa-week-summary">
-                            {group.items
-                              .map(
-                                (
-                                  requirement
-                                ) =>
-                                  requirement.code ||
-                                  requirement.label
-                              )
-                              .filter(
-                                Boolean
-                              )
-                              .slice(
-                                0,
-                                4
-                              )
-                              .join(
-                                ', '
-                              )}
+                        <span className="sa-week-summary">
+                          {status.completed} of{' '}
+                          {status.total} completed
+                        </span>
 
-                            {group.items
-                              .length >
-                            4
-                              ? '…'
-                              : ''}
-                          </span>
-                        )}
-
-                        <span
-                          className="sa-week-chevron"
-                          aria-hidden="true"
-                        >
+                        <span className="sa-week-chevron">
                           {isExpanded
-                            ? '▾'
-                            : '▸'}
+                            ? '▴'
+                            : '▾'}
                         </span>
                       </button>
 
                       {isExpanded && (
                         <div className="sa-week-body">
-                          {/* =========================
-                              WEEK TABS
-                          ========================== */}
-
-                          <div
-                            className="sa-week-tabs"
-                            role="tablist"
-                          >
-                            {[
-                              {
-                                id: 'activities',
-                                label: `Activities (${group.items.length})`,
-                              },
-                              {
-                                id: 'notes',
-                                label: `Notes (${notesInWeek})`,
-                              },
-                              {
-                                id: 'files',
-                                label:
-                                  'Files (0)',
-                              },
-                            ].map(
-                              (
-                                tabOption
-                              ) => (
-                                <button
-                                  key={
-                                    tabOption.id
-                                  }
-                                  type="button"
-                                  role="tab"
-                                  className={
-                                    tab ===
-                                    tabOption.id
-                                      ? 'sa-week-tab is-active'
-                                      : 'sa-week-tab'
-                                  }
-                                  onClick={() =>
-                                    setWeekTab(
-                                      group.week,
-                                      tabOption.id
-                                    )
-                                  }
-                                >
-                                  {
-                                    tabOption.label
-                                  }
-                                </button>
-                              )
-                            )}
-                          </div>
-
-                          {/* =========================
-                              ACTIVITIES
-                          ========================== */}
-
-                          {tab ===
-                            'activities' && (
-                            <div className="sa-table-wrap">
-                              <div className="sa-table-head">
-                                <span>
-                                  Activity
-                                </span>
-
-                                <span>
-                                  Status
-                                </span>
-
-                                <span>
-                                  Note
-                                </span>
-
-                                <span />
-                              </div>
-
-                              {visibleItems.length ===
-                              0 ? (
-                                <div className="sa-table-empty">
-                                  No
-                                  activities
-                                  match
-                                  this
-                                  filter.
-                                </div>
-                              ) : (
-                                visibleItems.map(
-                                  (
-                                    requirement
-                                  ) => {
-                                    const item =
-                                      getActivity(
-                                        requirement.id
-                                      )
-
-                                    const completed =
-                                      item?.completed ||
-                                      false
-
-                                    const note =
-                                      item?.note ||
-                                      ''
-
-                                    const isCustom =
-                                      Boolean(
-                                        requirement.student_id
-                                      )
-
-                                    const menuOpen =
-                                      openMenuId ===
-                                      requirement.id
-
-                                    return (
-                                      <div
-                                        key={
-                                          requirement.id
-                                        }
-                                        className={
-                                          completed
-                                            ? 'sa-row is-done'
-                                            : 'sa-row'
-                                        }
-                                      >
-                                        {/* Activity */}
-
-                                        <div className="sa-row-activity">
-                                          <label className="sa-check">
-                                            <input
-                                              type="checkbox"
-                                              checked={
-                                                completed
-                                              }
-                                              disabled={
-                                                savingId ===
-                                                requirement.id
-                                              }
-                                              onChange={() =>
-                                                handleToggle(
-                                                  requirement.id
-                                                )
-                                              }
-                                            />
-
-                                            <span className="sa-check-box" />
-                                          </label>
-
-                                          <div className="sa-row-text">
-                                            <strong>
-                                              {
-                                                requirement.label
-                                              }
-                                            </strong>
-
-                                            {requirement.code && (
-                                              <small>
-                                                {
-                                                  requirement.code
-                                                }
-                                              </small>
-                                            )}
-
-                                            {isCustom && (
-                                              <span className="sa-custom-tag">
-                                                Custom
-                                              </span>
-                                            )}
-                                          </div>
-                                        </div>
-
-                                        {/* Status */}
-
-                                        <div className="sa-row-status">
-                                          <span
-                                            className={
-                                              completed
-                                                ? 'sa-status is-done'
-                                                : 'sa-status is-pending'
-                                            }
-                                          >
-                                            {completed
-                                              ? 'Completed'
-                                              : 'Awaiting Review'}
-                                          </span>
-                                        </div>
-
-                                        {/* Note */}
-
-                                        <div className="sa-row-note">
-                                          <input
-                                            type="text"
-                                            className="sa-note-input"
-                                            placeholder="Add note…"
-                                            defaultValue={
-                                              note
-                                            }
-                                            onBlur={(
-                                              event
-                                            ) => {
-                                              if (
-                                                event
-                                                  .target
-                                                  .value !==
-                                                note
-                                              ) {
-                                                updateNote(
-                                                  requirement.id,
-                                                  event
-                                                    .target
-                                                    .value
-                                                )
-                                              }
-                                            }}
-                                          />
-                                        </div>
-
-                                        {/* Actions */}
-
-                                        <div className="sa-row-actions">
-                                          <div className="sa-menu-wrap">
-                                            <button
-                                              type="button"
-                                              className="sa-icon-btn"
-                                              aria-label="More actions"
-                                              onClick={() =>
-                                                setOpenMenuId(
-                                                  menuOpen
-                                                    ? null
-                                                    : requirement.id
-                                                )
-                                              }
-                                            >
-                                              ⋯
-                                            </button>
-
-                                            {menuOpen && (
-                                              <div className="sa-menu">
-                                                {isCustom && (
-                                                  <button
-                                                    type="button"
-                                                    className="sa-menu-item danger"
-                                                    disabled={
-                                                      deletingId ===
-                                                      requirement.id
-                                                    }
-                                                    onClick={() =>
-                                                      handleDelete(
-                                                        requirement
-                                                      )
-                                                    }
-                                                  >
-                                                    {deletingId ===
-                                                    requirement.id
-                                                      ? 'Removing…'
-                                                      : 'Remove'}
-                                                  </button>
-                                                )}
-
-                                                <button
-                                                  type="button"
-                                                  className="sa-menu-item"
-                                                  onClick={() =>
-                                                    setOpenMenuId(
-                                                      null
-                                                    )
-                                                  }
-                                                >
-                                                  Close
-                                                </button>
-                                              </div>
-                                            )}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    )
-                                  }
-                                )
-                              )}
+                          {visibleItems.length ===
+                          0 ? (
+                            <div className="sa-week-empty">
+                              No activities in
+                              this filter.
                             </div>
-                          )}
-
-                          {/* =========================
-                              NOTES
-                          ========================== */}
-
-                          {tab ===
-                            'notes' && (
-                            <div className="sa-notes-panel">
-                              {group.items.filter(
-                                (
-                                  requirement
-                                ) => {
-                                  const note =
-                                    getActivity(
-                                      requirement.id
-                                    )?.note
-
-                                  return (
-                                    note &&
-                                    note.trim()
+                          ) : (
+                            visibleItems.map(
+                              (requirement) => {
+                                const item =
+                                  getActivity(
+                                    requirement.id
                                   )
-                                }
-                              ).length ===
-                              0 ? (
-                                <p className="sa-table-empty">
-                                  No notes
-                                  for this
-                                  week yet.
-                                </p>
-                              ) : (
-                                group.items.map(
-                                  (
-                                    requirement
-                                  ) => {
-                                    const note =
-                                      getActivity(
-                                        requirement.id
-                                      )?.note
 
-                                    if (
-                                      !note ||
-                                      !note.trim()
-                                    ) {
-                                      return null
+                                const completed =
+                                  Boolean(
+                                    item?.completed
+                                  )
+
+                                return (
+                                  <div
+                                    key={
+                                      requirement.id
                                     }
+                                    className={
+                                      completed
+                                        ? 'sa-activity-row is-complete'
+                                        : 'sa-activity-row'
+                                    }
+                                  >
+                                    <button
+                                      type="button"
+                                      className="sa-activity-check"
+                                      disabled={
+                                        savingId ===
+                                        requirement.id
+                                      }
+                                      onClick={() =>
+                                        handleToggle(
+                                          requirement.id
+                                        )
+                                      }
+                                      aria-label={
+                                        completed
+                                          ? 'Mark incomplete'
+                                          : 'Mark complete'
+                                      }
+                                    >
+                                      {completed
+                                        ? '✓'
+                                        : ''}
+                                    </button>
 
-                                    return (
-                                      <div
-                                        key={
+                                    <div className="sa-activity-main">
+                                      <strong>
+                                        {
+                                          requirement.label
+                                        }
+                                      </strong>
+
+                                      <span>
+                                        {requirement.code ||
+                                          selectedSubject?.name ||
+                                          'Activity'}
+                                      </span>
+                                    </div>
+
+                                    <input
+                                      className="sa-note-input"
+                                      type="text"
+                                      defaultValue={
+                                        item?.note ||
+                                        ''
+                                      }
+                                      placeholder="Note..."
+                                      onBlur={(
+                                        event
+                                      ) => {
+                                        if (
+                                          event.target
+                                            .value !==
+                                          (item?.note ||
+                                            '')
+                                        ) {
+                                          updateNote(
+                                            requirement.id,
+                                            event
+                                              .target
+                                              .value
+                                          )
+                                        }
+                                      }}
+                                    />
+
+                                    {requirement.student_id ===
+                                      student?.id && (
+                                      <button
+                                        type="button"
+                                        className="sa-delete-activity"
+                                        disabled={
+                                          deletingId ===
                                           requirement.id
                                         }
-                                        className="sa-note-card"
+                                        onClick={() =>
+                                          handleDelete(
+                                            requirement
+                                          )
+                                        }
                                       >
-                                        <strong>
-                                          {
-                                            requirement.label
-                                          }
-                                        </strong>
-
-                                        <p>
-                                          {
-                                            note
-                                          }
-                                        </p>
-                                      </div>
-                                    )
-                                  }
+                                        {deletingId ===
+                                        requirement.id
+                                          ? 'Removing...'
+                                          : 'Remove'}
+                                      </button>
+                                    )}
+                                  </div>
                                 )
-                              )}
-                            </div>
-                          )}
-
-                          {/* =========================
-                              FILES
-                          ========================== */}
-
-                          {tab ===
-                            'files' && (
-                            <p className="sa-table-empty">
-                              File
-                              attachments
-                              are not
-                              available in
-                              this view.
-                            </p>
+                              }
+                            )
                           )}
                         </div>
                       )}
@@ -1273,22 +818,16 @@ function StudentActivityModal({
           )}
         </div>
 
-        {/* =========================
-            FOOTER
-        ========================== */}
-
         <footer className="sa-footer">
-          <button
-            type="button"
-            className="sa-btn-ghost"
-            onClick={onClose}
-          >
-            Close
-          </button>
+          <span>
+            {selectedSubject?.name
+              ? `${selectedSubject.name} progress`
+              : 'Student progress'}
+          </span>
 
           <button
             type="button"
-            className="sa-btn-primary"
+            className="sa-done-button"
             onClick={onClose}
           >
             Done

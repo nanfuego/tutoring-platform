@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../supabaseClient'
 import './ActivityTracker.css'
 import StudentActivityModal from './StudentActivityModal'
+import SubjectActivityManager from './SubjectActivityManager'
 
 function ActivityTracker() {
   // ============================================================
@@ -13,6 +14,8 @@ function ActivityTracker() {
   const [requirements, setRequirements] = useState([])
   const [allRequirements, setAllRequirements] = useState([])
   const [studentActivity, setStudentActivity] = useState([])
+  const [studentSubjects, setStudentSubjects] = useState([])
+  const [subjects, setSubjects] = useState([])
   const [currentSemester, setCurrentSemester] = useState(null)
   const [endedSemesters, setEndedSemesters] = useState([])
   const [allSemesterStudents, setAllSemesterStudents] = useState([])
@@ -20,23 +23,15 @@ function ActivityTracker() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  // Viewing an archived semester (read-only snapshot)
+  // ============================================================
+  // MODALS
+  // ============================================================
+
   const [archiveView, setArchiveView] = useState(null)
+  const [selectedStudent, setSelectedStudent] = useState(null)
+  const [showSubjectManager, setShowSubjectManager] = useState(false)
 
-  // ============================================================
-  // FILTERS
-  // ============================================================
-
-  const [search, setSearch] = useState('')
-  const [clinicFilter, setClinicFilter] = useState('all')
-  const [schoolFilter, setSchoolFilter] = useState('all')
-  const [manageSchoolFilter, setManageSchoolFilter] = useState('all')
-
-  // Main student table pagination
-  const STUDENTS_PER_PAGE = 10
-  const [currentPage, setCurrentPage] = useState(1)
-
-  // Assign activity to student(s) by school
+  // Legacy/manual activity assignment remains available for now.
   const [showAssignActivity, setShowAssignActivity] = useState(false)
   const [assignSchool, setAssignSchool] = useState('AUHS')
   const [assignStudentSearch, setAssignStudentSearch] = useState('')
@@ -44,56 +39,7 @@ function ActivityTracker() {
   const [assignSelectedActivityIds, setAssignSelectedActivityIds] = useState([])
   const [assignSaving, setAssignSaving] = useState(false)
 
-  // ============================================================
-  // CHECKLIST MODAL
-  // ============================================================
-
-  const [selectedStudent, setSelectedStudent] = useState(null)
-  const [savingActivityId, setSavingActivityId] = useState(null)
-
-  // ============================================================
-  // MANAGE ACTIVITY MODAL
-  // ============================================================
-
-  const [showManageActivity, setShowManageActivity] =
-    useState(false)
-
-  const [showActivityForm, setShowActivityForm] =
-    useState(false)
-
-  const [editingActivity, setEditingActivity] =
-    useState(null)
-
-  const [activityForm, setActivityForm] = useState({
-    name: '',
-    code: '',
-    week: '1',
-    university: 'AUHS',
-    startDate: '',
-    endDate: '',
-  })
-
-  const [savingActivity, setSavingActivity] =
-    useState(false)
-
-  // ============================================================
-  // DELETE MODAL
-  // ============================================================
-
-  const [activityToDelete, setActivityToDelete] =
-    useState(null)
-
-  const [deletingActivityId, setDeletingActivityId] =
-    useState(null)
-
-  const [manageSearch, setManageSearch] = useState('')
-  const [selectedManageIds, setSelectedManageIds] = useState([])
-  const [bulkDeleting, setBulkDeleting] = useState(false)
-
-  // ============================================================
-  // END SEMESTER / ROLLOVER
-  // ============================================================
-
+  // Semester workflow
   const [showEndConfirm, setShowEndConfirm] = useState(false)
   const [showNewSemester, setShowNewSemester] = useState(false)
   const [savingSemester, setSavingSemester] = useState(false)
@@ -109,6 +55,17 @@ function ActivityTracker() {
   const [activitySearch, setActivitySearch] = useState('')
   const [selectedStudentIds, setSelectedStudentIds] = useState([])
   const [selectedActivityIds, setSelectedActivityIds] = useState([])
+
+  // ============================================================
+  // FILTERS / PAGINATION
+  // ============================================================
+
+  const [search, setSearch] = useState('')
+  const [clinicFilter, setClinicFilter] = useState('all')
+  const [schoolFilter, setSchoolFilter] = useState('all')
+
+  const STUDENTS_PER_PAGE = 10
+  const [currentPage, setCurrentPage] = useState(1)
 
   // ============================================================
   // LOAD
@@ -129,6 +86,8 @@ function ActivityTracker() {
         activityResponse,
         semesterResponse,
         semesterStudentsResponse,
+        studentSubjectsResponse,
+        subjectsResponse,
       ] = await Promise.all([
         supabase
           .from('students')
@@ -159,129 +118,111 @@ function ActivityTracker() {
         supabase
           .from('semester_students')
           .select('semester_id, student_id'),
+
+        supabase
+          .from('student_subjects')
+          .select('student_id, subject_id, active'),
+
+        supabase
+          .from('subjects')
+          .select('id, name, university, active')
+          .order('name', { ascending: true }),
       ])
 
-      if (studentsResponse.error) {
-        throw studentsResponse.error
+      if (studentsResponse.error) throw studentsResponse.error
+      if (requirementsResponse.error) throw requirementsResponse.error
+      if (activityResponse.error) throw activityResponse.error
+      if (semesterResponse.error) throw semesterResponse.error
+      if (semesterStudentsResponse.error) throw semesterStudentsResponse.error
+
+      // During rollout, give a clearer message when the migration has not been run.
+      if (studentSubjectsResponse.error) {
+        throw new Error(
+          `Subject system is not ready: ${studentSubjectsResponse.error.message}. Run subject_activity_migration.sql in Supabase first.`
+        )
       }
 
-      if (requirementsResponse.error) {
-        throw requirementsResponse.error
-      }
-
-      if (activityResponse.error) {
-        throw activityResponse.error
-      }
-
-      if (semesterResponse.error) {
-        throw semesterResponse.error
-      }
-
-      if (semesterStudentsResponse.error) {
-        throw semesterStudentsResponse.error
+      if (subjectsResponse.error) {
+        throw new Error(
+          `Subjects could not be loaded: ${subjectsResponse.error.message}`
+        )
       }
 
       const allStudentsData = studentsResponse.data || []
       const allRequirementsData = requirementsResponse.data || []
       const activityData = activityResponse.data || []
       const allSemestersData = semesterResponse.data || []
-      const semesterStudentsData =
-        semesterStudentsResponse.data || []
+      const semesterStudentsData = semesterStudentsResponse.data || []
+      const studentSubjectData = studentSubjectsResponse.data || []
 
       const activeSemester =
-        allSemestersData.find((s) => s.status === 'active') ||
+        allSemestersData.find((semester) => semester.status === 'active') ||
         null
-
-      const archived =
-        allSemestersData.filter((s) => s.status !== 'active')
 
       setAllStudents(allStudentsData)
       setAllRequirements(allRequirementsData)
       setStudentActivity(activityData)
+      setStudentSubjects(studentSubjectData)
+      setSubjects(subjectsResponse.data || [])
       setCurrentSemester(activeSemester)
-      setEndedSemesters(archived)
+      setEndedSemesters(
+        allSemestersData.filter(
+          (semester) => semester.status !== 'active'
+        )
+      )
       setAllSemesterStudents(semesterStudentsData)
 
       if (activeSemester) {
-        const semesterReqIds = new Set(
-          allRequirementsData
-            .filter(
-              (r) =>
-                r.semester_id === activeSemester.id ||
-                (r.semester_id == null && r.student_id == null)
-            )
-            .map((r) => r.id)
-        )
-
         const assignedIds = new Set(
           semesterStudentsData
-            .filter((row) => row.semester_id === activeSemester.id)
+            .filter(
+              (row) => row.semester_id === activeSemester.id
+            )
             .map((row) => row.student_id)
         )
 
-        // Students with checklist progress for this semester but not enrolled yet
-        const activityStudentIds = new Set(
-          activityData
-            .filter((item) => semesterReqIds.has(item.requirement_id))
-            .map((item) => item.student_id)
-        )
-
-        const missingEnrollIds = [...activityStudentIds].filter(
-          (id) => !assignedIds.has(id)
-        )
-
-        // Auto-enroll students who already have semester activity records
-        if (missingEnrollIds.length > 0) {
-          const rows = missingEnrollIds.map((studentId) => ({
-            semester_id: activeSemester.id,
-            student_id: studentId,
-          }))
-          const { data: enrolledRows, error: enrollError } =
-            await supabase
-              .from('semester_students')
-              .insert(rows)
-              .select()
-
-          if (!enrollError) {
-            const inserted = enrolledRows || rows
-            inserted.forEach((row) => assignedIds.add(row.student_id))
-            setAllSemesterStudents((current) => [
-              ...current,
-              ...inserted,
-            ])
-          } else {
-            // Still show them in the UI even if enroll write fails
-            missingEnrollIds.forEach((id) => assignedIds.add(id))
-            console.warn(
-              'Could not auto-enroll students into semester:',
-              enrollError.message
+        // Keep existing behavior: students with current semester activity
+        // records are visible even if semester_students was not populated.
+        const currentRequirementIds = new Set(
+          allRequirementsData
+            .filter(
+              (requirement) =>
+                requirement.semester_id === activeSemester.id ||
+                requirement.semester_id == null
             )
-          }
-        }
+            .map((requirement) => requirement.id)
+        )
+
+        activityData
+          .filter((item) =>
+            currentRequirementIds.has(item.requirement_id)
+          )
+          .forEach((item) => assignedIds.add(item.student_id))
 
         setStudents(
-          allStudentsData.filter((s) => assignedIds.has(s.id))
+          allStudentsData.filter((student) =>
+            assignedIds.has(student.id)
+          )
         )
 
         setRequirements(
           allRequirementsData.filter(
-            (r) =>
-              r.semester_id === activeSemester.id ||
-              (r.semester_id == null && r.student_id == null)
+            (requirement) =>
+              requirement.semester_id === activeSemester.id ||
+              requirement.semester_id == null
           )
         )
       } else {
-        // No active semester: show everyone and global requirements
         setStudents(allStudentsData)
         setRequirements(
-          allRequirementsData.filter((r) => r.student_id == null)
+          allRequirementsData.filter(
+            (requirement) =>
+              requirement.semester_id == null
+          )
         )
       }
     } catch (err) {
-      console.error(
-        'Student Progress loading error:',
-        err
-      )
+      console.error('Student Progress loading error:', err)
 
       setError(
         err.message ||
@@ -293,8 +234,20 @@ function ActivityTracker() {
   }
 
   // ============================================================
-  // CLINICS / SCHOOLS
+  // LOOKUPS
   // ============================================================
+
+  const schools = useMemo(() => {
+    const values = new Set(['AUHS', 'PACIFIC'])
+
+    allStudents.forEach((student) => {
+      if (student.university) {
+        values.add(student.university)
+      }
+    })
+
+    return Array.from(values).sort()
+  }, [allStudents])
 
   const clinics = useMemo(() => {
     const values = new Set()
@@ -308,385 +261,126 @@ function ActivityTracker() {
     return Array.from(values).sort()
   }, [students])
 
-  const schools = useMemo(() => {
-    const values = new Set()
-    allStudents.forEach((student) => {
-      if (student.university) values.add(student.university)
-    })
-    // Always offer the known schools even if empty
-    values.add('AUHS')
-    values.add('PACIFIC')
-    return Array.from(values).sort()
-  }, [allStudents])
+  const subjectIdsByStudent = useMemo(() => {
+    const map = new Map()
+
+    studentSubjects
+      .filter((assignment) => assignment.active !== false)
+      .forEach((assignment) => {
+        if (!map.has(assignment.student_id)) {
+          map.set(assignment.student_id, new Set())
+        }
+
+        map
+          .get(assignment.student_id)
+          .add(assignment.subject_id)
+      })
+
+    return map
+  }, [studentSubjects])
+
+  const subjectNamesByStudent = useMemo(() => {
+    const subjectNameById = new Map(
+      subjects.map((subject) => [
+        String(subject.id),
+        subject.name,
+      ])
+    )
+
+    const map = new Map()
+
+    studentSubjects
+      .filter((assignment) => assignment.active !== false)
+      .forEach((assignment) => {
+        const name = subjectNameById.get(
+          String(assignment.subject_id)
+        )
+
+        if (!name) return
+
+        if (!map.has(assignment.student_id)) {
+          map.set(assignment.student_id, [])
+        }
+
+        map.get(assignment.student_id).push(name)
+      })
+
+    return map
+  }, [studentSubjects, subjects])
 
   /**
-   * Activities for a student = current-semester requirements that
-   * explicitly match the student's school, plus activities deliberately
-   * marked SHARED. Blank/NULL school values are not treated as shared.
+   * Subject-aware requirement visibility.
+   *
+   * - student-specific requirement -> exact student only
+   * - subject_id present -> student must be assigned that subject
+   * - legacy subject_id NULL -> keep old school-based behavior
+   * - university scope always remains enforced
    */
-  function requirementsForStudent(student, reqList = requirements) {
-    const school = student?.university || null
-    return reqList.filter((r) => {
-      if (r.student_id && r.student_id !== student?.id) return false
-      if (r.university === 'SHARED') return true
-      return Boolean(school) && r.university === school
-    })
-  }
+  function requirementsForStudent(
+    student,
+    reqList = requirements
+  ) {
+    if (!student) return []
 
-  const manageActivities = useMemo(() => {
-    const pool = requirements.filter((r) => r.student_id == null)
-    if (manageSchoolFilter === 'all') return pool
-    if (manageSchoolFilter === 'shared') {
-      return pool.filter((r) => r.university === 'SHARED')
-    }
-    // School-specific view: only that school's activities (not shared)
-    return pool.filter((r) => r.university === manageSchoolFilter)
-  }, [requirements, manageSchoolFilter])
+    const school = student.university || null
+    const assignedSubjects =
+      subjectIdsByStudent.get(student.id) || new Set()
 
-  const searchableManageActivities = useMemo(() => {
-    const query = manageSearch.trim().toLowerCase()
-    const sorted = manageActivities.slice().sort(
-      (a, b) =>
-        (a.week ?? 0) - (b.week ?? 0) ||
-        (a.sort_order ?? 0) - (b.sort_order ?? 0)
-    )
-    if (!query) return sorted
-    return sorted.filter((r) => {
-      const hay = [r.label, r.code, r.university, `week ${r.week ?? ''}`]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase()
-      return hay.includes(query)
-    })
-  }, [manageActivities, manageSearch])
+    return reqList.filter((requirement) => {
+      if (
+        requirement.student_id &&
+        requirement.student_id !== student.id
+      ) {
+        return false
+      }
 
-  const allSearchableSelected =
-    searchableManageActivities.length > 0 &&
-    searchableManageActivities.every((r) =>
-      selectedManageIds.includes(r.id)
-    )
+      if (requirement.student_id === student.id) {
+        return true
+      }
 
-  function toggleManageSelectAll() {
-    if (allSearchableSelected) {
-      const visible = new Set(
-        searchableManageActivities.map((r) => r.id)
+      if (
+        requirement.subject_id != null &&
+        !assignedSubjects.has(requirement.subject_id)
+      ) {
+        return false
+      }
+
+      if (requirement.university === 'SHARED') {
+        return true
+      }
+
+      return (
+        Boolean(school) &&
+        requirement.university === school
       )
-      setSelectedManageIds((current) =>
-        current.filter((id) => !visible.has(id))
-      )
-    } else {
-      setSelectedManageIds((current) => {
-        const next = new Set(current)
-        searchableManageActivities.forEach((r) => next.add(r.id))
-        return Array.from(next)
-      })
-    }
-  }
-
-  function toggleManageSelectOne(id) {
-    setSelectedManageIds((current) =>
-      current.includes(id)
-        ? current.filter((x) => x !== id)
-        : [...current, id]
-    )
+    })
   }
 
   // ============================================================
-  // ACTIVITY GROUPS
-  // ============================================================
-
-  function groupRequirementsByWeek(list) {
-    const groups = {}
-
-    list.forEach((requirement) => {
-      const week = requirement.week ?? 0
-      if (!groups[week]) groups[week] = []
-      groups[week].push(requirement)
-    })
-
-    return Object.entries(groups)
-      .sort(([a], [b]) => Number(a) - Number(b))
-      .map(([week, items]) => ({
-        week: Number(week),
-        label:
-          Number(week) === 0
-            ? 'General'
-            : `Week ${week}`,
-        items,
-      }))
-  }
-
-  const activityGroups = useMemo(
-    () => groupRequirementsByWeek(requirements),
-    [requirements]
-  )
-
-  const manageActivityGroups = useMemo(
-    () => groupRequirementsByWeek(manageActivities),
-    [manageActivities]
-  )
-
-  const selectedStudentGroups = useMemo(() => {
-    if (!selectedStudent) return []
-    return groupRequirementsByWeek(
-      requirementsForStudent(selectedStudent, requirements)
-    )
-  }, [selectedStudent, requirements])
-
-  const assignableActivities = useMemo(() => {
-    return requirements.filter(
-      (r) =>
-        r.student_id == null &&
-        (r.university === assignSchool || r.university === 'SHARED')
-    )
-  }, [requirements, assignSchool])
-
-  const assignStudentOptions = useMemo(() => {
-    const query = assignStudentSearch.trim().toLowerCase()
-    return allStudents
-      .filter((s) => s.university === assignSchool)
-      .filter((s) => {
-        if (!query) return true
-        const hay = [s.name, s.email, s.program]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase()
-        return hay.includes(query)
-      })
-  }, [allStudents, assignSchool, assignStudentSearch])
-
-  function openAssignActivity() {
-    setError('')
-    setAssignSchool(
-      schoolFilter !== 'all' ? schoolFilter : 'AUHS'
-    )
-    setAssignStudentSearch('')
-    setAssignStudentId('')
-    setAssignSelectedActivityIds([])
-    setShowAssignActivity(true)
-  }
-
-  function closeAssignActivity() {
-    if (assignSaving) return
-    setShowAssignActivity(false)
-  }
-
-  function selectAssignStudent(studentId) {
-    setAssignStudentId(studentId)
-    const activityIdsForSchool = new Set(
-      assignableActivities.map((a) => a.id)
-    )
-    const current = studentActivity
-      .filter(
-        (item) =>
-          item.student_id === studentId &&
-          activityIdsForSchool.has(item.requirement_id)
-      )
-      .map((item) => item.requirement_id)
-    setAssignSelectedActivityIds(current)
-  }
-
-  function toggleAssignActivityId(id) {
-    setAssignSelectedActivityIds((current) =>
-      current.includes(id)
-        ? current.filter((x) => x !== id)
-        : [...current, id]
-    )
-  }
-
-  const allAssignActivitiesSelected =
-    assignableActivities.length > 0 &&
-    assignableActivities.every((activity) =>
-      assignSelectedActivityIds.includes(activity.id)
-    )
-
-  function toggleSelectAllAssignActivities() {
-    if (!assignStudentId || assignSaving) return
-
-    const visibleIds = assignableActivities.map((activity) => activity.id)
-
-    setAssignSelectedActivityIds((current) => {
-      if (allAssignActivitiesSelected) {
-        return current.filter((id) => !visibleIds.includes(id))
-      }
-
-      return Array.from(new Set([...current, ...visibleIds]))
-    })
-  }
-
-  async function submitAssignActivity(event) {
-    event.preventDefault()
-
-    if (!assignStudentId) {
-      setError('Please select a student.')
-      return
-    }
-
-    setAssignSaving(true)
-    setError('')
-
-    try {
-      const schoolActivityIds = assignableActivities.map((a) => a.id)
-      const schoolIdSet = new Set(schoolActivityIds)
-
-      const existingForStudent = studentActivity.filter(
-        (item) =>
-          item.student_id === assignStudentId &&
-          schoolIdSet.has(item.requirement_id)
-      )
-      const existingIds = new Set(
-        existingForStudent.map((item) => item.requirement_id)
-      )
-      const selectedSet = new Set(assignSelectedActivityIds)
-
-      const toInsert = assignSelectedActivityIds
-        .filter((id) => !existingIds.has(id))
-        .map((requirementId) => ({
-          student_id: assignStudentId,
-          requirement_id: requirementId,
-          completed: false,
-        }))
-
-      const toRemove = [...existingIds].filter(
-        (id) => !selectedSet.has(id)
-      )
-
-      if (toInsert.length > 0) {
-        const { data, error: insertError } = await supabase
-          .from('student_activity')
-          .insert(toInsert)
-          .select()
-
-        if (insertError) throw insertError
-
-        setStudentActivity((current) => [
-          ...current,
-          ...(data || []),
-        ])
-      }
-
-      if (toRemove.length > 0) {
-        const { error: deleteError } = await supabase
-          .from('student_activity')
-          .delete()
-          .eq('student_id', assignStudentId)
-          .in('requirement_id', toRemove)
-
-        if (deleteError) throw deleteError
-
-        setStudentActivity((current) =>
-          current.filter(
-            (item) =>
-              !(
-                item.student_id === assignStudentId &&
-                toRemove.includes(item.requirement_id)
-              )
-          )
-        )
-      }
-
-      // Student Progress list membership is driven only by assigned activities:
-      // - has any activity for this school → enroll + show on table
-      // - all unchecked → unenroll + remove from table
-      if (currentSemester?.id) {
-        const hasAnyAssigned = assignSelectedActivityIds.length > 0
-        const already = allSemesterStudents.some(
-          (row) =>
-            row.semester_id === currentSemester.id &&
-            row.student_id === assignStudentId
-        )
-
-        if (hasAnyAssigned && !already) {
-          const { data: ssData, error: ssError } = await supabase
-            .from('semester_students')
-            .insert({
-              semester_id: currentSemester.id,
-              student_id: assignStudentId,
-            })
-            .select()
-
-          if (!ssError) {
-            const inserted = ssData || [
-              {
-                semester_id: currentSemester.id,
-                student_id: assignStudentId,
-              },
-            ]
-            setAllSemesterStudents((current) => [
-              ...current,
-              ...inserted,
-            ])
-            const student = allStudents.find(
-              (s) => s.id === assignStudentId
-            )
-            if (student) {
-              setStudents((current) => {
-                if (current.some((s) => s.id === student.id)) {
-                  return current
-                }
-                return [...current, student].sort((a, b) =>
-                  (a.name || '').localeCompare(b.name || '')
-                )
-              })
-            }
-          }
-        }
-
-        if (!hasAnyAssigned && already) {
-          const { error: unenrollError } = await supabase
-            .from('semester_students')
-            .delete()
-            .eq('semester_id', currentSemester.id)
-            .eq('student_id', assignStudentId)
-
-          if (!unenrollError) {
-            setAllSemesterStudents((current) =>
-              current.filter(
-                (row) =>
-                  !(
-                    row.semester_id === currentSemester.id &&
-                    row.student_id === assignStudentId
-                  )
-              )
-            )
-            setStudents((current) =>
-              current.filter((s) => s.id !== assignStudentId)
-            )
-          }
-        }
-      }
-    } catch (err) {
-      console.error('Assign activity error:', err)
-      setError(
-        err.message || 'Unable to update student activities.'
-      )
-    } finally {
-      setAssignSaving(false)
-    }
-  }
-
-  // ============================================================
-  // PROGRESS MAP
+  // PROGRESS / CURRENT ACTIVITY
   // ============================================================
 
   const progressMap = useMemo(() => {
     const map = {}
 
     students.forEach((student) => {
-      const studentReqs = requirementsForStudent(
-        student,
-        requirements
+      const studentRequirements =
+        requirementsForStudent(student)
+
+      const requirementIds = new Set(
+        studentRequirements.map(
+          (requirement) => requirement.id
+        )
       )
-      const reqIds = new Set(studentReqs.map((r) => r.id))
 
       const completed = studentActivity.filter(
         (item) =>
           item.student_id === student.id &&
           item.completed === true &&
-          reqIds.has(item.requirement_id)
+          requirementIds.has(item.requirement_id)
       ).length
 
-      const total = studentReqs.length
+      const total = studentRequirements.length
 
       map[student.id] = {
         completed,
@@ -699,39 +393,46 @@ function ActivityTracker() {
     })
 
     return map
-  }, [students, requirements, studentActivity])
-
-  // ============================================================
-  // CURRENT ACTIVITY MAP
-  // ============================================================
+  }, [
+    students,
+    requirements,
+    studentActivity,
+    subjectIdsByStudent,
+  ])
 
   const currentActivityMap = useMemo(() => {
     const map = {}
 
     students.forEach((student) => {
-      const studentReqs = requirementsForStudent(
-        student,
-        requirements
-      )
+      const allowed =
+        requirementsForStudent(student)
 
       const activityByRequirement = new Map(
         studentActivity
-          .filter((item) => item.student_id === student.id)
-          .map((item) => [item.requirement_id, item])
+          .filter(
+            (item) => item.student_id === student.id
+          )
+          .map((item) => [
+            item.requirement_id,
+            item,
+          ])
       )
 
-      const assignedRequirements = studentReqs.filter((requirement) =>
-        activityByRequirement.has(requirement.id)
-      )
+      const currentRequirement = allowed.find(
+        (requirement) => {
+          const item =
+            activityByRequirement.get(requirement.id)
 
-      const currentRequirement = assignedRequirements.find((requirement) => {
-        const item = activityByRequirement.get(requirement.id)
-        return item?.completed !== true
-      })
+          return item?.completed !== true
+        }
+      )
 
       if (currentRequirement) {
-        map[student.id] = currentRequirement.label || currentRequirement.name || 'Activity'
-      } else if (assignedRequirements.length > 0) {
+        map[student.id] =
+          currentRequirement.label ||
+          currentRequirement.name ||
+          'Activity'
+      } else if (allowed.length > 0) {
         map[student.id] = 'All complete'
       } else {
         map[student.id] = 'No activity'
@@ -739,127 +440,19 @@ function ActivityTracker() {
     })
 
     return map
-  }, [students, requirements, studentActivity])
-
-  // ============================================================
-  // SEMESTER ARCHIVE STATS
-  // ============================================================
-
-  const archiveRows = useMemo(() => {
-    return endedSemesters.map((semester) => {
-      const studentIds = allSemesterStudents
-        .filter((row) => row.semester_id === semester.id)
-        .map((row) => row.student_id)
-
-      const semesterReqs = allRequirements.filter(
-        (r) => r.semester_id === semester.id
-      )
-
-      const reqIds = new Set(semesterReqs.map((r) => r.id))
-      const studentIdSet = new Set(studentIds)
-
-      const completed = studentActivity.filter(
-        (item) =>
-          item.completed === true &&
-          reqIds.has(item.requirement_id) &&
-          studentIdSet.has(item.student_id)
-      ).length
-
-      const possible =
-        studentIds.length * semesterReqs.length
-
-      const percentage =
-        possible > 0
-          ? Math.round((completed / possible) * 100)
-          : 0
-
-      return {
-        semester,
-        studentCount: studentIds.length,
-        activityCount: semesterReqs.length,
-        completed,
-        percentage,
-      }
-    })
   }, [
-    endedSemesters,
-    allSemesterStudents,
-    allRequirements,
+    students,
+    requirements,
     studentActivity,
+    subjectIdsByStudent,
   ])
 
-  function openArchiveView(semester) {
-    const studentIds = allSemesterStudents
-      .filter((row) => row.semester_id === semester.id)
-      .map((row) => row.student_id)
-
-    const studentIdSet = new Set(studentIds)
-    const semesterStudents = allStudents.filter((s) =>
-      studentIdSet.has(s.id)
-    )
-
-    const semesterReqs = allRequirements
-      .filter((r) => r.semester_id === semester.id)
-      .sort((a, b) => {
-        const weekDiff = (a.week ?? 0) - (b.week ?? 0)
-        if (weekDiff !== 0) return weekDiff
-        return (a.sort_order ?? 0) - (b.sort_order ?? 0)
-      })
-
-    const reqIds = new Set(semesterReqs.map((r) => r.id))
-
-    const progress = {}
-    semesterStudents.forEach((student) => {
-      const completed = studentActivity.filter(
-        (item) =>
-          item.student_id === student.id &&
-          item.completed === true &&
-          reqIds.has(item.requirement_id)
-      ).length
-
-      progress[student.id] = {
-        completed,
-        total: semesterReqs.length,
-        percentage:
-          semesterReqs.length > 0
-            ? Math.round(
-                (completed / semesterReqs.length) * 100
-              )
-            : 0,
-      }
-    })
-
-    setArchiveView({
-      semester,
-      students: semesterStudents,
-      requirements: semesterReqs,
-      progress,
-    })
-  }
-
-  function closeArchiveView() {
-    setArchiveView(null)
-  }
-
-  function formatDate(value) {
-    if (!value) return '—'
-    try {
-      return new Date(value + 'T00:00:00').toLocaleDateString(
-        undefined,
-        { year: 'numeric', month: 'short', day: 'numeric' }
-      )
-    } catch {
-      return value
-    }
-  }
-
   // ============================================================
-  // FILTERED STUDENTS
+  // FILTERED STUDENTS / PAGINATION
   // ============================================================
 
   const filteredStudents = useMemo(() => {
-    const query =
-      search.trim().toLowerCase()
+    const query = search.trim().toLowerCase()
 
     return students.filter((student) => {
       if (
@@ -876,11 +469,9 @@ function ActivityTracker() {
         return false
       }
 
-      if (!query) {
-        return true
-      }
+      if (!query) return true
 
-      const searchable = [
+      return [
         student.name,
         student.email,
         student.program,
@@ -891,8 +482,7 @@ function ActivityTracker() {
         .filter(Boolean)
         .join(' ')
         .toLowerCase()
-
-      return searchable.includes(query)
+        .includes(query)
     })
   }, [
     students,
@@ -903,31 +493,34 @@ function ActivityTracker() {
 
   const totalPages = Math.max(
     1,
-    Math.ceil(filteredStudents.length / STUDENTS_PER_PAGE)
+    Math.ceil(
+      filteredStudents.length / STUDENTS_PER_PAGE
+    )
   )
 
   const paginatedStudents = useMemo(() => {
-    const startIndex = (currentPage - 1) * STUDENTS_PER_PAGE
+    const start =
+      (currentPage - 1) * STUDENTS_PER_PAGE
+
     return filteredStudents.slice(
-      startIndex,
-      startIndex + STUDENTS_PER_PAGE
+      start,
+      start + STUDENTS_PER_PAGE
     )
   }, [filteredStudents, currentPage])
 
   const pageStart = filteredStudents.length
     ? (currentPage - 1) * STUDENTS_PER_PAGE + 1
     : 0
+
   const pageEnd = Math.min(
     currentPage * STUDENTS_PER_PAGE,
     filteredStudents.length
   )
 
-  // Return to page 1 whenever the main filters change.
   useEffect(() => {
     setCurrentPage(1)
   }, [search, clinicFilter, schoolFilter])
 
-  // Keep the current page valid if students are removed or filters shrink.
   useEffect(() => {
     if (currentPage > totalPages) {
       setCurrentPage(totalPages)
@@ -939,55 +532,73 @@ function ActivityTracker() {
   // ============================================================
 
   const totalStudents = students.length
-  const totalActivities = requirements.length
 
-  const currentRequirementIds = useMemo(
-    () => new Set(requirements.map((r) => r.id)),
-    [requirements]
-  )
+  const totalActivities = useMemo(() => {
+    const ids = new Set()
 
-  const completedItems =
-    studentActivity.filter(
-      (item) =>
-        item.completed === true &&
-        currentRequirementIds.has(
-          item.requirement_id
-        ) &&
-        students.some(
-          (s) => s.id === item.student_id
+    students.forEach((student) => {
+      requirementsForStudent(student).forEach(
+        (requirement) => ids.add(requirement.id)
+      )
+    })
+
+    return ids.size
+  }, [
+    students,
+    requirements,
+    subjectIdsByStudent,
+  ])
+
+  const completedItems = useMemo(() => {
+    let count = 0
+
+    students.forEach((student) => {
+      const allowedIds = new Set(
+        requirementsForStudent(student).map(
+          (requirement) => requirement.id
         )
-    ).length
+      )
 
-  const possibleItems =
-    totalStudents * totalActivities
+      count += studentActivity.filter(
+        (item) =>
+          item.student_id === student.id &&
+          item.completed === true &&
+          allowedIds.has(item.requirement_id)
+      ).length
+    })
+
+    return count
+  }, [
+    students,
+    requirements,
+    studentActivity,
+    subjectIdsByStudent,
+  ])
+
+  const possibleItems = useMemo(
+    () =>
+      students.reduce(
+        (sum, student) =>
+          sum +
+          requirementsForStudent(student).length,
+        0
+      ),
+    [
+      students,
+      requirements,
+      subjectIdsByStudent,
+    ]
+  )
 
   const overallProgress =
     possibleItems > 0
       ? Math.round(
-          (completedItems /
-            possibleItems) *
-            100
+          (completedItems / possibleItems) * 100
         )
       : 0
 
   // ============================================================
-  // HELPERS
-  // ============================================================
-
-  function getStudentActivity(
-    studentId,
-    requirementId
-  ) {
-    return studentActivity.find(
-      (item) =>
-        item.student_id === studentId &&
-        item.requirement_id ===
-          requirementId
-    )
-  }
-
-  // ============================================================
-  // CHECKLIST
+  // STUDENT CHECKLIST
   // ============================================================
 
   function openChecklist(student) {
@@ -996,574 +607,426 @@ function ActivityTracker() {
 
   function closeChecklist() {
     setSelectedStudent(null)
+    loadData()
   }
 
-  async function toggleActivity(
-    studentId,
-    requirementId,
-    currentCompleted
-  ) {
-    setSavingActivityId(requirementId)
+  // ============================================================
+  // SUBJECT MANAGER
+  // ============================================================
+
+  function openSubjectManager() {
     setError('')
+    setShowSubjectManager(true)
+  }
 
-    try {
-      const existing =
-        getStudentActivity(
-          studentId,
-          requirementId
-        )
-
-      if (existing) {
-        const {
-          data,
-          error: updateError,
-        } = await supabase
-          .from('student_activity')
-          .update({
-            completed:
-              !currentCompleted,
-            updated_at:
-              new Date().toISOString(),
-          })
-          .eq('id', existing.id)
-          .select()
-          .single()
-
-        if (updateError) {
-          throw updateError
-        }
-
-        setStudentActivity((current) =>
-          current.map((item) =>
-            item.id === existing.id
-              ? data
-              : item
-          )
-        )
-      } else {
-        const {
-          data,
-          error: insertError,
-        } = await supabase
-          .from('student_activity')
-          .insert({
-            student_id: studentId,
-            requirement_id:
-              requirementId,
-            completed: true,
-          })
-          .select()
-          .single()
-
-        if (insertError) {
-          throw insertError
-        }
-
-        setStudentActivity((current) => [
-          ...current,
-          data,
-        ])
-      }
-    } catch (err) {
-      console.error(
-        'Activity update error:',
-        err
-      )
-
-      setError(
-        err.message ||
-          'Unable to update activity.'
-      )
-    } finally {
-      setSavingActivityId(null)
-    }
+  async function handleSubjectManagerChanged() {
+    await loadData()
   }
 
   // ============================================================
-  // NOTES
+  // LEGACY / MANUAL ASSIGN ACTIVITY
   // ============================================================
 
-  async function saveNote(
-    studentId,
-    requirementId,
-    note
-  ) {
-    const existing =
-      getStudentActivity(
-        studentId,
-        requirementId
+  const assignStudentOptions = useMemo(() => {
+    const query =
+      assignStudentSearch.trim().toLowerCase()
+
+    return allStudents
+      .filter(
+        (student) =>
+          student.university === assignSchool
       )
+      .filter((student) => {
+        if (!query) return true
 
-    try {
-      if (existing) {
-        const {
-          data,
-          error: updateError,
-        } = await supabase
-          .from('student_activity')
-          .update({
-            note,
-            updated_at:
-              new Date().toISOString(),
-          })
-          .eq('id', existing.id)
-          .select()
-          .single()
+        return [
+          student.name,
+          student.email,
+          student.program,
+          student.subject,
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+          .includes(query)
+      })
+  }, [
+    allStudents,
+    assignSchool,
+    assignStudentSearch,
+  ])
 
-        if (updateError) {
-          throw updateError
-        }
+  const assignableActivities = useMemo(() => {
+    if (!assignStudentId) return []
 
-        setStudentActivity((current) =>
-          current.map((item) =>
-            item.id === existing.id
-              ? data
-              : item
-          )
-        )
-      } else if (note.trim()) {
-        const {
-          data,
-          error: insertError,
-        } = await supabase
-          .from('student_activity')
-          .insert({
-            student_id: studentId,
-            requirement_id:
-              requirementId,
-            completed: false,
-            note,
-          })
-          .select()
-          .single()
+    const student = allStudents.find(
+      (item) => item.id === assignStudentId
+    )
 
-        if (insertError) {
-          throw insertError
-        }
+    if (!student) return []
 
-        setStudentActivity((current) => [
-          ...current,
-          data,
-        ])
-      }
-    } catch (err) {
-      console.error(
-        'Note save error:',
-        err
-      )
+    return requirementsForStudent(
+      student,
+      requirements
+    ).filter(
+      (requirement) =>
+        requirement.student_id == null
+    )
+  }, [
+    assignStudentId,
+    allStudents,
+    requirements,
+    subjectIdsByStudent,
+  ])
 
-      setError(
-        err.message ||
-          'Unable to save note.'
-      )
-    }
-  }
-
-  // ============================================================
-  // MANAGE ACTIVITY
-  // ============================================================
-
-  function openManageActivity() {
+  function openAssignActivity() {
     setError('')
-    const defaultSchool =
-      schoolFilter !== 'all' ? schoolFilter : 'AUHS'
-    setManageSchoolFilter(defaultSchool)
-    setActivityForm({
-      name: '',
-      code: '',
-      week: '1',
-      university: defaultSchool,
-      startDate: '',
-      endDate: '',
-    })
-    setEditingActivity(null)
-    setShowActivityForm(false)
-    setActivityToDelete(null)
-    setManageSearch('')
-    setSelectedManageIds([])
-    setShowManageActivity(true)
+    setAssignSchool(
+      schoolFilter !== 'all'
+        ? schoolFilter
+        : 'AUHS'
+    )
+    setAssignStudentSearch('')
+    setAssignStudentId('')
+    setAssignSelectedActivityIds([])
+    setShowAssignActivity(true)
   }
 
-  function handleManageSchoolChange(value) {
-    setManageSchoolFilter(value)
-    setEditingActivity(null)
-    setManageSearch('')
-    setSelectedManageIds([])
-    setActivityForm((current) => ({
-      ...current,
-      name: '',
-      code: '',
-      week: '1',
-      university: value === 'shared' ? 'SHARED' : value === 'all' ? 'AUHS' : value,
-      startDate: '',
-      endDate: '',
-    }))
+  function closeAssignActivity() {
+    if (assignSaving) return
+    setShowAssignActivity(false)
   }
 
-  function closeManageActivity() {
-    if (
-      savingActivity ||
-      deletingActivityId
-    ) {
+  function selectAssignStudent(studentId) {
+    setAssignStudentId(studentId)
+
+    const student = allStudents.find(
+      (item) => item.id === studentId
+    )
+
+    if (!student) {
+      setAssignSelectedActivityIds([])
       return
     }
 
-    setShowManageActivity(false)
-    setShowActivityForm(false)
-    setEditingActivity(null)
-    setActivityToDelete(null)
+    const allowedIds = new Set(
+      requirementsForStudent(
+        student,
+        requirements
+      ).map((requirement) => requirement.id)
+    )
 
-    resetActivityForm()
+    const existing = studentActivity
+      .filter(
+        (item) =>
+          item.student_id === studentId &&
+          allowedIds.has(item.requirement_id)
+      )
+      .map((item) => item.requirement_id)
+
+    setAssignSelectedActivityIds(existing)
   }
 
-  // ============================================================
-  // ADD ACTIVITY
-  // ============================================================
+  function toggleAssignActivityId(id) {
+    setAssignSelectedActivityIds((current) =>
+      current.includes(id)
+        ? current.filter((item) => item !== id)
+        : [...current, id]
+    )
+  }
 
-  function resetActivityForm() {
-    setActivityForm({
-      name: '',
-      code: '',
-      week: '1',
-      university:
-        manageSchoolFilter !== 'all' &&
-        manageSchoolFilter !== 'shared'
-          ? manageSchoolFilter
-          : 'AUHS',
-      startDate: '',
-      endDate: '',
+  const allAssignActivitiesSelected =
+    assignableActivities.length > 0 &&
+    assignableActivities.every((activity) =>
+      assignSelectedActivityIds.includes(
+        activity.id
+      )
+    )
+
+  function toggleSelectAllAssignActivities() {
+    if (!assignStudentId || assignSaving) return
+
+    const visibleIds = assignableActivities.map(
+      (activity) => activity.id
+    )
+
+    setAssignSelectedActivityIds((current) => {
+      if (allAssignActivitiesSelected) {
+        return current.filter(
+          (id) => !visibleIds.includes(id)
+        )
+      }
+
+      return Array.from(
+        new Set([...current, ...visibleIds])
+      )
     })
   }
 
-  function openAddActivity() {
-    setError('')
-
-    setEditingActivity(null)
-
-    resetActivityForm()
-
-    setShowActivityForm(true)
-  }
-
-  // ============================================================
-  // EDIT ACTIVITY
-  // ============================================================
-
-  function openEditActivity(requirement) {
-    setError('')
-
-    setEditingActivity(requirement)
-
-    setActivityForm({
-      name:
-        requirement.label || '',
-      code:
-        requirement.code || '',
-      week:
-        String(
-          requirement.week ?? 1
-        ),
-      university:
-        requirement.university || '',
-      startDate:
-        requirement.start_date || '',
-      endDate:
-        requirement.end_date || '',
-    })
-
-    setShowActivityForm(true)
-  }
-
-  function closeActivityForm() {
-    if (savingActivity) {
-      return
-    }
-
-    setShowActivityForm(false)
-    setEditingActivity(null)
-
-    resetActivityForm()
-  }
-
-  // ============================================================
-  // SAVE ACTIVITY
-  // ============================================================
-
-  async function saveActivity(event) {
+  async function submitAssignActivity(event) {
     event.preventDefault()
 
-    const name =
-      activityForm.name.trim()
-
-    const code =
-      activityForm.code.trim()
-
-    const week =
-      Number(activityForm.week)
-
-    if (!name) {
-      setError(
-        'Please enter an activity name.'
-      )
+    if (!assignStudentId) {
+      setError('Please select a student.')
       return
     }
 
-    if (
-      !Number.isInteger(week) ||
-      week < 0
-    ) {
-      setError(
-        'Activity Week must be a valid number.'
-      )
-      return
-    }
-
-    setSavingActivity(true)
+    setAssignSaving(true)
     setError('')
 
     try {
-      // --------------------------------------------------------
-      // EDIT
-      // --------------------------------------------------------
-
-      const universityValue =
-        activityForm.university?.trim() || null
-      const startDateValue =
-        activityForm.startDate?.trim() || null
-      const endDateValue =
-        activityForm.endDate?.trim() || null
-
-      if (editingActivity) {
-        const {
-          data,
-          error: updateError,
-        } = await supabase
-          .from('activity_requirements')
-          .update({
-            label: name,
-            code:
-              code ||
-              editingActivity.code ||
-              `ACT-${Date.now()}`,
-            week,
-            university: universityValue,
-            start_date: startDateValue,
-            end_date: endDateValue,
-          })
-          .eq(
-            'id',
-            editingActivity.id
-          )
-          .select()
-          .single()
-
-        if (updateError) {
-          throw updateError
-        }
-
-        setRequirements((current) =>
-          current.map((item) =>
-            item.id ===
-            editingActivity.id
-              ? data
-              : item
-          )
+      const visibleIds = new Set(
+        assignableActivities.map(
+          (activity) => activity.id
         )
-        setAllRequirements((current) =>
-          current.map((item) =>
-            item.id ===
-            editingActivity.id
-              ? data
-              : item
-          )
-        )
-      }
-
-      // --------------------------------------------------------
-      // ADD
-      // --------------------------------------------------------
-
-      else {
-        const insertPayload = {
-          code:
-            code ||
-            `ACT-${Date.now()}`,
-          label: name,
-          week,
-          sort_order:
-            requirements.length,
-          university: universityValue,
-          start_date: startDateValue,
-          end_date: endDateValue,
-        }
-
-        if (currentSemester?.id) {
-          insertPayload.semester_id =
-            currentSemester.id
-        }
-
-        const {
-          data,
-          error: insertError,
-        } = await supabase
-          .from('activity_requirements')
-          .insert(insertPayload)
-          .select()
-          .single()
-
-        if (insertError) {
-          throw insertError
-        }
-
-        setRequirements((current) => [
-          ...current,
-          data,
-        ])
-        setAllRequirements((current) => [
-          ...current,
-          data,
-        ])
-      }
-
-      // Keep Manage modal open; clear form for the next activity
-      setEditingActivity(null)
-      setShowActivityForm(false)
-      setActivityForm({
-        name: '',
-        code: '',
-        week: '1',
-        university:
-          manageSchoolFilter === 'shared'
-            ? 'SHARED'
-            : manageSchoolFilter === 'all'
-              ? 'AUHS'
-              : manageSchoolFilter,
-        startDate: '',
-        endDate: '',
-      })
-    } catch (err) {
-      console.error(
-        'Save activity error:',
-        err
       )
+
+      const existingRows = studentActivity.filter(
+        (item) =>
+          item.student_id === assignStudentId &&
+          visibleIds.has(item.requirement_id)
+      )
+
+      const existingIds = new Set(
+        existingRows.map(
+          (item) => item.requirement_id
+        )
+      )
+
+      const selectedIds = new Set(
+        assignSelectedActivityIds
+      )
+
+      const toInsert =
+        assignSelectedActivityIds
+          .filter((id) => !existingIds.has(id))
+          .map((requirementId) => ({
+            student_id: assignStudentId,
+            requirement_id: requirementId,
+            completed: false,
+          }))
+
+      const toRemove = [...existingIds].filter(
+        (id) => !selectedIds.has(id)
+      )
+
+      if (toInsert.length) {
+        const { error: insertError } =
+          await supabase
+            .from('student_activity')
+            .insert(toInsert)
+
+        if (insertError) throw insertError
+      }
+
+      if (toRemove.length) {
+        const { error: deleteError } =
+          await supabase
+            .from('student_activity')
+            .delete()
+            .eq('student_id', assignStudentId)
+            .in('requirement_id', toRemove)
+
+        if (deleteError) throw deleteError
+      }
+
+      if (currentSemester?.id) {
+        const alreadyAssigned =
+          allSemesterStudents.some(
+            (row) =>
+              row.semester_id ===
+                currentSemester.id &&
+              row.student_id ===
+                assignStudentId
+          )
+
+        if (
+          assignSelectedActivityIds.length > 0 &&
+          !alreadyAssigned
+        ) {
+          const { error: semesterAssignError } =
+            await supabase
+              .from('semester_students')
+              .insert({
+                semester_id: currentSemester.id,
+                student_id: assignStudentId,
+              })
+
+          if (
+            semesterAssignError &&
+            !String(
+              semesterAssignError.message || ''
+            ).toLowerCase().includes('duplicate')
+          ) {
+            throw semesterAssignError
+          }
+        }
+      }
+
+      await loadData()
+    } catch (err) {
+      console.error('Assign activity error:', err)
 
       setError(
         err.message ||
-          'Unable to save activity. If school/date columns are missing, run the SQL migration in Supabase.'
+          'Unable to update student activities.'
       )
     } finally {
-      setSavingActivity(false)
+      setAssignSaving(false)
     }
   }
 
   // ============================================================
-  // DELETE
+  // ARCHIVE
   // ============================================================
 
-  function openDeleteActivity(requirement) {
-    setError('')
-    setActivityToDelete(requirement)
-  }
-
-  function closeDeleteActivity() {
-    if (deletingActivityId) {
-      return
-    }
-
-    setActivityToDelete(null)
-  }
-
-  async function deleteActivitiesByIds(ids) {
-    if (!ids.length) return
-
-    // Delete checklist records first.
-    const { error: checklistDeleteError } = await supabase
-      .from('student_activity')
-      .delete()
-      .in('requirement_id', ids)
-
-    if (checklistDeleteError) {
-      throw checklistDeleteError
-    }
-
-    const { error: activityDeleteError } = await supabase
-      .from('activity_requirements')
-      .delete()
-      .in('id', ids)
-
-    if (activityDeleteError) {
-      throw activityDeleteError
-    }
-
-    const idSet = new Set(ids)
-
-    setRequirements((current) =>
-      current.filter((item) => !idSet.has(item.id))
-    )
-    setAllRequirements((current) =>
-      current.filter((item) => !idSet.has(item.id))
-    )
-    setStudentActivity((current) =>
-      current.filter(
-        (item) => !idSet.has(item.requirement_id)
-      )
-    )
-    setSelectedManageIds((current) =>
-      current.filter((id) => !idSet.has(id))
-    )
-  }
-
-  async function confirmDeleteActivity() {
-    if (!activityToDelete) {
-      return
-    }
-
-    const requirement = activityToDelete
-
-    setDeletingActivityId(requirement.id)
-    setError('')
+  function formatDate(value) {
+    if (!value) return '—'
 
     try {
-      await deleteActivitiesByIds([requirement.id])
-      setActivityToDelete(null)
-    } catch (err) {
-      console.error('Delete activity error:', err)
-      setError(
-        err.message || 'Unable to delete activity.'
-      )
-    } finally {
-      setDeletingActivityId(null)
+      return new Date(
+        `${value}T00:00:00`
+      ).toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      })
+    } catch {
+      return value
     }
   }
 
-  async function confirmBulkDelete() {
-    if (selectedManageIds.length === 0) return
+  const archiveRows = useMemo(() => {
+    return endedSemesters.map((semester) => {
+      const studentIds = allSemesterStudents
+        .filter(
+          (row) =>
+            row.semester_id === semester.id
+        )
+        .map((row) => row.student_id)
 
-    const count = selectedManageIds.length
-    const ok = window.confirm(
-      `Delete ${count} selected ${
-        count === 1 ? 'activity' : 'activities'
-      }?\n\nThis also removes related student checklist records.`
-    )
-    if (!ok) return
+      const semesterRequirements =
+        allRequirements.filter(
+          (requirement) =>
+            requirement.semester_id ===
+            semester.id
+        )
 
-    setBulkDeleting(true)
-    setError('')
-
-    try {
-      await deleteActivitiesByIds(selectedManageIds)
-    } catch (err) {
-      console.error('Bulk delete error:', err)
-      setError(
-        err.message || 'Unable to delete selected activities.'
+      const requirementIds = new Set(
+        semesterRequirements.map(
+          (requirement) => requirement.id
+        )
       )
-    } finally {
-      setBulkDeleting(false)
-    }
+
+      const studentIdSet = new Set(studentIds)
+
+      const completed =
+        studentActivity.filter(
+          (item) =>
+            item.completed === true &&
+            requirementIds.has(
+              item.requirement_id
+            ) &&
+            studentIdSet.has(item.student_id)
+        ).length
+
+      const possible =
+        studentIds.length *
+        semesterRequirements.length
+
+      return {
+        semester,
+        studentCount: studentIds.length,
+        activityCount:
+          semesterRequirements.length,
+        percentage:
+          possible > 0
+            ? Math.round(
+                (completed / possible) * 100
+              )
+            : 0,
+      }
+    })
+  }, [
+    endedSemesters,
+    allSemesterStudents,
+    allRequirements,
+    studentActivity,
+  ])
+
+  function openArchiveView(semester) {
+    const studentIds = allSemesterStudents
+      .filter(
+        (row) =>
+          row.semester_id === semester.id
+      )
+      .map((row) => row.student_id)
+
+    const studentIdSet = new Set(studentIds)
+
+    const semesterStudents =
+      allStudents.filter((student) =>
+        studentIdSet.has(student.id)
+      )
+
+    const semesterRequirements =
+      allRequirements
+        .filter(
+          (requirement) =>
+            requirement.semester_id ===
+            semester.id
+        )
+        .sort(
+          (a, b) =>
+            (a.week ?? 0) -
+              (b.week ?? 0) ||
+            (a.sort_order ?? 0) -
+              (b.sort_order ?? 0)
+        )
+
+    const requirementIds = new Set(
+      semesterRequirements.map(
+        (requirement) => requirement.id
+      )
+    )
+
+    const progress = {}
+
+    semesterStudents.forEach((student) => {
+      const completed =
+        studentActivity.filter(
+          (item) =>
+            item.student_id === student.id &&
+            item.completed === true &&
+            requirementIds.has(
+              item.requirement_id
+            )
+        ).length
+
+      progress[student.id] = {
+        completed,
+        total: semesterRequirements.length,
+        percentage:
+          semesterRequirements.length > 0
+            ? Math.round(
+                (completed /
+                  semesterRequirements.length) *
+                  100
+              )
+            : 0,
+      }
+    })
+
+    setArchiveView({
+      semester,
+      students: semesterStudents,
+      requirements: semesterRequirements,
+      progress,
+    })
   }
 
   // ============================================================
-  // END SEMESTER / ROLLOVER
+  // SEMESTER WORKFLOW
   // ============================================================
 
   function resetSemesterForm() {
@@ -1584,115 +1047,116 @@ function ActivityTracker() {
     setShowEndConfirm(true)
   }
 
-  function closeEndConfirm() {
-    if (savingSemester) return
-    setShowEndConfirm(false)
-  }
-
   function continueToNewSemester() {
     setShowEndConfirm(false)
     resetSemesterForm()
 
-    // Pre-select students currently on this semester
-    setSelectedStudentIds(students.map((s) => s.id))
-
-    // Pre-select current global requirements as activity templates
-    setSelectedActivityIds(
-      requirements
-        .filter((r) => r.student_id == null)
-        .map((r) => r.id)
+    setSelectedStudentIds(
+      students.map((student) => student.id)
     )
 
-    // Sensible defaults for dates
-    const today = new Date().toISOString().slice(0, 10)
+    setSelectedActivityIds(
+      requirements
+        .filter(
+          (requirement) =>
+            requirement.student_id == null
+        )
+        .map((requirement) => requirement.id)
+    )
+
     setSemesterForm((current) => ({
       ...current,
-      startDate: today,
+      startDate:
+        new Date().toISOString().slice(0, 10),
     }))
 
     setShowNewSemester(true)
   }
 
-  function closeNewSemester() {
-    if (savingSemester) return
-    setShowNewSemester(false)
-    resetSemesterForm()
-  }
+  const searchableStudents = useMemo(() => {
+    const query =
+      studentSearch.trim().toLowerCase()
+
+    if (!query) return allStudents
+
+    return allStudents.filter((student) =>
+      [
+        student.name,
+        student.email,
+        student.program,
+        student.university,
+        student.subject,
+        student.clinic,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+        .includes(query)
+    )
+  }, [allStudents, studentSearch])
+
+  const searchableActivities = useMemo(() => {
+    const pool =
+      requirements.length > 0
+        ? requirements.filter(
+            (requirement) =>
+              requirement.student_id == null
+          )
+        : allRequirements.filter(
+            (requirement) =>
+              requirement.student_id == null
+          )
+
+    const query =
+      activitySearch.trim().toLowerCase()
+
+    if (!query) return pool
+
+    return pool.filter((activity) =>
+      [
+        activity.label,
+        activity.code,
+        activity.description,
+        activity.week != null
+          ? `week ${activity.week}`
+          : '',
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+        .includes(query)
+    )
+  }, [
+    requirements,
+    allRequirements,
+    activitySearch,
+  ])
 
   function toggleSelectedStudent(studentId) {
     setSelectedStudentIds((current) =>
       current.includes(studentId)
-        ? current.filter((id) => id !== studentId)
+        ? current.filter(
+            (id) => id !== studentId
+          )
         : [...current, studentId]
-    )
-  }
-
-  function removeSelectedStudent(studentId) {
-    setSelectedStudentIds((current) =>
-      current.filter((id) => id !== studentId)
     )
   }
 
   function toggleSelectedActivity(activityId) {
     setSelectedActivityIds((current) =>
       current.includes(activityId)
-        ? current.filter((id) => id !== activityId)
+        ? current.filter(
+            (id) => id !== activityId
+          )
         : [...current, activityId]
     )
   }
-
-  function removeSelectedActivity(activityId) {
-    setSelectedActivityIds((current) =>
-      current.filter((id) => id !== activityId)
-    )
-  }
-
-  const searchableStudents = useMemo(() => {
-    const query = studentSearch.trim().toLowerCase()
-    if (!query) return allStudents
-    return allStudents.filter((student) => {
-      const haystack = [
-        student.name,
-        student.email,
-        student.program,
-        student.university,
-        student.clinic,
-      ]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase()
-      return haystack.includes(query)
-    })
-  }, [allStudents, studentSearch])
-
-  const searchableActivities = useMemo(() => {
-    // Prefer templates from the current semester, fall back to all global ones
-    const pool =
-      requirements.length > 0
-        ? requirements.filter((r) => r.student_id == null)
-        : allRequirements.filter((r) => r.student_id == null)
-
-    const query = activitySearch.trim().toLowerCase()
-    if (!query) return pool
-
-    return pool.filter((activity) => {
-      const haystack = [
-        activity.label,
-        activity.code,
-        activity.description,
-        activity.week != null ? `week ${activity.week}` : '',
-      ]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase()
-      return haystack.includes(query)
-    })
-  }, [requirements, allRequirements, activitySearch])
 
   async function startNewSemester(event) {
     event.preventDefault()
 
     const name = semesterForm.name.trim()
+
     if (!name) {
       setError('Please enter a semester name.')
       return
@@ -1703,8 +1167,10 @@ function ActivityTracker() {
       return
     }
 
-    if (selectedStudentIds.length === 0) {
-      setError('Please assign at least one student to the new semester.')
+    if (!selectedStudentIds.length) {
+      setError(
+        'Please assign at least one student to the new semester.'
+      )
       return
     }
 
@@ -1712,89 +1178,104 @@ function ActivityTracker() {
     setError('')
 
     try {
-      // 1. End the current semester (preserve all history)
       if (currentSemester) {
-        const { error: endError } = await supabase
-          .from('semesters')
-          .update({
-            status: 'ended',
-            end_date:
-              currentSemester.end_date ||
-              new Date().toISOString().slice(0, 10),
-          })
-          .eq('id', currentSemester.id)
+        const { error: endError } =
+          await supabase
+            .from('semesters')
+            .update({
+              status: 'ended',
+              end_date:
+                currentSemester.end_date ||
+                new Date()
+                  .toISOString()
+                  .slice(0, 10),
+            })
+            .eq('id', currentSemester.id)
 
-        if (endError) {
-          throw endError
-        }
+        if (endError) throw endError
       }
 
-      // 2. Create the new active semester
-      const { data: newSemester, error: createError } = await supabase
+      const {
+        data: newSemester,
+        error: createError,
+      } = await supabase
         .from('semesters')
         .insert({
           name,
           status: 'active',
-          start_date: semesterForm.startDate,
-          end_date: semesterForm.endDate || null,
+          start_date:
+            semesterForm.startDate,
+          end_date:
+            semesterForm.endDate || null,
         })
         .select()
         .single()
 
-      if (createError) {
-        throw createError
+      if (createError) throw createError
+
+      const { error: studentAssignError } =
+        await supabase
+          .from('semester_students')
+          .insert(
+            selectedStudentIds.map(
+              (studentId) => ({
+                semester_id: newSemester.id,
+                student_id: studentId,
+              })
+            )
+          )
+
+      if (studentAssignError) {
+        throw studentAssignError
       }
 
-      // 3. Assign selected students
-      const studentRows = selectedStudentIds.map((studentId) => ({
-        semester_id: newSemester.id,
-        student_id: studentId,
-      }))
+      // Preserve subject_id while copying activities.
+      if (selectedActivityIds.length) {
+        const templates =
+          allRequirements.filter(
+            (requirement) =>
+              selectedActivityIds.includes(
+                requirement.id
+              )
+          )
 
-      const { error: assignError } = await supabase
-        .from('semester_students')
-        .insert(studentRows)
-
-      if (assignError) {
-        throw assignError
-      }
-
-      // 4. Copy selected activities into the new semester
-      //    (old requirement rows + student_activity stay historical)
-      if (selectedActivityIds.length > 0) {
-        const templates = allRequirements.filter((r) =>
-          selectedActivityIds.includes(r.id)
+        const rows = templates.map(
+          (template, index) => ({
+            code:
+              template.code ||
+              `ACT-${Date.now()}-${index}`,
+            label: template.label,
+            week: template.week ?? 1,
+            sort_order:
+              template.sort_order ?? index,
+            description:
+              template.description || null,
+            university:
+              template.university || null,
+            subject_id:
+              template.subject_id || null,
+            semester_id: newSemester.id,
+            student_id: null,
+          })
         )
 
-        const activityRows = templates.map((template, index) => ({
-          code: template.code || `ACT-${Date.now()}-${index}`,
-          label: template.label,
-          week: template.week ?? 1,
-          sort_order: template.sort_order ?? index,
-          description: template.description || null,
-          // IMPORTANT: preserve the school's scope when copying an
-          // activity into a new semester. Without this, AUHS/PACIFIC
-          // activities become unscoped in Supabase and can leak across
-          // schools in later assignment/checklist flows.
-          university: template.university || null,
-          semester_id: newSemester.id,
-          student_id: null,
-        }))
+        const { error: copyError } =
+          await supabase
+            .from('activity_requirements')
+            .insert(rows)
 
-        const { error: activitiesError } = await supabase
-          .from('activity_requirements')
-          .insert(activityRows)
-
-        if (activitiesError) {
-          throw activitiesError
-        }
+        if (copyError) throw copyError
       }
 
       setShowNewSemester(false)
       resetSemesterForm()
       await loadData()
     } catch (err) {
-      console.error('Start new semester error:', err)
+      console.error(
+        'Start new semester error:',
+        err
+      )
+
       setError(
         err.message ||
           'Unable to start the new semester.'
@@ -1810,43 +1291,31 @@ function ActivityTracker() {
 
   return (
     <div className="activity-page">
-
-      {/* ======================================================
-          PAGE HEADER
-      ======================================================= */}
-
       <section className="activity-page-header">
-
         <div className="activity-page-header-copy">
-
           <span className="activity-eyebrow">
             ACTIVITY MANAGEMENT
           </span>
 
-          <h1>
-            Student Progress
-          </h1>
+          <h1>Student Progress</h1>
 
           <p>
-            Monitor student activity
-            and manage the current
-            semester.
+            Monitor student activity and manage the
+            current semester.
             {currentSemester?.name
               ? ` Active: ${currentSemester.name}`
               : ''}
           </p>
-
         </div>
 
         <div className="activity-page-actions">
-
           <button
             type="button"
             className="activity-primary-button"
-            onClick={openManageActivity}
+            onClick={openSubjectManager}
           >
             <span className="button-plus">+</span>
-            Manage Activity
+            Manage Subjects
           </button>
 
           <button
@@ -1864,141 +1333,65 @@ function ActivityTracker() {
           >
             End Semester
           </button>
-
         </div>
-
       </section>
-
-
-      {/* ======================================================
-          ERROR
-      ======================================================= */}
 
       {error && (
         <div className="activity-error">
-
           <div>
-
-            <strong>
-              Something went wrong
-            </strong>
-
-            <span>
-              {error}
-            </span>
-
+            <strong>Something went wrong</strong>
+            <span>{error}</span>
           </div>
 
           <button
             type="button"
-            onClick={() =>
-              setError('')
-            }
+            onClick={() => setError('')}
           >
             ×
           </button>
-
         </div>
       )}
 
-
-      {/* ======================================================
-          SUMMARY
-      ======================================================= */}
-
       <section className="activity-summary-grid">
-
         <div className="activity-summary-card">
-
-          <span>
-            STUDENTS
-          </span>
-
-          <strong>
-            {totalStudents}
-          </strong>
-
+          <span>STUDENTS</span>
+          <strong>{totalStudents}</strong>
           <small>
-            Students currently being
-            monitored
+            Students currently being monitored
           </small>
-
         </div>
 
-
         <div className="activity-summary-card">
-
-          <span>
-            ACTIVITIES
-          </span>
-
-          <strong>
-            {totalActivities}
-          </strong>
-
+          <span>ACTIVITIES</span>
+          <strong>{totalActivities}</strong>
           <small>
-            Checklist requirements
+            Subject-aware checklist requirements
           </small>
-
         </div>
 
-
         <div className="activity-summary-card">
-
-          <span>
-            COMPLETED
-          </span>
-
-          <strong>
-            {completedItems}
-          </strong>
-
-          <small>
-            Completed activities
-          </small>
-
+          <span>COMPLETED</span>
+          <strong>{completedItems}</strong>
+          <small>Completed activities</small>
         </div>
 
-
         <div className="activity-summary-card">
-
-          <span>
-            OVERALL PROGRESS
-          </span>
-
-          <strong>
-            {overallProgress}%
-          </strong>
-
-          <small>
-            Across all students
-          </small>
-
+          <span>OVERALL PROGRESS</span>
+          <strong>{overallProgress}%</strong>
+          <small>Across assigned subjects</small>
         </div>
-
       </section>
 
-
-      {/* ======================================================
-          FILTER BAR
-      ======================================================= */}
-
       <section className="activity-filter-card">
-
         <div className="activity-filter-search">
-
-          <span className="search-icon">
-            ⌕
-          </span>
+          <span className="search-icon">⌕</span>
 
           <input
             type="text"
             value={search}
             placeholder="Search student..."
             onChange={(event) =>
-              setSearch(
-                event.target.value
-              )
+              setSearch(event.target.value)
             }
           />
 
@@ -2006,16 +1399,12 @@ function ActivityTracker() {
             <button
               type="button"
               className="clear-search"
-              onClick={() =>
-                setSearch('')
-              }
+              onClick={() => setSearch('')}
             >
               ×
             </button>
           )}
-
         </div>
-
 
         <select
           className="activity-filter-select"
@@ -2025,616 +1414,240 @@ function ActivityTracker() {
           }
         >
           <option value="all">All Schools</option>
+
           {schools.map((school) => (
-            <option key={school} value={school}>
+            <option
+              key={school}
+              value={school}
+            >
               {school}
             </option>
           ))}
         </select>
 
+        {clinics.length > 0 && (
+          <select
+            className="activity-filter-select"
+            value={clinicFilter}
+            onChange={(event) =>
+              setClinicFilter(
+                event.target.value
+              )
+            }
+          >
+            <option value="all">
+              All Clinics
+            </option>
 
-
-
+            {clinics.map((clinic) => (
+              <option
+                key={clinic}
+                value={clinic}
+              >
+                {clinic}
+              </option>
+            ))}
+          </select>
+        )}
 
         <div className="activity-filter-count">
-
           Showing{' '}
-
           <strong>
             {filteredStudents.length}
-          </strong>
-
-          {' '}of{' '}
-
-          <strong>
-            {students.length}
-          </strong>
-
+          </strong>{' '}
+          of <strong>{students.length}</strong>
         </div>
-
       </section>
 
-
-      {/* ======================================================
-          STUDENT PROGRESS + SEMESTER ARCHIVE
-      ======================================================= */}
-
       {loading ? (
-
         <div className="activity-state-card">
-
           <div className="activity-spinner" />
-
           <strong>
             Loading Student Progress
           </strong>
-
           <span>
-            Please wait while the
-            student activity is loaded.
+            Please wait while student activity
+            is loaded.
           </span>
-
         </div>
-
       ) : (
-
-      <div className="activity-split-layout">
-
-        {/* ---- Current semester students ---- */}
-
-        <section className="activity-split-panel">
-
-          <div className="activity-split-header">
-            <div>
-              <span className="activity-eyebrow">
-                CURRENT SEMESTER
-              </span>
-              <h3>
-                {currentSemester?.name ||
-                  'Student Progress'}
-              </h3>
-            </div>
-            <span className="activity-split-count">
-              {filteredStudents.length}{' '}
-              {filteredStudents.length === 1
-                ? 'student'
-                : 'students'}
-            </span>
-          </div>
-
-          {filteredStudents.length === 0 ? (
-
-            <div className="activity-state-card activity-state-card-compact">
-
-              <div className="activity-state-icon">
-                ?
-              </div>
-
-              <strong>
-                No students found
-              </strong>
-
-              <span>
-                {currentSemester
-                  ? 'No students are assigned to this semester, or none match your filters.'
-                  : 'Start a semester to assign students.'}
-              </span>
-
-            </div>
-
-          ) : (
-
-        <div className="activity-table-card">
-
-          <div className="activity-table-scroll">
-
-            <table className="activity-table activity-table-compact">
-
-              <thead>
-
-                <tr>
-
-                  <th>STUDENT</th>
-                  <th>SCHOOL/PROGRAM</th>
-                  <th>CURRENT ACTIVITY</th>
-                  <th>PROGRESS</th>
-
-                </tr>
-
-              </thead>
-
-
-              <tbody>
-
-                {paginatedStudents.map(
-                  (student) => {
-
-                    const progress =
-                      progressMap[
-                        student.id
-                      ] || {
-                        completed: 0,
-                        total:
-                          totalActivities,
-                        percentage: 0,
-                      }
-
-                    return (
-
-                      <tr
-                        key={
-                          student.id
-                        }
-                      >
-
-                        {/* STUDENT */}
-
-                        <td>
-
-                          <button
-                            type="button"
-                            className="student-person"
-                            onClick={() =>
-                              openChecklist(student)
-                            }
-                            title={`View activity for ${student.name}`}
-                            style={{
-                              width: '100%',
-                              padding: 0,
-                              border: 0,
-                              background: 'transparent',
-                              font: 'inherit',
-                              textAlign: 'left',
-                              cursor: 'pointer',
-                            }}
-                          >
-
-                            <div className="student-avatar">
-
-                              {student.name
-                                ?.charAt(
-                                  0
-                                )
-                                ?.toUpperCase() ||
-                                '?'}
-
-                            </div>
-
-                            <div className="student-person-info">
-
-                              <strong>
-                                {
-                                  student.name
-                                }
-                              </strong>
-
-                              {student.email && (
-                                <span>
-                                  {
-                                    student.email
-                                  }
-                                </span>
-                              )}
-
-                            </div>
-
-                          </button>
-
-                        </td>
-
-
-                        {/* SCHOOL/PROGRAM */}
-                        <td>
-                          <span
-                            className="dash-cell-text dash-school-program"
-                            style={{
-                              display: 'flex',
-                              flexDirection: 'column',
-                              lineHeight: 1.3,
-                            }}
-                          >
-                            <span className="dash-school">
-                              {student.university || '—'}
-                            </span>
-                            <span
-                              className="dash-program"
-                              style={{ fontSize: '0.85em', opacity: 0.7 }}
-                            >
-                              {student.program || '—'}
-                            </span>
-                          </span>
-                        </td>
-
-                        {/* CURRENT ACTIVITY */}
-                        <td>
-                          <span
-                            className={
-                              currentActivityMap[student.id] === 'All complete'
-                                ? 'activity-current-label is-complete'
-                                : currentActivityMap[student.id] === 'No activity'
-                                  ? 'activity-current-label is-empty'
-                                  : 'activity-current-label'
-                            }
-                            title={currentActivityMap[student.id]}
-                          >
-                            {currentActivityMap[student.id]}
-                          </span>
-                        </td>
-
-                        {/* PROGRESS */}
-
-                        <td>
-
-                          <div className="progress-cell">
-
-                            <div className="progress-track">
-
-                              <div
-                                className="progress-fill"
-                                style={{
-                                  width: `${progress.percentage}%`,
-                                }}
-                              />
-
-                            </div>
-
-                            <strong>
-                              {
-                                progress.percentage
-                              }%
-                            </strong>
-
-                            <span>
-                              {
-                                progress.completed
-                              }/
-                              {
-                                progress.total
-                              }
-                            </span>
-
-                          </div>
-
-                        </td>
-
-
-
-
-                      </tr>
-
-                    )
-                  }
-                )}
-
-              </tbody>
-
-            </table>
-
-          </div>
-
-          <div className="activity-pagination">
-            <div className="activity-pagination-info">
-              Showing <strong>{pageStart}–{pageEnd}</strong> of{' '}
-              <strong>{filteredStudents.length}</strong> students
-            </div>
-
-            <div className="activity-pagination-controls">
-              <button
-                type="button"
-                className="activity-pagination-button"
-                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                disabled={currentPage === 1}
-              >
-                ← Previous
-              </button>
-
-              <span className="activity-pagination-page">
-                Page <strong>{currentPage}</strong> of <strong>{totalPages}</strong>
-              </span>
-
-              <button
-                type="button"
-                className="activity-pagination-button"
-                onClick={() =>
-                  setCurrentPage((page) => Math.min(totalPages, page + 1))
-                }
-                disabled={currentPage === totalPages}
-              >
-                Next →
-              </button>
-            </div>
-          </div>
-
-        </div>
-
-          )}
-
-        </section>
-
-        {/* ---- Semester Archive ---- */}
-
-        <section className="activity-split-panel activity-archive-panel">
-
-          <div className="activity-split-header">
-            <div>
-              <span className="activity-eyebrow">
-                HISTORY
-              </span>
-              <h3>
-                Semester Archive
-              </h3>
-            </div>
-            <span className="activity-split-count">
-              {archiveRows.length}{' '}
-              {archiveRows.length === 1
-                ? 'semester'
-                : 'semesters'}
-            </span>
-          </div>
-
-          {archiveRows.length === 0 ? (
-
-            <div className="activity-state-card activity-state-card-compact">
-
-              <div className="activity-state-icon">
-                ☰
-              </div>
-
-              <strong>
-                No archived semesters
-              </strong>
-
-              <span>
-                When you end a semester,
-                it will appear here with
-                its historical progress.
-              </span>
-
-            </div>
-
-          ) : (
-
-            <div className="activity-table-card">
-
-              <div className="activity-table-scroll">
-
-                <table className="activity-table activity-table-compact activity-archive-table">
-
-                  <thead>
-                    <tr>
-                      <th>SEMESTER</th>
-                      <th>DATES</th>
-                      <th>STUDENTS</th>
-                      <th>PROGRESS</th>
-                      <th className="activity-action-column">
-                        VIEW
-                      </th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {archiveRows.map(
-                      ({
-                        semester,
-                        studentCount,
-                        activityCount,
-                        percentage,
-                      }) => (
-                        <tr key={semester.id}>
-                          <td>
-                            <div className="archive-semester-cell">
-                              <strong>
-                                {semester.name}
-                              </strong>
-                              <span className="archive-status-badge">
-                                {semester.status ||
-                                  'ended'}
-                              </span>
-                            </div>
-                          </td>
-
-                          <td>
-                            <div className="archive-dates">
-                              <span>
-                                {formatDate(
-                                  semester.start_date
-                                )}
-                              </span>
-                              <span>
-                                →{' '}
-                                {formatDate(
-                                  semester.end_date
-                                )}
-                              </span>
-                            </div>
-                          </td>
-
-                          <td>
-                            <span className="archive-meta">
-                              {studentCount}
-                              <small>
-                                {' '}
-                                / {activityCount} act.
-                              </small>
-                            </span>
-                          </td>
-
-                          <td>
-                            <div className="progress-cell progress-cell-compact">
-                              <div className="progress-track">
-                                <div
-                                  className="progress-fill"
-                                  style={{
-                                    width: `${percentage}%`,
-                                  }}
-                                />
-                              </div>
-                              <strong>
-                                {percentage}%
-                              </strong>
-                            </div>
-                          </td>
-
-                          <td className="activity-action-column">
-                            <button
-                              type="button"
-                              className="view-checklist-button"
-                              onClick={() =>
-                                openArchiveView(semester)
-                              }
-                            >
-                              View
-                              <span>→</span>
-                            </button>
-                          </td>
-                        </tr>
-                      )
-                    )}
-                  </tbody>
-
-                </table>
-
-              </div>
-
-            </div>
-
-          )}
-
-        </section>
-
-      </div>
-
-      )}
-
-
-      {/* ======================================================
-          ARCHIVE DETAIL MODAL
-      ======================================================= */}
-
-      {archiveView && (
-
-        <div
-          className="activity-modal-overlay"
-          onMouseDown={(event) => {
-            if (
-              event.target ===
-              event.currentTarget
-            ) {
-              closeArchiveView()
-            }
-          }}
-        >
-
-          <div
-            className="archive-detail-modal"
-            onMouseDown={(event) =>
-              event.stopPropagation()
-            }
-          >
-
-            <div className="modal-header">
-
+        <div className="activity-split-layout">
+          <section className="activity-split-panel">
+            <div className="activity-split-header">
               <div>
                 <span className="activity-eyebrow">
-                  SEMESTER ARCHIVE
+                  CURRENT SEMESTER
                 </span>
-                <h2>
-                  {archiveView.semester.name}
-                </h2>
-                <p>
-                  {formatDate(
-                    archiveView.semester.start_date
-                  )}
-                  {' → '}
-                  {formatDate(
-                    archiveView.semester.end_date
-                  )}
-                  {' · '}
-                  {archiveView.students.length}{' '}
-                  students ·{' '}
-                  {archiveView.requirements.length}{' '}
-                  activities
-                  {' · read-only history'}
-                </p>
+
+                <h3>
+                  {currentSemester?.name ||
+                    'Student Progress'}
+                </h3>
               </div>
 
-              <button
-                type="button"
-                className="modal-close"
-                onClick={closeArchiveView}
-              >
-                ×
-              </button>
-
+              <span className="activity-split-count">
+                {filteredStudents.length}{' '}
+                {filteredStudents.length === 1
+                  ? 'student'
+                  : 'students'}
+              </span>
             </div>
 
-            <div className="archive-detail-body">
-
-              {archiveView.students.length === 0 ? (
-                <p className="semester-empty-hint">
-                  No students were assigned to
-                  this semester.
-                </p>
-              ) : (
+            {filteredStudents.length === 0 ? (
+              <div className="activity-state-card activity-state-card-compact">
+                <div className="activity-state-icon">
+                  ?
+                </div>
+                <strong>No students found</strong>
+                <span>
+                  No students match the current
+                  filters.
+                </span>
+              </div>
+            ) : (
+              <div className="activity-table-card">
                 <div className="activity-table-scroll">
                   <table className="activity-table activity-table-compact">
                     <thead>
                       <tr>
                         <th>STUDENT</th>
-                        <th>PROGRAM</th>
+                        <th>SCHOOL/PROGRAM</th>
+                        <th>SUBJECT</th>
+                        <th>CURRENT ACTIVITY</th>
                         <th>PROGRESS</th>
                       </tr>
                     </thead>
+
                     <tbody>
-                      {archiveView.students.map(
+                      {paginatedStudents.map(
                         (student) => {
                           const progress =
-                            archiveView.progress[
+                            progressMap[
                               student.id
                             ] || {
                               completed: 0,
-                              total:
-                                archiveView
-                                  .requirements
-                                  .length,
+                              total: 0,
                               percentage: 0,
                             }
 
                           return (
                             <tr key={student.id}>
                               <td>
-                                <div className="student-person">
+                                <button
+                                  type="button"
+                                  className="student-person"
+                                  onClick={() =>
+                                    openChecklist(
+                                      student
+                                    )
+                                  }
+                                  title={`View activity for ${student.name}`}
+                                  style={{
+                                    width: '100%',
+                                    padding: 0,
+                                    border: 0,
+                                    background:
+                                      'transparent',
+                                    font: 'inherit',
+                                    textAlign: 'left',
+                                    cursor: 'pointer',
+                                  }}
+                                >
                                   <div className="student-avatar">
                                     {student.name
                                       ?.charAt(0)
                                       ?.toUpperCase() ||
                                       '?'}
                                   </div>
+
                                   <div className="student-person-info">
                                     <strong>
                                       {student.name}
                                     </strong>
+
                                     {student.email && (
                                       <span>
-                                        {student.email}
+                                        {
+                                          student.email
+                                        }
                                       </span>
                                     )}
                                   </div>
-                                </div>
+                                </button>
                               </td>
+
                               <td>
-                                <div className="program-school">
-                                  <strong>
-                                    {student.program ||
-                                      'General'}
-                                  </strong>
-                                  <span>
+                                <span
+                                  className="dash-cell-text dash-school-program"
+                                  style={{
+                                    display: 'flex',
+                                    flexDirection:
+                                      'column',
+                                    lineHeight: 1.3,
+                                  }}
+                                >
+                                  <span className="dash-school">
                                     {student.university ||
-                                      student.clinic ||
                                       '—'}
                                   </span>
-                                </div>
+
+                                  <span
+                                    className="dash-program"
+                                    style={{
+                                      fontSize:
+                                        '0.85em',
+                                      opacity: 0.7,
+                                    }}
+                                  >
+                                    {student.program ||
+                                      '—'}
+                                  </span>
+                                </span>
                               </td>
+
+                              <td>
+                                <span
+                                  className="activity-current-label"
+                                  title={
+                                    subjectNamesByStudent
+                                      .get(student.id)
+                                      ?.join(', ') ||
+                                    student.subject ||
+                                    '—'
+                                  }
+                                >
+                                  {subjectNamesByStudent
+                                    .get(student.id)
+                                    ?.join(', ') ||
+                                    student.subject ||
+                                    '—'}
+                                </span>
+                              </td>
+
+                              <td>
+                                <span
+                                  className={
+                                    currentActivityMap[
+                                      student.id
+                                    ] ===
+                                    'All complete'
+                                      ? 'activity-current-label is-complete'
+                                      : currentActivityMap[
+                                            student.id
+                                          ] ===
+                                          'No activity'
+                                        ? 'activity-current-label is-empty'
+                                        : 'activity-current-label'
+                                  }
+                                >
+                                  {
+                                    currentActivityMap[
+                                      student.id
+                                    ]
+                                  }
+                                </span>
+                              </td>
+
                               <td>
                                 <div className="progress-cell">
                                   <div className="progress-track">
@@ -2645,17 +1658,16 @@ function ActivityTracker() {
                                       }}
                                     />
                                   </div>
+
                                   <strong>
                                     {
                                       progress.percentage
                                     }
                                     %
                                   </strong>
+
                                   <span>
-                                    {
-                                      progress.completed
-                                    }
-                                    /
+                                    {progress.completed}/
                                     {progress.total}
                                   </span>
                                 </div>
@@ -2667,29 +1679,227 @@ function ActivityTracker() {
                     </tbody>
                   </table>
                 </div>
-              )}
 
+                <div className="activity-pagination">
+                  <div className="activity-pagination-info">
+                    Showing{' '}
+                    <strong>
+                      {pageStart}–{pageEnd}
+                    </strong>{' '}
+                    of{' '}
+                    <strong>
+                      {filteredStudents.length}
+                    </strong>{' '}
+                    students
+                  </div>
+
+                  <div className="activity-pagination-controls">
+                    <button
+                      type="button"
+                      className="activity-pagination-button"
+                      onClick={() =>
+                        setCurrentPage((page) =>
+                          Math.max(
+                            1,
+                            page - 1
+                          )
+                        )
+                      }
+                      disabled={
+                        currentPage === 1
+                      }
+                    >
+                      ← Previous
+                    </button>
+
+                    <span className="activity-pagination-page">
+                      Page{' '}
+                      <strong>
+                        {currentPage}
+                      </strong>{' '}
+                      of{' '}
+                      <strong>
+                        {totalPages}
+                      </strong>
+                    </span>
+
+                    <button
+                      type="button"
+                      className="activity-pagination-button"
+                      onClick={() =>
+                        setCurrentPage((page) =>
+                          Math.min(
+                            totalPages,
+                            page + 1
+                          )
+                        )
+                      }
+                      disabled={
+                        currentPage ===
+                        totalPages
+                      }
+                    >
+                      Next →
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </section>
+
+          <section className="activity-split-panel activity-archive-panel">
+            <div className="activity-split-header">
+              <div>
+                <span className="activity-eyebrow">
+                  HISTORY
+                </span>
+                <h3>Semester Archive</h3>
+              </div>
+
+              <span className="activity-split-count">
+                {archiveRows.length}{' '}
+                {archiveRows.length === 1
+                  ? 'semester'
+                  : 'semesters'}
+              </span>
             </div>
 
-            <div className="modal-footer">
-              <button
-                type="button"
-                className="activity-secondary-button"
-                onClick={closeArchiveView}
-              >
-                Close
-              </button>
-            </div>
+            {archiveRows.length === 0 ? (
+              <div className="activity-state-card activity-state-card-compact">
+                <div className="activity-state-icon">
+                  ☰
+                </div>
+                <strong>
+                  No archived semesters
+                </strong>
+                <span>
+                  Ended semesters will appear
+                  here.
+                </span>
+              </div>
+            ) : (
+              <div className="activity-table-card">
+                <div className="activity-table-scroll">
+                  <table className="activity-table activity-table-compact activity-archive-table">
+                    <thead>
+                      <tr>
+                        <th>SEMESTER</th>
+                        <th>DATES</th>
+                        <th>STUDENTS</th>
+                        <th>PROGRESS</th>
+                        <th>VIEW</th>
+                      </tr>
+                    </thead>
 
-          </div>
+                    <tbody>
+                      {archiveRows.map(
+                        ({
+                          semester,
+                          studentCount,
+                          activityCount,
+                          percentage,
+                        }) => (
+                          <tr
+                            key={semester.id}
+                          >
+                            <td>
+                              <div className="archive-semester-cell">
+                                <strong>
+                                  {semester.name}
+                                </strong>
+                                <span className="archive-status-badge">
+                                  {semester.status ||
+                                    'ended'}
+                                </span>
+                              </div>
+                            </td>
 
+                            <td>
+                              <div className="archive-dates">
+                                <span>
+                                  {formatDate(
+                                    semester.start_date
+                                  )}
+                                </span>
+                                <span>
+                                  →{' '}
+                                  {formatDate(
+                                    semester.end_date
+                                  )}
+                                </span>
+                              </div>
+                            </td>
+
+                            <td>
+                              <span className="archive-meta">
+                                {studentCount}
+                                <small>
+                                  {' '}
+                                  / {activityCount}{' '}
+                                  act.
+                                </small>
+                              </span>
+                            </td>
+
+                            <td>
+                              <div className="progress-cell progress-cell-compact">
+                                <div className="progress-track">
+                                  <div
+                                    className="progress-fill"
+                                    style={{
+                                      width: `${percentage}%`,
+                                    }}
+                                  />
+                                </div>
+                                <strong>
+                                  {percentage}%
+                                </strong>
+                              </div>
+                            </td>
+
+                            <td>
+                              <button
+                                type="button"
+                                className="view-checklist-button"
+                                onClick={() =>
+                                  openArchiveView(
+                                    semester
+                                  )
+                                }
+                              >
+                                View{' '}
+                                <span>→</span>
+                              </button>
+                            </td>
+                          </tr>
+                        )
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </section>
         </div>
-
       )}
 
+      {/* ======================================================
+          SUBJECT ACTIVITY MANAGER — NEW MODAL
+      ======================================================= */}
+
+      {showSubjectManager && (
+        <SubjectActivityManager
+          onClose={() =>
+            setShowSubjectManager(false)
+          }
+          onChanged={
+            handleSubjectManagerChanged
+          }
+        />
+      )}
 
       {/* ======================================================
-          STUDENT ACTIVITY MODAL
+          STUDENT CHECKLIST
       ======================================================= */}
 
       {selectedStudent && (
@@ -2699,831 +1909,182 @@ function ActivityTracker() {
         />
       )}
 
-
       {/* ======================================================
-          MANAGE ACTIVITY MODAL (simple school workflow)
+          ARCHIVE DETAIL
       ======================================================= */}
 
-      {showManageActivity && (
-
+      {archiveView && (
         <div
           className="activity-modal-overlay"
           onMouseDown={(event) => {
-            if (event.target === event.currentTarget) {
-              closeManageActivity()
+            if (
+              event.target ===
+              event.currentTarget
+            ) {
+              setArchiveView(null)
             }
           }}
         >
-
           <div
-            className="manage-activity-modal manage-activity-modal-simple"
-            onMouseDown={(event) => event.stopPropagation()}
+            className="archive-detail-modal"
+            onMouseDown={(event) =>
+              event.stopPropagation()
+            }
           >
-
             <div className="modal-header">
               <div>
                 <span className="activity-eyebrow">
-                  ACTIVITY MANAGEMENT
+                  SEMESTER ARCHIVE
                 </span>
-                <h2>Manage Activities</h2>
+                <h2>
+                  {archiveView.semester.name}
+                </h2>
                 <p>
-                  Choose a school, add activities by
-                  name and week, or delete ones you
-                  no longer need.
+                  {formatDate(
+                    archiveView.semester
+                      .start_date
+                  )}{' '}
+                  →{' '}
+                  {formatDate(
+                    archiveView.semester.end_date
+                  )}{' '}
+                  · {archiveView.students.length}{' '}
+                  students ·{' '}
+                  {
+                    archiveView.requirements
+                      .length
+                  }{' '}
+                  activities
                 </p>
               </div>
+
               <button
                 type="button"
                 className="modal-close"
-                onClick={closeManageActivity}
+                onClick={() =>
+                  setArchiveView(null)
+                }
               >
                 ×
               </button>
             </div>
 
-            <div className="manage-simple-body">
+            <div className="archive-detail-body">
+              {archiveView.students.length ===
+              0 ? (
+                <p className="semester-empty-hint">
+                  No students were assigned
+                  to this semester.
+                </p>
+              ) : (
+                <div className="activity-table-scroll">
+                  <table className="activity-table activity-table-compact">
+                    <thead>
+                      <tr>
+                        <th>STUDENT</th>
+                        <th>PROGRAM</th>
+                        <th>PROGRESS</th>
+                      </tr>
+                    </thead>
 
-              {/* Add / edit activity */}
-              <section className="manage-simple-card">
-                <div className="manage-simple-card-title">
-                  <strong>
-                    {editingActivity
-                      ? 'Edit activity'
-                      : 'Add activity'}
-                  </strong>
-                  {editingActivity && (
-                    <button
-                      type="button"
-                      className="manage-cancel-edit"
-                      onClick={() => {
-                        setEditingActivity(null)
-                        setActivityForm({
-                          name: '',
-                          code: '',
-                          week: '1',
-                          university:
-                            manageSchoolFilter === 'shared'
-                              ? 'SHARED'
-                              : manageSchoolFilter === 'all'
-                                ? 'AUHS'
-                                : manageSchoolFilter,
-                          startDate: '',
-                          endDate: '',
-                        })
-                      }}
-                    >
-                      Cancel edit
-                    </button>
-                  )}
-                </div>
+                    <tbody>
+                      {archiveView.students.map(
+                        (student) => {
+                          const progress =
+                            archiveView.progress[
+                              student.id
+                            ] || {
+                              completed: 0,
+                              total: 0,
+                              percentage: 0,
+                            }
 
-                <form
-                  className="manage-simple-form"
-                  onSubmit={saveActivity}
-                >
-                  <label className="manage-simple-field">
-                    <span>School</span>
-                    <select
-                      value={
-                        manageSchoolFilter === 'all'
-                          ? 'AUHS'
-                          : manageSchoolFilter
-                      }
-                      onChange={(event) =>
-                        handleManageSchoolChange(
-                          event.target.value
-                        )
-                      }
-                      disabled={savingActivity}
-                    >
-                      {schools.map((school) => (
-                        <option key={school} value={school}>
-                          {school}
-                        </option>
-                      ))}
-                      <option value="shared">
-                        Shared (all schools)
-                      </option>
-                    </select>
-                  </label>
+                          return (
+                            <tr key={student.id}>
+                              <td>
+                                <strong>
+                                  {student.name}
+                                </strong>
+                              </td>
 
-                  <label className="manage-simple-field manage-simple-field-grow">
-                    <span>Activity name</span>
-                    <input
-                      type="text"
-                      required
-                      value={activityForm.name}
-                      placeholder="e.g. Clinical orientation"
-                      disabled={savingActivity}
-                      onChange={(event) =>
-                        setActivityForm((current) => ({
-                          ...current,
-                          name: event.target.value,
-                          university:
-                            manageSchoolFilter === 'shared'
-                              ? 'SHARED'
-                              : manageSchoolFilter === 'all'
-                                ? 'AUHS'
-                                : manageSchoolFilter,
-                        }))
-                      }
-                    />
-                  </label>
+                              <td>
+                                {student.program ||
+                                  '—'}
+                              </td>
 
-                  <label className="manage-simple-field">
-                    <span>Week</span>
-                    <select
-                      value={activityForm.week}
-                      disabled={savingActivity}
-                      onChange={(event) =>
-                        setActivityForm((current) => ({
-                          ...current,
-                          week: event.target.value,
-                        }))
-                      }
-                    >
-                      <option value="0">General</option>
-                      {Array.from({ length: 16 }, (_, i) => (
-                        <option key={i + 1} value={String(i + 1)}>
-                          Week {i + 1}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                              <td>
+                                <div className="progress-cell">
+                                  <div className="progress-track">
+                                    <div
+                                      className="progress-fill"
+                                      style={{
+                                        width: `${progress.percentage}%`,
+                                      }}
+                                    />
+                                  </div>
 
-                  <label className="manage-simple-field">
-                    <span>Start date</span>
-                    <input
-                      type="date"
-                      value={activityForm.startDate}
-                      disabled={savingActivity}
-                      onChange={(event) =>
-                        setActivityForm((current) => ({
-                          ...current,
-                          startDate: event.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-
-                  <label className="manage-simple-field">
-                    <span>End date</span>
-                    <input
-                      type="date"
-                      value={activityForm.endDate}
-                      disabled={savingActivity}
-                      onChange={(event) =>
-                        setActivityForm((current) => ({
-                          ...current,
-                          endDate: event.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-
-                  <button
-                    type="submit"
-                    className="activity-primary-button manage-simple-save"
-                    disabled={savingActivity}
-                  >
-                    {savingActivity
-                      ? 'Saving...'
-                      : editingActivity
-                        ? 'Update'
-                        : 'Save activity'}
-                  </button>
-                </form>
-              </section>
-
-              {/* Step 3 — List + search + bulk delete */}
-              <section className="manage-simple-card manage-simple-list-card">
-                <div className="manage-simple-card-title">
-                  <strong>
-                    Activities for{' '}
-                    {manageSchoolFilter === 'shared'
-                      ? 'all schools'
-                      : manageSchoolFilter === 'all'
-                        ? 'AUHS'
-                        : manageSchoolFilter}
-                  </strong>
-                  <span>
-                    {searchableManageActivities.length}
-                    {manageSearch.trim()
-                      ? ` match · ${manageActivities.length} total`
-                      : manageActivities.length === 1
-                        ? ' item'
-                        : ' items'}
-                  </span>
-                </div>
-
-                {manageActivities.length === 0 ? (
-                  <p className="manage-simple-empty">
-                    No activities for this school yet.
-                    Add one above. Existing items may
-                    need the AUHS SQL update first.
-                  </p>
-                ) : (
-                  <>
-                    <div className="manage-bulk-toolbar">
-                      <div className="manage-bulk-search">
-                        <span>⌕</span>
-                        <input
-                          type="search"
-                          value={manageSearch}
-                          onChange={(event) =>
-                            setManageSearch(event.target.value)
-                          }
-                          placeholder="Search activities..."
-                        />
-                      </div>
-                      <label className="manage-select-all">
-                        <input
-                          type="checkbox"
-                          checked={allSearchableSelected}
-                          onChange={toggleManageSelectAll}
-                        />
-                        Select all
-                      </label>
-                      <button
-                        type="button"
-                        className="activity-delete-button"
-                        disabled={
-                          bulkDeleting ||
-                          selectedManageIds.length === 0
-                        }
-                        onClick={confirmBulkDelete}
-                      >
-                        {bulkDeleting
-                          ? 'Deleting...'
-                          : `Delete selected (${selectedManageIds.length})`}
-                      </button>
-                    </div>
-
-                    {searchableManageActivities.length === 0 ? (
-                      <p className="manage-simple-empty">
-                        No activities match your search.
-                      </p>
-                    ) : (
-                      <ul className="manage-simple-list">
-                        {searchableManageActivities.map(
-                          (requirement, index) => {
-                            const checked =
-                              selectedManageIds.includes(
-                                requirement.id
-                              )
-                            return (
-                              <li
-                                key={requirement.id}
-                                className={`manage-simple-item${
-                                  editingActivity?.id ===
-                                  requirement.id
-                                    ? ' is-editing'
-                                    : ''
-                                }${checked ? ' is-selected' : ''}`}
-                              >
-                                <label className="manage-item-check">
-                                  <input
-                                    type="checkbox"
-                                    checked={checked}
-                                    onChange={() =>
-                                      toggleManageSelectOne(
-                                        requirement.id
-                                      )
-                                    }
-                                  />
-                                </label>
-                                <span className="manage-simple-index">
-                                  {String(index + 1).padStart(
-                                    2,
-                                    '0'
-                                  )}
-                                </span>
-                                <div className="manage-simple-item-info">
                                   <strong>
-                                    {requirement.label}
+                                    {
+                                      progress.percentage
+                                    }
+                                    %
                                   </strong>
+
                                   <span>
-                                    Week{' '}
-                                    {requirement.week ?? '—'}
-                                    {requirement.university
-                                      ? ` · ${requirement.university}`
-                                      : ' · Shared'}
-                                    {(requirement.start_date ||
-                                      requirement.end_date) &&
-                                      ` · ${requirement.start_date || '—'} → ${requirement.end_date || '—'}`}
+                                    {
+                                      progress.completed
+                                    }
+                                    /{progress.total}
                                   </span>
                                 </div>
-                                <div className="manage-simple-item-actions">
-                                  <button
-                                    type="button"
-                                    className="activity-edit-button"
-                                    onClick={() => {
-                                      setEditingActivity(
-                                        requirement
-                                      )
-                                      setActivityForm({
-                                        name:
-                                          requirement.label ||
-                                          '',
-                                        code:
-                                          requirement.code ||
-                                          '',
-                                        week: String(
-                                          requirement.week ?? 1
-                                        ),
-                                        university:
-                                          requirement.university ||
-                                          '',
-                                        startDate:
-                                          requirement.start_date ||
-                                          '',
-                                        endDate:
-                                          requirement.end_date ||
-                                          '',
-                                      })
-                                    }}
-                                  >
-                                    Edit
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="activity-delete-button"
-                                    disabled={
-                                      deletingActivityId ===
-                                      requirement.id
-                                    }
-                                    onClick={() =>
-                                      openDeleteActivity(
-                                        requirement
-                                      )
-                                    }
-                                  >
-                                    {deletingActivityId ===
-                                    requirement.id
-                                      ? '...'
-                                      : 'Delete'}
-                                  </button>
-                                </div>
-                              </li>
-                            )
-                          }
-                        )}
-                      </ul>
-                    )}
-                  </>
-                )}
-              </section>
-
+                              </td>
+                            </tr>
+                          )
+                        }
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
 
             <div className="modal-footer">
               <button
                 type="button"
                 className="activity-secondary-button"
-                onClick={closeManageActivity}
+                onClick={() =>
+                  setArchiveView(null)
+                }
               >
-                Done
+                Close
               </button>
             </div>
-
           </div>
-
         </div>
-
       )}
 
-
       {/* ======================================================
-          ADD / EDIT ACTIVITY MODAL
-      ======================================================= */}
-
-      {showActivityForm && (
-
-        <div
-          className="activity-modal-overlay activity-form-overlay"
-          onMouseDown={(event) => {
-            if (
-              event.target ===
-              event.currentTarget
-            ) {
-              closeActivityForm()
-            }
-          }}
-        >
-
-          <div
-            className="activity-form-modal"
-            onMouseDown={(event) =>
-              event.stopPropagation()
-            }
-          >
-
-            <div className="modal-header">
-
-              <div>
-
-                <span className="activity-eyebrow">
-                  {editingActivity
-                    ? 'EDIT ACTIVITY'
-                    : 'NEW ACTIVITY'}
-                </span>
-
-                <h2>
-                  {editingActivity
-                    ? 'Edit Activity'
-                    : 'Add Activity'}
-                </h2>
-
-                <p>
-                  {editingActivity
-                    ? 'Update the activity details.'
-                    : 'Create a new student checklist activity.'}
-                </p>
-
-              </div>
-
-
-              <button
-                type="button"
-                className="modal-close"
-                disabled={
-                  savingActivity
-                }
-                onClick={
-                  closeActivityForm
-                }
-              >
-                ×
-              </button>
-
-            </div>
-
-
-            <form
-              className="activity-form"
-              onSubmit={
-                saveActivity
-              }
-            >
-
-              <div className="form-grid">
-
-                <label className="form-field form-field-wide">
-
-                  <span>
-                    Activity Name *
-                  </span>
-
-                  <input
-                    type="text"
-                    required
-                    autoFocus
-                    value={
-                      activityForm.name
-                    }
-                    placeholder="Activity name"
-                    onChange={(
-                      event
-                    ) =>
-                      setActivityForm(
-                        (current) => ({
-                          ...current,
-                          name:
-                            event
-                              .target
-                              .value,
-                        })
-                      )
-                    }
-                  />
-
-                </label>
-
-
-                <label className="form-field">
-
-                  <span>
-                    School *
-                  </span>
-
-                  <select
-                    value={
-                      activityForm.university
-                    }
-                    onChange={(
-                      event
-                    ) =>
-                      setActivityForm(
-                        (current) => ({
-                          ...current,
-                          university:
-                            event
-                              .target
-                              .value,
-                        })
-                      )
-                    }
-                  >
-                    <option value="SHARED">
-                      All schools (shared)
-                    </option>
-                    {schools.map((school) => (
-                      <option
-                        key={school}
-                        value={school}
-                      >
-                        {school} only
-                      </option>
-                    ))}
-                  </select>
-
-                </label>
-
-
-                <label className="form-field">
-
-                  <span>
-                    Activity Week *
-                  </span>
-
-                  <select
-                    value={
-                      activityForm.week
-                    }
-                    onChange={(
-                      event
-                    ) =>
-                      setActivityForm(
-                        (current) => ({
-                          ...current,
-                          week:
-                            event
-                              .target
-                              .value,
-                        })
-                      )
-                    }
-                  >
-
-                    <option value="0">
-                      General
-                    </option>
-
-                    {Array.from(
-                      {
-                        length: 16,
-                      },
-                      (
-                        _,
-                        index
-                      ) => (
-                        <option
-                          key={
-                            index + 1
-                          }
-                          value={
-                            index + 1
-                          }
-                        >
-                          Week{' '}
-                          {index + 1}
-                        </option>
-                      )
-                    )}
-
-                  </select>
-
-                </label>
-
-
-                <label className="form-field">
-
-                  <span>
-                    Activity Code
-                  </span>
-
-                  <input
-                    type="text"
-                    value={
-                      activityForm.code
-                    }
-                    placeholder="Optional"
-                    onChange={(
-                      event
-                    ) =>
-                      setActivityForm(
-                        (current) => ({
-                          ...current,
-                          code:
-                            event
-                              .target
-                              .value,
-                        })
-                      )
-                    }
-                  />
-
-                </label>
-
-              </div>
-
-
-              <div className="activity-form-footer">
-
-                <button
-                  type="button"
-                  className="activity-secondary-button"
-                  disabled={
-                    savingActivity
-                  }
-                  onClick={
-                    closeActivityForm
-                  }
-                >
-                  Cancel
-                </button>
-
-
-                <button
-                  type="submit"
-                  className="activity-primary-button"
-                  disabled={
-                    savingActivity
-                  }
-                >
-                  {savingActivity
-                    ? 'Saving...'
-                    : editingActivity
-                      ? 'Save Changes'
-                      : 'Add Activity'}
-                </button>
-
-              </div>
-
-            </form>
-
-          </div>
-
-        </div>
-
-      )}
-
-
-      {/* ======================================================
-          DELETE CONFIRMATION MODAL
-      ======================================================= */}
-
-      {activityToDelete && (
-
-        <div
-          className="activity-modal-overlay delete-overlay"
-          onMouseDown={(event) => {
-            if (
-              event.target ===
-              event.currentTarget
-            ) {
-              closeDeleteActivity()
-            }
-          }}
-        >
-
-          <div
-            className="delete-modal"
-            onMouseDown={(event) =>
-              event.stopPropagation()
-            }
-          >
-
-            <div className="delete-modal-header">
-
-              <div>
-
-                <span className="activity-eyebrow">
-                  DELETE ACTIVITY
-                </span>
-
-                <h2>
-                  Delete Activity?
-                </h2>
-
-              </div>
-
-
-              <button
-                type="button"
-                className="modal-close"
-                onClick={
-                  closeDeleteActivity
-                }
-              >
-                ×
-              </button>
-
-            </div>
-
-
-            <div className="delete-modal-body">
-
-              <div className="delete-activity-preview">
-
-                <strong>
-                  {
-                    activityToDelete.label
-                  }
-                </strong>
-
-                <span>
-
-                  Week{' '}
-                  {
-                    activityToDelete.week ??
-                    '—'
-                  }
-
-                  {activityToDelete.code &&
-                    ` · ${activityToDelete.code}`}
-
-                </span>
-
-              </div>
-
-
-              <p>
-                Are you sure you want to
-                delete this activity?
-              </p>
-
-              <p className="delete-warning-text">
-                This will also remove the
-                checklist records associated
-                with this activity for all
-                students. This action cannot
-                be undone.
-              </p>
-
-            </div>
-
-
-            <div className="delete-modal-footer">
-
-              <button
-                type="button"
-                className="activity-secondary-button"
-                disabled={
-                  Boolean(
-                    deletingActivityId
-                  )
-                }
-                onClick={
-                  closeDeleteActivity
-                }
-              >
-                Cancel
-              </button>
-
-
-              <button
-                type="button"
-                className="delete-confirm-button"
-                disabled={
-                  Boolean(
-                    deletingActivityId
-                  )
-                }
-                onClick={
-                  confirmDeleteActivity
-                }
-              >
-                {deletingActivityId
-                  ? 'Deleting...'
-                  : 'Delete Activity'}
-              </button>
-
-            </div>
-
-          </div>
-
-        </div>
-
-      )}
-
-
-      {/* ======================================================
-          ASSIGN ACTIVITY TO STUDENT (student editor)
+          MANUAL ASSIGN ACTIVITY
+          Keep during migration for individual exceptions.
       ======================================================= */}
 
       {showAssignActivity && (
         <div
           className="activity-modal-overlay"
           onMouseDown={(event) => {
-            if (event.target === event.currentTarget) {
+            if (
+              event.target ===
+              event.currentTarget
+            ) {
               closeAssignActivity()
             }
           }}
         >
           <div
             className="assign-activity-modal"
-            onMouseDown={(event) => event.stopPropagation()}
+            onMouseDown={(event) =>
+              event.stopPropagation()
+            }
           >
             <div className="modal-header">
               <div>
@@ -3532,12 +2093,13 @@ function ActivityTracker() {
                 </span>
                 <h2>Assign Activity</h2>
                 <p>
-                  Choose a school, pick a student, then check or
-                  uncheck activities. Students appear on Student
-                  Progress only when they have at least one
-                  activity assigned.
+                  For normal setup, assign a
+                  subject in Manage Activity.
+                  Use this screen only for
+                  individual activity exceptions.
                 </p>
               </div>
+
               <button
                 type="button"
                 className="modal-close"
@@ -3555,175 +2117,205 @@ function ActivityTracker() {
               <div className="assign-toolbar">
                 <label className="assign-field">
                   <span>School</span>
+
                   <select
                     value={assignSchool}
+                    disabled={assignSaving}
                     onChange={(event) => {
-                      setAssignSchool(event.target.value)
+                      setAssignSchool(
+                        event.target.value
+                      )
                       setAssignStudentId('')
-                      setAssignSelectedActivityIds([])
+                      setAssignSelectedActivityIds(
+                        []
+                      )
                       setAssignStudentSearch('')
                     }}
-                    disabled={assignSaving}
                   >
                     {schools.map((school) => (
-                      <option key={school} value={school}>
+                      <option
+                        key={school}
+                        value={school}
+                      >
                         {school}
                       </option>
                     ))}
                   </select>
                 </label>
+
                 <label className="assign-field assign-field-grow">
                   <span>Search student</span>
                   <input
                     type="search"
-                    value={assignStudentSearch}
-                    onChange={(event) =>
-                      setAssignStudentSearch(event.target.value)
+                    value={
+                      assignStudentSearch
                     }
-                    placeholder="Name, email, or program..."
+                    onChange={(event) =>
+                      setAssignStudentSearch(
+                        event.target.value
+                      )
+                    }
+                    placeholder="Name, email, subject, or program..."
                     disabled={assignSaving}
                   />
                 </label>
               </div>
 
               <div className="assign-split">
-                {/* Left: students */}
                 <section className="assign-panel">
                   <div className="assign-panel-header">
                     <strong>Students</strong>
                     <span>
-                      {assignStudentOptions.length} in{' '}
-                      {assignSchool}
+                      {
+                        assignStudentOptions.length
+                      }{' '}
+                      in {assignSchool}
                     </span>
                   </div>
+
                   <div className="assign-panel-list">
-                    {assignStudentOptions.length === 0 ? (
-                      <p className="semester-empty-hint">
-                        No students found for this school.
-                      </p>
-                    ) : (
-                      assignStudentOptions.map((student) => {
-                        const active =
-                          assignStudentId === student.id
-                        return (
-                          <button
-                            key={student.id}
-                            type="button"
-                            className={`assign-student-row${
-                              active ? ' is-active' : ''
-                            }`}
-                            disabled={assignSaving}
-                            onClick={() =>
-                              selectAssignStudent(student.id)
-                            }
-                          >
-                            <span className="assign-student-avatar">
-                              {student.name
-                                ?.charAt(0)
-                                ?.toUpperCase() || '?'}
-                            </span>
-                            <span className="assign-student-info">
-                              <strong>{student.name}</strong>
-                              <small>
-                                {student.program ||
-                                  student.email ||
-                                  '—'}
-                              </small>
-                            </span>
-                          </button>
-                        )
-                      })
+                    {assignStudentOptions.map(
+                      (student) => (
+                        <button
+                          key={student.id}
+                          type="button"
+                          className={`assign-student-row${
+                            assignStudentId ===
+                            student.id
+                              ? ' is-active'
+                              : ''
+                          }`}
+                          disabled={
+                            assignSaving
+                          }
+                          onClick={() =>
+                            selectAssignStudent(
+                              student.id
+                            )
+                          }
+                        >
+                          <span className="assign-student-avatar">
+                            {student.name
+                              ?.charAt(0)
+                              ?.toUpperCase() ||
+                              '?'}
+                          </span>
+
+                          <span className="assign-student-info">
+                            <strong>
+                              {student.name}
+                            </strong>
+                            <small>
+                              {student.subject ||
+                                student.program ||
+                                student.email ||
+                                '—'}
+                            </small>
+                          </span>
+                        </button>
+                      )
                     )}
                   </div>
                 </section>
 
-                {/* Right: activities for selected student */}
                 <section className="assign-panel assign-panel-activities">
                   <div className="assign-panel-header">
                     <strong>
                       {assignStudentId
                         ? `Activities · ${
                             allStudents.find(
-                              (s) => s.id === assignStudentId
-                            )?.name || 'Student'
+                              (student) =>
+                                student.id ===
+                                assignStudentId
+                            )?.name ||
+                            'Student'
                           }`
                         : 'Activities'}
                     </strong>
-                    <div className="assign-panel-header-actions">
-                      <span>
-                        {assignStudentId
-                          ? `${assignSelectedActivityIds.length} assigned`
-                          : 'Select a student'}
-                      </span>
 
-                      {assignStudentId && assignableActivities.length > 0 && (
+                    {assignStudentId &&
+                      assignableActivities.length >
+                        0 && (
                         <label className="assign-select-all">
                           <input
                             type="checkbox"
-                            checked={allAssignActivitiesSelected}
-                            disabled={assignSaving}
-                            onChange={toggleSelectAllAssignActivities}
+                            checked={
+                              allAssignActivitiesSelected
+                            }
+                            disabled={
+                              assignSaving
+                            }
+                            onChange={
+                              toggleSelectAllAssignActivities
+                            }
                           />
-                          <span>Select All</span>
+                          <span>
+                            Select All
+                          </span>
                         </label>
                       )}
-                    </div>
                   </div>
 
                   {!assignStudentId ? (
                     <p className="assign-placeholder">
-                      Select a student on the left to view and
-                      edit their activities.
+                      Select a student first.
                     </p>
-                  ) : assignableActivities.length === 0 ? (
+                  ) : assignableActivities.length ===
+                    0 ? (
                     <p className="semester-empty-hint">
-                      No activities for {assignSchool} yet.
-                      Create them in Manage Activity first.
+                      No activities are available
+                      for the student's assigned
+                      subjects.
                     </p>
                   ) : (
                     <div className="assign-panel-list">
-                      {assignableActivities
-                        .slice()
-                        .sort(
-                          (a, b) =>
-                            (a.week ?? 0) - (b.week ?? 0) ||
-                            (a.sort_order ?? 0) -
-                              (b.sort_order ?? 0)
-                        )
-                        .map((activity) => {
+                      {assignableActivities.map(
+                        (activity) => {
                           const checked =
                             assignSelectedActivityIds.includes(
                               activity.id
                             )
+
                           return (
                             <label
                               key={activity.id}
                               className={`assign-activity-row${
-                                checked ? ' is-selected' : ''
+                                checked
+                                  ? ' is-selected'
+                                  : ''
                               }`}
                             >
                               <input
                                 type="checkbox"
-                                checked={checked}
-                                disabled={assignSaving}
+                                checked={
+                                  checked
+                                }
+                                disabled={
+                                  assignSaving
+                                }
                                 onChange={() =>
                                   toggleAssignActivityId(
                                     activity.id
                                   )
                                 }
                               />
+
                               <span className="assign-activity-text">
-                                <strong>{activity.label}</strong>
+                                <strong>
+                                  {
+                                    activity.label
+                                  }
+                                </strong>
                                 <small>
-                                  Week {activity.week ?? '—'}
-                                  {(activity.start_date ||
-                                    activity.end_date) &&
-                                    ` · ${activity.start_date || '—'} → ${activity.end_date || '—'}`}
+                                  Week{' '}
+                                  {activity.week ??
+                                    '—'}
                                 </small>
                               </span>
                             </label>
                           )
-                        })}
+                        }
+                      )}
                     </div>
                   )}
                 </section>
@@ -3734,16 +2326,24 @@ function ActivityTracker() {
                   type="button"
                   className="activity-secondary-button"
                   disabled={assignSaving}
-                  onClick={closeAssignActivity}
+                  onClick={
+                    closeAssignActivity
+                  }
                 >
                   Close
                 </button>
+
                 <button
                   type="submit"
                   className="activity-primary-button"
-                  disabled={assignSaving || !assignStudentId}
+                  disabled={
+                    assignSaving ||
+                    !assignStudentId
+                  }
                 >
-                  {assignSaving ? 'Saving...' : 'Save changes'}
+                  {assignSaving
+                    ? 'Saving...'
+                    : 'Save changes'}
                 </button>
               </div>
             </form>
@@ -3751,61 +2351,35 @@ function ActivityTracker() {
         </div>
       )}
 
-
       {/* ======================================================
-          END SEMESTER CONFIRMATION
+          END SEMESTER
       ======================================================= */}
 
       {showEndConfirm && (
-
-        <div
-          className="activity-modal-overlay delete-overlay"
-          onMouseDown={(event) => {
-            if (
-              event.target ===
-              event.currentTarget
-            ) {
-              closeEndConfirm()
-            }
-          }}
-        >
-
-          <div
-            className="delete-modal"
-            onMouseDown={(event) =>
-              event.stopPropagation()
-            }
-          >
-
+        <div className="activity-modal-overlay delete-overlay">
+          <div className="delete-modal">
             <div className="delete-modal-header">
-
               <div>
-
                 <span className="activity-eyebrow">
                   SEMESTER
                 </span>
-
-                <h2>
-                  End Semester?
-                </h2>
-
+                <h2>End Semester?</h2>
               </div>
 
               <button
                 type="button"
                 className="modal-close"
-                onClick={closeEndConfirm}
+                onClick={() =>
+                  setShowEndConfirm(false)
+                }
               >
                 ×
               </button>
-
             </div>
 
             <div className="delete-modal-body">
-
               <p>
-                Are you sure you want to
-                end the current semester
+                End the current semester
                 {currentSemester?.name
                   ? ` (${currentSemester.name})`
                   : ''}
@@ -3813,20 +2387,18 @@ function ActivityTracker() {
               </p>
 
               <p className="delete-warning-text">
-                Student progress for this
-                semester will be kept as
-                history. You will then set
-                up the next semester.
+                Existing student progress will
+                remain in the semester archive.
               </p>
-
             </div>
 
             <div className="delete-modal-footer">
-
               <button
                 type="button"
                 className="activity-secondary-button"
-                onClick={closeEndConfirm}
+                onClick={() =>
+                  setShowEndConfirm(false)
+                }
               >
                 Cancel
               </button>
@@ -3834,96 +2406,77 @@ function ActivityTracker() {
               <button
                 type="button"
                 className="activity-danger-button"
-                onClick={continueToNewSemester}
+                onClick={
+                  continueToNewSemester
+                }
               >
                 Continue
               </button>
-
             </div>
-
           </div>
-
         </div>
-
       )}
 
-
       {/* ======================================================
-          START NEW SEMESTER MODAL
+          NEW SEMESTER
       ======================================================= */}
 
       {showNewSemester && (
-
-        <div
-          className="activity-modal-overlay"
-          onMouseDown={(event) => {
-            if (
-              event.target ===
-              event.currentTarget
-            ) {
-              closeNewSemester()
-            }
-          }}
-        >
-
-          <div
-            className="semester-rollover-modal"
-            onMouseDown={(event) =>
-              event.stopPropagation()
-            }
-          >
-
+        <div className="activity-modal-overlay">
+          <div className="semester-rollover-modal">
             <div className="modal-header">
-
               <div>
-
                 <span className="activity-eyebrow">
                   SEMESTER ROLLOVER
                 </span>
-
                 <h2>
                   Start a New Semester
                 </h2>
-
                 <p>
-                  Name the semester, assign
-                  students, and choose the
-                  activities they will track.
+                  Choose students and copy
+                  subject-aware activity
+                  templates into the next
+                  semester.
                 </p>
-
               </div>
 
               <button
                 type="button"
                 className="modal-close"
                 disabled={savingSemester}
-                onClick={closeNewSemester}
+                onClick={() => {
+                  if (!savingSemester) {
+                    setShowNewSemester(false)
+                    resetSemesterForm()
+                  }
+                }}
               >
                 ×
               </button>
-
             </div>
 
             <form
               className="semester-rollover-form"
               onSubmit={startNewSemester}
             >
-
               <div className="semester-form-grid">
-
                 <label className="semester-field semester-field-full">
-                  <span>Semester Name</span>
+                  <span>
+                    Semester Name
+                  </span>
                   <input
                     type="text"
                     value={semesterForm.name}
                     onChange={(event) =>
-                      setSemesterForm((current) => ({
-                        ...current,
-                        name: event.target.value,
-                      }))
+                      setSemesterForm(
+                        (current) => ({
+                          ...current,
+                          name:
+                            event.target
+                              .value,
+                        })
+                      )
                     }
-                    placeholder="e.g. Fall 2026"
-                    disabled={savingSemester}
                     required
                   />
                 </label>
@@ -3932,268 +2485,198 @@ function ActivityTracker() {
                   <span>Start Date</span>
                   <input
                     type="date"
-                    value={semesterForm.startDate}
-                    onChange={(event) =>
-                      setSemesterForm((current) => ({
-                        ...current,
-                        startDate: event.target.value,
-                      }))
+                    value={
+                      semesterForm.startDate
                     }
-                    disabled={savingSemester}
+                    onChange={(event) =>
+                      setSemesterForm(
+                        (current) => ({
+                          ...current,
+                          startDate:
+                            event.target
+                              .value,
+                        })
+                      )
+                    }
                     required
                   />
                 </label>
 
                 <label className="semester-field">
-                  <span>Expected End Date</span>
+                  <span>
+                    Expected End Date
+                  </span>
                   <input
                     type="date"
-                    value={semesterForm.endDate}
-                    onChange={(event) =>
-                      setSemesterForm((current) => ({
-                        ...current,
-                        endDate: event.target.value,
-                      }))
+                    value={
+                      semesterForm.endDate
                     }
-                    disabled={savingSemester}
+                    onChange={(event) =>
+                      setSemesterForm(
+                        (current) => ({
+                          ...current,
+                          endDate:
+                            event.target
+                              .value,
+                        })
+                      )
+                    }
                   />
                 </label>
-
               </div>
 
-              {/* Assign Students */}
               <div className="semester-multi-section">
-
                 <div className="semester-multi-header">
-                  <strong>Assign Students</strong>
+                  <strong>
+                    Assign Students
+                  </strong>
                   <span>
-                    {selectedStudentIds.length} selected
+                    {
+                      selectedStudentIds.length
+                    }{' '}
+                    selected
                   </span>
                 </div>
 
                 <div className="semester-search-wrap">
-                  <span className="semester-search-icon">
-                    🔍
-                  </span>
                   <input
                     type="search"
                     className="semester-search-input"
                     value={studentSearch}
                     onChange={(event) =>
-                      setStudentSearch(event.target.value)
+                      setStudentSearch(
+                        event.target.value
+                      )
                     }
                     placeholder="Search students..."
-                    disabled={savingSemester}
                   />
                 </div>
 
-                {selectedStudentIds.length > 0 && (
-                  <div className="semester-chip-list">
-                    {selectedStudentIds.map((id) => {
-                      const student = allStudents.find(
-                        (s) => s.id === id
-                      )
-                      if (!student) return null
-                      return (
-                        <span
-                          key={id}
-                          className="semester-chip"
-                        >
-                          {student.name}
-                          <button
-                            type="button"
-                            disabled={savingSemester}
-                            onClick={() =>
-                              removeSelectedStudent(id)
-                            }
-                            aria-label={`Remove ${student.name}`}
-                          >
-                            ×
-                          </button>
-                        </span>
-                      )
-                    })}
-                  </div>
-                )}
-
                 <div className="semester-select-list">
-                  {searchableStudents.length === 0 ? (
-                    <p className="semester-empty-hint">
-                      No students match your search.
-                    </p>
-                  ) : (
-                    searchableStudents.map((student) => {
+                  {searchableStudents.map(
+                    (student) => {
                       const checked =
                         selectedStudentIds.includes(
                           student.id
                         )
+
                       return (
                         <label
                           key={student.id}
                           className={`semester-select-row${
-                            checked ? ' is-selected' : ''
+                            checked
+                              ? ' is-selected'
+                              : ''
                           }`}
                         >
                           <input
                             type="checkbox"
                             checked={checked}
-                            disabled={savingSemester}
                             onChange={() =>
                               toggleSelectedStudent(
                                 student.id
                               )
                             }
                           />
+
                           <span className="semester-select-name">
                             {student.name}
                           </span>
-                          {(student.program ||
-                            student.clinic) && (
-                            <span className="semester-select-meta">
-                              {student.program ||
-                                student.clinic}
-                            </span>
-                          )}
+
+                          <span className="semester-select-meta">
+                            {student.subject ||
+                              student.program ||
+                              student.university ||
+                              '—'}
+                          </span>
                         </label>
                       )
-                    })
+                    }
                   )}
                 </div>
-
               </div>
 
-              {/* Assign Activities */}
               <div className="semester-multi-section">
-
                 <div className="semester-multi-header">
                   <strong>
-                    Add Activities to Students
+                    Copy Activities
                   </strong>
                   <span>
-                    {selectedActivityIds.length} selected
+                    {
+                      selectedActivityIds.length
+                    }{' '}
+                    selected
                   </span>
                 </div>
 
                 <div className="semester-search-wrap">
-                  <span className="semester-search-icon">
-                    🔍
-                  </span>
                   <input
                     type="search"
                     className="semester-search-input"
                     value={activitySearch}
                     onChange={(event) =>
-                      setActivitySearch(event.target.value)
+                      setActivitySearch(
+                        event.target.value
+                      )
                     }
                     placeholder="Search activities..."
-                    disabled={savingSemester}
                   />
                 </div>
 
-                {selectedActivityIds.length > 0 && (
-                  <div className="semester-chip-list">
-                    {selectedActivityIds.map((id) => {
-                      const activity =
-                        allRequirements.find(
-                          (r) => r.id === id
-                        ) ||
-                        requirements.find(
-                          (r) => r.id === id
-                        )
-                      if (!activity) return null
-                      return (
-                        <span
-                          key={id}
-                          className="semester-chip"
-                        >
-                          {activity.label}
-                          <button
-                            type="button"
-                            disabled={savingSemester}
-                            onClick={() =>
-                              removeSelectedActivity(id)
-                            }
-                            aria-label={`Remove ${activity.label}`}
-                          >
-                            ×
-                          </button>
-                        </span>
-                      )
-                    })}
-                  </div>
-                )}
-
                 <div className="semester-select-list">
-                  {searchableActivities.length === 0 ? (
-                    <p className="semester-empty-hint">
-                      No activities available to copy.
-                      You can add activities after starting
-                      the semester.
-                    </p>
-                  ) : (
-                    searchableActivities.map((activity) => {
+                  {searchableActivities.map(
+                    (activity) => {
                       const checked =
                         selectedActivityIds.includes(
                           activity.id
                         )
+
                       return (
                         <label
                           key={activity.id}
                           className={`semester-select-row${
-                            checked ? ' is-selected' : ''
+                            checked
+                              ? ' is-selected'
+                              : ''
                           }`}
                         >
                           <input
                             type="checkbox"
                             checked={checked}
-                            disabled={savingSemester}
                             onChange={() =>
                               toggleSelectedActivity(
                                 activity.id
                               )
                             }
                           />
+
                           <span className="semester-select-name">
                             {activity.label}
                           </span>
+
                           <span className="semester-select-meta">
                             Week{' '}
-                            {activity.week ?? '—'}
-                            {activity.code
-                              ? ` · ${activity.code}`
-                              : ''}
+                            {activity.week ??
+                              '—'}
                           </span>
                         </label>
                       )
-                    })
+                    }
                   )}
                 </div>
-
               </div>
 
-              <label className="semester-field semester-field-full">
-                <span>Notes</span>
-                <textarea
-                  rows={3}
-                  value={semesterForm.notes}
-                  onChange={(event) =>
-                    setSemesterForm((current) => ({
-                      ...current,
-                      notes: event.target.value,
-                    }))
-                  }
-                  placeholder="Optional notes for this rollover (not stored in the database)"
-                  disabled={savingSemester}
-                />
-              </label>
-
               <div className="modal-footer semester-rollover-footer">
-
                 <button
                   type="button"
                   className="activity-secondary-button"
                   disabled={savingSemester}
-                  onClick={closeNewSemester}
+                  onClick={() => {
+                    if (!savingSemester) {
+                      setShowNewSemester(false)
+                      resetSemesterForm()
+                    }
+                  }}
                 >
                   Cancel
                 </button>
@@ -4207,17 +2690,11 @@ function ActivityTracker() {
                     ? 'Starting...'
                     : 'Start New Semester'}
                 </button>
-
               </div>
-
             </form>
-
           </div>
-
         </div>
-
       )}
-
     </div>
   )
 }

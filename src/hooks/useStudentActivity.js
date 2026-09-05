@@ -1,29 +1,55 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../supabaseClient'
 
-/**
- * Single source of truth for a student's activity checklist.
- *
- * IMPORTANT:
- * - A student only sees requirements for their own school.
- * - SHARED requirements are visible to both schools.
- * - Student-specific requirements are always allowed for that student.
- * - Only the active semester plus global requirements are loaded.
- * - Historical student_activity rows are excluded from current progress.
- */
+const LEGACY_SUBJECT_ID = '__legacy__'
+const FALLBACK_SUBJECT_ID = '__current__'
+
+function groupByWeek(requirements) {
+  const groups = {}
+
+  requirements.forEach((requirement) => {
+    const week = Number(requirement.week ?? 0)
+
+    if (!groups[week]) {
+      groups[week] = []
+    }
+
+    groups[week].push(requirement)
+  })
+
+  return Object.entries(groups)
+    .sort(([a], [b]) => Number(a) - Number(b))
+    .map(([week, items]) => ({
+      week: Number(week),
+      label: Number(week) === 0 ? 'General' : `Week ${week}`,
+      items: items
+        .slice()
+        .sort(
+          (a, b) =>
+            Number(a.sort_order ?? 0) -
+            Number(b.sort_order ?? 0)
+        ),
+    }))
+}
+
 export function useStudentActivity(studentId) {
-  const [requirements, setRequirements] = useState([])
+  const [student, setStudent] = useState(null)
+  const [subjects, setSubjects] = useState([])
+  const [allRequirements, setAllRequirements] = useState([])
   const [activity, setActivity] = useState([])
+  const [selectedSubjectId, setSelectedSubjectId] = useState(null)
+
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [studentSchool, setStudentSchool] = useState(null)
   const [activeSemesterId, setActiveSemesterId] = useState(null)
 
   const load = useCallback(async () => {
     if (!studentId) {
-      setRequirements([])
+      setStudent(null)
+      setSubjects([])
+      setAllRequirements([])
       setActivity([])
-      setStudentSchool(null)
+      setSelectedSubjectId(null)
       setActiveSemesterId(null)
       setLoading(false)
       return
@@ -33,33 +59,57 @@ export function useStudentActivity(studentId) {
     setError('')
 
     try {
-      // Load the student's actual school and the active semester first.
-      const [studentRes, semesterRes] = await Promise.all([
-        supabase
-          .from('students')
-          .select('id, university')
-          .eq('id', studentId)
-          .single(),
+      const [studentRes, semesterRes, assignmentRes] =
+        await Promise.all([
+          supabase
+            .from('students')
+            .select('id, name, university, program, subject')
+            .eq('id', studentId)
+            .single(),
 
-        supabase
-          .from('semesters')
-          .select('id')
-          .eq('status', 'active')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-      ])
+          supabase
+            .from('semesters')
+            .select('id')
+            .eq('status', 'active')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+
+          supabase
+            .from('student_subjects')
+            .select('subject_id, active')
+            .eq('student_id', studentId),
+        ])
 
       if (studentRes.error) throw studentRes.error
       if (semesterRes.error) throw semesterRes.error
+      if (assignmentRes.error) {
+        throw new Error(
+          `Subject assignments could not be loaded: ${assignmentRes.error.message}`
+        )
+      }
 
-      const school = studentRes.data?.university || null
+      const studentRow = studentRes.data
+      const school = studentRow?.university || null
       const semesterId = semesterRes.data?.id || null
 
-      setStudentSchool(school)
-      setActiveSemesterId(semesterId)
+      const subjectIds = (assignmentRes.data || [])
+        .filter((row) => row.active !== false)
+        .map((row) => row.subject_id)
 
-      // Load candidate requirements and this student's activity rows.
+      let subjectRows = []
+
+      if (subjectIds.length > 0) {
+        const { data, error: subjectError } = await supabase
+          .from('subjects')
+          .select('*')
+          .in('id', subjectIds)
+          .order('name', { ascending: true })
+
+        if (subjectError) throw subjectError
+        subjectRows = data || []
+      }
+
       const [reqRes, actRes] = await Promise.all([
         supabase
           .from('activity_requirements')
@@ -83,13 +133,13 @@ export function useStudentActivity(studentId) {
       if (reqRes.error) throw reqRes.error
       if (actRes.error) throw actRes.error
 
-      const filteredRequirements = (reqRes.data || []).filter(
+      const assignedSubjectSet = new Set(subjectIds)
+
+      const eligibleRequirements = (reqRes.data || []).filter(
         (requirement) => {
           const isStudentSpecific =
             requirement.student_id === studentId
 
-          // Current view = active semester requirements
-          // plus global requirements.
           const belongsToCurrentSemester = semesterId
             ? requirement.semester_id === semesterId ||
               requirement.semester_id == null
@@ -99,58 +149,112 @@ export function useStudentActivity(studentId) {
             return false
           }
 
-          // Custom requirement explicitly attached
-          // to this student is always valid.
+          if (
+            requirement.student_id != null &&
+            !isStudentSpecific
+          ) {
+            return false
+          }
+
+          // Subject-linked activities require that assignment.
+          if (
+            requirement.subject_id != null &&
+            !assignedSubjectSet.has(requirement.subject_id) &&
+            !isStudentSpecific
+          ) {
+            return false
+          }
+
           if (isStudentSpecific) {
             return true
           }
 
-          // Global requirements:
-          // - SHARED = both schools
-          // - otherwise school must match exactly
-          if (requirement.student_id == null) {
-            if (requirement.university === 'SHARED') {
-              return true
-            }
-
-            return (
-              Boolean(school) &&
-              requirement.university === school
-            )
+          if (requirement.university === 'SHARED') {
+            return true
           }
 
-          return false
+          return (
+            Boolean(school) &&
+            requirement.university === school
+          )
         }
       )
 
-      const allowedRequirementIds = new Set(
-        filteredRequirements.map(
-          (requirement) => requirement.id
-        )
+      const legacyRequirements = eligibleRequirements.filter(
+        (requirement) => requirement.subject_id == null
       )
 
-      // Do not let historical or cross-school rows
-      // affect this student's current view.
-      const filteredActivity = (actRes.data || []).filter(
-        (item) =>
-          allowedRequirementIds.has(item.requirement_id)
-      )
+      const normalizedSubjects = subjectRows.map((subject) => ({
+        ...subject,
+        id: subject.id,
+        legacy: false,
+      }))
 
-      setRequirements(filteredRequirements)
-      setActivity(filteredActivity)
+      // Compatibility behavior:
+      // - One assigned subject: legacy activities temporarily count under it.
+      // - Multiple assigned subjects: legacy activities are shown separately
+      //   because we cannot safely guess which subject owns them.
+      // - No normalized assignment: use the old students.subject text.
+      if (
+        normalizedSubjects.length > 1 &&
+        legacyRequirements.length > 0
+      ) {
+        normalizedSubjects.push({
+          id: LEGACY_SUBJECT_ID,
+          name: 'Legacy / Unassigned',
+          university: school,
+          legacy: true,
+        })
+      } else if (normalizedSubjects.length === 0) {
+        if (studentRow?.subject) {
+          normalizedSubjects.push({
+            id: FALLBACK_SUBJECT_ID,
+            name: studentRow.subject,
+            university: school,
+            legacy: true,
+            fallback: true,
+          })
+        } else if (legacyRequirements.length > 0) {
+          normalizedSubjects.push({
+            id: LEGACY_SUBJECT_ID,
+            name: 'General Activities',
+            university: school,
+            legacy: true,
+          })
+        }
+      }
+
+      setStudent(studentRow)
+      setSubjects(normalizedSubjects)
+      setAllRequirements(eligibleRequirements)
+      setActivity(actRes.data || [])
+      setActiveSemesterId(semesterId)
+
+      setSelectedSubjectId((current) => {
+        if (
+          current != null &&
+          normalizedSubjects.some(
+            (subject) =>
+              String(subject.id) === String(current)
+          )
+        ) {
+          return current
+        }
+
+        return normalizedSubjects[0]?.id ?? null
+      })
     } catch (err) {
-      console.error(
-        'Error loading student activity:',
-        err
-      )
+      console.error('Error loading student activity:', err)
 
       setError(
-        err.message ||
-          'Unable to load student activity.'
+        err.message || 'Unable to load student activity.'
       )
 
-      setRequirements([])
+      setStudent(null)
+      setSubjects([])
+      setAllRequirements([])
       setActivity([])
+      setSelectedSubjectId(null)
     } finally {
       setLoading(false)
     }
@@ -159,6 +263,67 @@ export function useStudentActivity(studentId) {
   useEffect(() => {
     load()
   }, [load])
+
+  const realSubjectCount = useMemo(
+    () =>
+      subjects.filter(
+        (subject) =>
+          subject.id !== LEGACY_SUBJECT_ID &&
+          subject.id !== FALLBACK_SUBJECT_ID
+      ).length,
+    [subjects]
+  )
+
+  function requirementsForSubject(subjectId) {
+    if (subjectId == null) return []
+
+    const isLegacy =
+      subjectId === LEGACY_SUBJECT_ID ||
+      subjectId === FALLBACK_SUBJECT_ID
+
+    if (isLegacy) {
+      return allRequirements.filter(
+        (requirement) =>
+          requirement.subject_id == null
+      )
+    }
+
+    return allRequirements.filter((requirement) => {
+      if (
+        String(requirement.subject_id) ===
+        String(subjectId)
+      ) {
+        return true
+      }
+
+      // Migration compatibility: when a student currently has only one
+      // normalized subject, unassigned legacy activities are temporarily
+      // included in that subject until the admin moves them.
+      return (
+        realSubjectCount === 1 &&
+        requirement.subject_id == null
+      )
+    })
+  }
+
+  const requirements = useMemo(
+    () => requirementsForSubject(selectedSubjectId),
+    [
+      allRequirements,
+      selectedSubjectId,
+      realSubjectCount,
+    ]
+  )
+
+  const selectedSubject = useMemo(
+    () =>
+      subjects.find(
+        (subject) =>
+          String(subject.id) ===
+          String(selectedSubjectId)
+      ) || null,
+    [subjects, selectedSubjectId]
+  )
 
   const getActivity = useCallback(
     (requirementId) =>
@@ -169,18 +334,20 @@ export function useStudentActivity(studentId) {
     [activity]
   )
 
-  const progress = useMemo(() => {
-    const requirementIds = new Set(
-      requirements.map((r) => r.id)
+  function buildProgress(requirementsForProgress) {
+    const ids = new Set(
+      requirementsForProgress.map(
+        (requirement) => requirement.id
+      )
     )
 
     const completed = activity.filter(
       (item) =>
-        item.completed &&
-        requirementIds.has(item.requirement_id)
+        item.completed === true &&
+        ids.has(item.requirement_id)
     ).length
 
-    const total = requirements.length
+    const total = requirementsForProgress.length
 
     return {
       completed,
@@ -190,40 +357,42 @@ export function useStudentActivity(studentId) {
           ? Math.round((completed / total) * 100)
           : 0,
     }
-  }, [activity, requirements])
+  }
 
-  const requirementsByWeek = useMemo(() => {
-    const groups = {}
+  const progress = useMemo(
+    () => buildProgress(requirements),
+    [requirements, activity]
+  )
 
-    requirements.forEach((requirement) => {
-      const week = requirement.week ?? 0
+  const subjectProgress = useMemo(
+    () =>
+      subjects.map((subject) => {
+        const subjectRequirements =
+          requirementsForSubject(subject.id)
 
-      if (!groups[week]) {
-        groups[week] = []
-      }
+        return {
+          ...subject,
+          progress: buildProgress(subjectRequirements),
+          requirementCount: subjectRequirements.length,
+        }
+      }),
+    [
+      subjects,
+      allRequirements,
+      activity,
+      realSubjectCount,
+    ]
+  )
 
-      groups[week].push(requirement)
-    })
-
-    return Object.entries(groups)
-      .sort(
-        ([a], [b]) =>
-          Number(a) - Number(b)
-      )
-      .map(([week, items]) => ({
-        week: Number(week),
-        label:
-          Number(week) === 0
-            ? 'General'
-            : `Week ${week}`,
-        items,
-      }))
-  }, [requirements])
+  const requirementsByWeek = useMemo(
+    () => groupByWeek(requirements),
+    [requirements]
+  )
 
   const weekOptions = useMemo(() => {
     const weeks = new Set(
-      requirements.map((r) =>
-        Number(r.week ?? 0)
+      requirements.map((requirement) =>
+        Number(requirement.week ?? 0)
       )
     )
 
@@ -234,78 +403,71 @@ export function useStudentActivity(studentId) {
     )
   }, [requirements])
 
+  const currentActivity = useMemo(() => {
+    if (!requirements.length) return null
+
+    return (
+      requirements.find((requirement) => {
+        const item = getActivity(requirement.id)
+        return item?.completed !== true
+      }) || null
+    )
+  }, [requirements, getActivity])
+
   async function toggleRequirement(requirementId) {
     const allowed = requirements.some(
-      (r) => r.id === requirementId
+      (requirement) =>
+        requirement.id === requirementId
     )
 
     if (!allowed) {
       setError(
-        'This activity is not available for this student.'
+        'This activity is not available in the selected subject.'
       )
       return
     }
 
-    const existing =
-      getActivity(requirementId)
-
+    const existing = getActivity(requirementId)
     const currentCompleted =
       existing?.completed || false
 
     setError('')
 
     if (existing) {
-      const { error: updateError } =
+      const { data, error: updateError } =
         await supabase
           .from('student_activity')
           .update({
             completed: !currentCompleted,
-            updated_at:
-              new Date().toISOString(),
+            updated_at: new Date().toISOString(),
           })
           .eq('id', existing.id)
+          .select()
+          .single()
 
       if (updateError) {
-        console.error(
-          'Error updating activity:',
-          updateError
-        )
-
         setError(updateError.message)
         return
       }
 
       setActivity((current) =>
         current.map((item) =>
-          item.id === existing.id
-            ? {
-                ...item,
-                completed:
-                  !currentCompleted,
-              }
-            : item
+          item.id === existing.id ? data : item
         )
       )
     } else {
-      const {
-        data,
-        error: insertError,
-      } = await supabase
-        .from('student_activity')
-        .insert({
-          student_id: studentId,
-          requirement_id: requirementId,
-          completed: true,
-        })
-        .select()
-        .single()
+      const { data, error: insertError } =
+        await supabase
+          .from('student_activity')
+          .insert({
+            student_id: studentId,
+            requirement_id: requirementId,
+            completed: true,
+          })
+          .select()
+          .single()
 
       if (insertError) {
-        console.error(
-          'Error creating activity:',
-          insertError
-        )
-
         setError(insertError.message)
         return
       }
@@ -317,78 +479,59 @@ export function useStudentActivity(studentId) {
     }
   }
 
-  async function updateNote(
-    requirementId,
-    note
-  ) {
+  async function updateNote(requirementId, note) {
     const allowed = requirements.some(
-      (r) => r.id === requirementId
+      (requirement) =>
+        requirement.id === requirementId
     )
 
     if (!allowed) {
       setError(
-        'This activity is not available for this student.'
+        'This activity is not available in the selected subject.'
       )
       return
     }
 
-    const existing =
-      getActivity(requirementId)
+    const existing = getActivity(requirementId)
 
     setError('')
 
     if (existing) {
-      const { error: updateError } =
+      const { data, error: updateError } =
         await supabase
           .from('student_activity')
           .update({
             note,
-            updated_at:
-              new Date().toISOString(),
+            updated_at: new Date().toISOString(),
           })
           .eq('id', existing.id)
+          .select()
+          .single()
 
       if (updateError) {
-        console.error(
-          'Error saving activity note:',
-          updateError
-        )
-
         setError(updateError.message)
         return
       }
 
       setActivity((current) =>
         current.map((item) =>
-          item.id === existing.id
-            ? {
-                ...item,
-                note,
-              }
-            : item
+          item.id === existing.id ? data : item
         )
       )
     } else if (note.trim()) {
-      const {
-        data,
-        error: insertError,
-      } = await supabase
-        .from('student_activity')
-        .insert({
-          student_id: studentId,
-          requirement_id: requirementId,
-          completed: false,
-          note,
-        })
-        .select()
-        .single()
+      const { data, error: insertError } =
+        await supabase
+          .from('student_activity')
+          .insert({
+            student_id: studentId,
+            requirement_id: requirementId,
+            completed: false,
+            note,
+          })
+          .select()
+          .single()
 
       if (insertError) {
-        console.error(
-          'Error creating activity note:',
-          insertError
-        )
-
         setError(insertError.message)
         return
       }
@@ -401,72 +544,63 @@ export function useStudentActivity(studentId) {
   }
 
   async function addActivity(label, week) {
-    if (!label.trim()) {
-      return
-    }
+    if (!label.trim()) return
 
     setError('')
 
-    const maxSortOrder =
-      requirements.reduce(
-        (max, r) =>
-          Math.max(
-            max,
-            r.sort_order ?? 0
-          ),
-        0
-      )
+    const maxSortOrder = allRequirements.reduce(
+      (max, requirement) =>
+        Math.max(
+          max,
+          Number(requirement.sort_order ?? 0)
+        ),
+      0
+    )
+
+    const selectedIsRealSubject =
+      selectedSubjectId != null &&
+      selectedSubjectId !== LEGACY_SUBJECT_ID &&
+      selectedSubjectId !== FALLBACK_SUBJECT_ID
 
     const payload = {
       label: label.trim(),
       week: Number(week),
       student_id: studentId,
-      university: studentSchool,
+      university: student?.university || null,
+      subject_id: selectedIsRealSubject
+        ? selectedSubjectId
+        : null,
       sort_order: maxSortOrder + 1,
     }
 
     if (activeSemesterId) {
-      payload.semester_id =
-        activeSemesterId
+      payload.semester_id = activeSemesterId
     }
 
-    const {
-      data,
-      error: insertError,
-    } = await supabase
-      .from('activity_requirements')
-      .insert(payload)
-      .select()
-      .single()
+    const { data, error: insertError } =
+      await supabase
+        .from('activity_requirements')
+        .insert(payload)
+        .select()
+        .single()
 
     if (insertError) {
-      console.error(
-        'Error adding custom activity:',
-        insertError
-      )
-
       setError(insertError.message)
       return
     }
 
-    setRequirements((current) => [
+    setAllRequirements((current) => [
       ...current,
       data,
     ])
   }
 
-  async function deleteActivity(
-    requirement
-  ) {
+  async function deleteActivity(requirement) {
     setError('')
 
-    // Only student-specific activities should
-    // be deleted from the student modal.
-    if (
-      requirement.student_id !== studentId
-    ) {
+    if (requirement.student_id !== studentId) {
       setError(
-        'School-wide activities cannot be deleted from a student record.'
+        'Subject repository activities cannot be deleted from a student record.'
       )
       return
     }
@@ -474,10 +608,7 @@ export function useStudentActivity(studentId) {
     await supabase
       .from('student_activity')
       .delete()
-      .eq(
-        'requirement_id',
-        requirement.id
-      )
+      .eq('requirement_id', requirement.id)
       .eq('student_id', studentId)
 
     const { error: deleteError } =
@@ -488,38 +619,42 @@ export function useStudentActivity(studentId) {
         .eq('student_id', studentId)
 
     if (deleteError) {
-      console.error(
-        'Error deleting custom activity:',
-        deleteError
-      )
-
       setError(deleteError.message)
       return
     }
 
-    setRequirements((current) =>
+    setAllRequirements((current) =>
       current.filter(
-        (r) => r.id !== requirement.id
+        (item) => item.id !== requirement.id
       )
     )
 
     setActivity((current) =>
       current.filter(
         (item) =>
-          item.requirement_id !==
-          requirement.id
+          item.requirement_id !== requirement.id
       )
     )
   }
 
   return {
+    student,
+    subjects,
+    selectedSubject,
+    selectedSubjectId,
+    setSelectedSubjectId,
+    subjectProgress,
+
     requirements,
+    allRequirements,
     activity,
     loading,
     error,
     progress,
+    currentActivity,
     requirementsByWeek,
     weekOptions,
+
     getActivity,
     toggleRequirement,
     updateNote,
