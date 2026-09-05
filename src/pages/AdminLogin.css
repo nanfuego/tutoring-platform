@@ -1,519 +1,167 @@
-/* ============================================================
-   ADMIN LOGIN — SPLIT CARD REVAMP
-   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
 
-.admin-login-page {
+.wp-login-page {
   min-height: 100vh;
-  box-sizing: border-box;
   display: grid;
   place-items: center;
-  padding: 32px;
-
+  padding: 34px 20px;
   background:
-    radial-gradient(circle at top left, rgba(23, 76, 58, 0.08), transparent 30%),
-    linear-gradient(135deg, #f3f4f2 0%, #ecefef 100%);
-
-  color: #253044;
-  font-family: var(--font-body, 'Inter', sans-serif);
+    radial-gradient(circle at 10% 15%, rgba(13,79,60,.06), transparent 26%),
+    radial-gradient(circle at 90% 80%, rgba(13,79,60,.05), transparent 30%),
+    linear-gradient(180deg, #fbfaf5 0%, #f4f3ed 100%);
+  font-family: 'Inter', sans-serif;
 }
 
-.admin-login-shell {
-  width: min(960px, 100%);
-  min-height: 560px;
-
-  display: grid;
-  grid-template-columns: 42% 58%;
-
-  overflow: hidden;
-
-  border: 1px solid rgba(210, 216, 219, 0.95);
-  border-radius: 18px;
-
-  background: #ffffff;
-
-  box-shadow:
-    0 28px 75px rgba(15, 23, 42, 0.16);
+.wp-login-card {
+  width: min(560px, 100%);
+  padding: 34px;
+  border: 1px solid rgba(13,79,60,.08);
+  border-radius: 20px;
+  background: rgba(255,253,249,.94);
+  box-shadow: 0 24px 65px rgba(20,42,35,.14);
 }
 
-/* ============================================================
-   LEFT BRAND PANEL
-   ============================================================ */
-
-.admin-login-brand {
-  position: relative;
-  min-height: 560px;
-  overflow: hidden;
-
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-
-  padding: 26px;
-
-  background:
-    linear-gradient(
-      155deg,
-      #163f34 0%,
-      #174c3a 46%,
-      #213f37 100%
-    );
-
-  color: #ffffff;
-}
-
-.admin-login-brand-overlay {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-
-  background:
-    linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.04),
-      transparent 25%,
-      rgba(5, 17, 13, 0.08)
-    );
-}
-
-.admin-login-brand-top,
-.admin-login-brand-art,
-.admin-login-brand-copy {
-  position: relative;
-  z-index: 1;
-}
-
-.admin-login-brand-logo {
-  display: block;
-  width: min(150px, 70%);
+.wp-login-logo {
+  width: min(390px, 88%);
   height: auto;
-
-  padding: 8px 10px;
-
-  border-radius: 10px;
-
-  background: rgba(255, 255, 255, 0.94);
-  object-fit: contain;
-}
-
-.admin-login-brand-art {
-  position: relative;
-  height: 235px;
-  margin: 18px 0 8px;
-}
-
-.admin-login-orb {
-  position: absolute;
   display: block;
-  border-radius: 50%;
-  filter: blur(0.3px);
+  margin: 0 auto 28px;
 }
 
-.orb-one {
-  width: 155px;
-  height: 155px;
-  left: 20px;
-  top: 35px;
-  background: rgba(255, 255, 255, 0.08);
+.wp-login-form-card {
+  padding: 28px;
+  border: 1px solid #e1e5e0;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(30,45,40,.07);
 }
 
-.orb-two {
-  width: 95px;
-  height: 95px;
-  right: 22px;
-  top: 14px;
-  background: rgba(234, 243, 239, 0.1);
-}
-
-.orb-three {
-  width: 75px;
-  height: 75px;
-  right: 54px;
-  bottom: 8px;
-  background: rgba(255, 255, 255, 0.07);
-}
-
-.admin-login-art-card {
-  position: absolute;
-
-  min-width: 105px;
-  padding: 12px 14px;
-
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 12px;
-
-  background: rgba(255, 255, 255, 0.1);
-
-  box-shadow:
-    0 12px 30px rgba(4, 19, 14, 0.16);
-
-  backdrop-filter: blur(10px);
-}
-
-.admin-login-art-card span,
-.admin-login-art-card strong {
-  display: block;
-}
-
-.admin-login-art-card span {
-  margin-bottom: 4px;
-
-  color: rgba(255, 255, 255, 0.66);
-
-  font-size: 8px;
-  font-weight: 800;
-
-  letter-spacing: 0.12em;
-}
-
-.admin-login-art-card strong {
-  color: #ffffff;
-
-  font-family: var(--font-display, 'Fraunces', serif);
-  font-size: 16px;
-  font-weight: 500;
-}
-
-.card-one {
-  top: 20px;
-  left: 28px;
-}
-
-.card-two {
-  top: 98px;
-  right: 18px;
-}
-
-.card-three {
-  bottom: 6px;
-  left: 54px;
-}
-
-.admin-login-brand-kicker {
-  display: block;
-  margin-bottom: 8px;
-
-  color: rgba(255, 255, 255, 0.68);
-
-  font-size: 9px;
-  font-weight: 800;
-
-  letter-spacing: 0.14em;
-}
-
-.admin-login-brand-copy h2 {
-  max-width: 330px;
-
+.wp-login-form-card h1 {
   margin: 0;
-
-  color: #ffffff;
-
-  font-family: var(--font-display, 'Fraunces', serif);
-  font-size: 26px;
-  line-height: 1.14;
-  font-weight: 500;
-
-  letter-spacing: -0.02em;
+  color: #153f35;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 34px;
+  line-height: 1;
+  font-weight: 600;
+  text-align: center;
 }
 
-.admin-login-brand-copy p {
-  max-width: 310px;
-
-  margin: 10px 0 0;
-
-  color: rgba(255, 255, 255, 0.72);
-
+.wp-login-form-card > p {
+  margin: 8px 0 23px;
+  color: #7b8782;
   font-size: 11px;
-  line-height: 1.6;
+  text-align: center;
 }
 
-/* ============================================================
-   RIGHT LOGIN PANEL
-   ============================================================ */
-
-.admin-login-panel {
-  min-width: 0;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  padding: 54px;
-}
-
-.admin-login-form-wrap {
-  width: min(360px, 100%);
-}
-
-.admin-login-heading {
-  margin-bottom: 28px;
-}
-
-.admin-login-eyebrow {
-  display: block;
-  margin-bottom: 7px;
-
-  color: #748093;
-
-  font-size: 9px;
-  line-height: 1.2;
-  font-weight: 800;
-
-  letter-spacing: 0.15em;
-}
-
-.admin-login-heading h1 {
-  margin: 0;
-
-  color: #182235;
-
-  font-family: var(--font-display, 'Fraunces', serif);
-  font-size: 31px;
-  line-height: 1.15;
-  font-weight: 500;
-
-  letter-spacing: -0.025em;
-}
-
-.admin-login-heading p {
-  margin: 9px 0 0;
-
-  color: #7a8595;
-
-  font-size: 11px;
-  line-height: 1.55;
-}
-
-.admin-login-form {
+.wp-login-form-card form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
-.admin-login-field {
+.wp-login-form-card label {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
 
-  color: #596579;
-
+.wp-login-form-card label > span {
+  color: #53625d;
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
-.admin-login-field input {
+.wp-login-form-card input {
   width: 100%;
-  height: 40px;
-
-  box-sizing: border-box;
-
-  padding: 0 11px;
-
-  border: 1px solid #d9e0e5;
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid #d9dfdc;
   border-radius: 8px;
-
-  outline: none;
-
-  background: #ffffff;
-  color: #344055;
-
-  font-family: inherit;
-  font-size: 11px;
-
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
+  outline: 0;
+  color: #253a34;
+  font: 500 11px 'Inter', sans-serif;
 }
 
-.admin-login-field input::placeholder {
-  color: #a3adb9;
+.wp-login-form-card input:focus {
+  border-color: #7fa395;
+  box-shadow: 0 0 0 3px rgba(13,79,60,.07);
 }
 
-.admin-login-field input:focus {
-  border-color: #8eaaa1;
-
-  box-shadow:
-    0 0 0 3px rgba(23, 76, 58, 0.08);
-}
-
-.admin-login-password {
+.wp-password-row {
   position: relative;
 }
 
-.admin-login-password input {
-  padding-right: 58px;
+.wp-password-row input {
+  padding-right: 60px;
 }
 
-.admin-login-show-password {
+.wp-password-row button {
   position: absolute;
   top: 50%;
   right: 7px;
   transform: translateY(-50%);
-
-  min-width: 44px;
-  height: 28px;
-
-  padding: 0 8px;
-
+  min-width: 45px;
+  height: 29px;
   border: 0;
   border-radius: 6px;
-
-  background: #f1f4f3;
-  color: #536071;
-
-  font-family: inherit;
+  background: #eef3f0;
+  color: #37584d;
   font-size: 9px;
   font-weight: 700;
-
   cursor: pointer;
 }
 
-.admin-login-show-password:hover {
-  background: #e7ecea;
-  color: #174c3a;
-}
-
-.admin-login-error {
-  margin-top: -4px;
+.wp-login-error {
   padding: 9px 10px;
-
-  border: 1px solid #efc9c6;
+  border: 1px solid #efcbc8;
   border-radius: 8px;
-
-  background: #fff5f4;
-  color: #9e463f;
-
+  background: #fff4f3;
+  color: #9b463f;
   font-size: 10px;
-  line-height: 1.45;
 }
 
-.admin-login-submit {
-  width: 100%;
-  min-height: 41px;
-
-  margin-top: 2px;
-
-  border: 1px solid #174c3a;
+.wp-login-form-card form > button {
+  min-height: 43px;
+  border: 0;
   border-radius: 8px;
-
-  background: #174c3a;
-  color: #ffffff;
-
-  font-family: inherit;
-  font-size: 11px;
-  font-weight: 700;
-
+  background: linear-gradient(180deg, #126a53, #0d4f3c);
+  color: #fff;
+  font: 700 11px 'Inter', sans-serif;
   cursor: pointer;
-
-  box-shadow:
-    0 4px 10px rgba(23, 76, 58, 0.14);
-
-  transition:
-    background 0.15s ease,
-    border-color 0.15s ease,
-    box-shadow 0.15s ease,
-    transform 0.15s ease;
+  box-shadow: 0 7px 18px rgba(13,79,60,.14);
 }
 
-.admin-login-submit:hover:not(:disabled) {
-  border-color: #123f30;
-  background: #123f30;
-
-  transform: translateY(-1px);
-
-  box-shadow:
-    0 6px 14px rgba(23, 76, 58, 0.18);
+.wp-login-form-card form > button:disabled {
+  opacity: .6;
+  cursor: default;
 }
 
-.admin-login-submit:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+.wp-back-home {
+  display: block;
+  margin-top: 19px;
+  color: #416159;
+  font-size: 10px;
+  text-align: center;
+  text-decoration: none;
 }
 
-.admin-login-security {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-
-  margin-top: 22px;
-
-  color: #98a2ae;
-
-  font-size: 9px;
-}
-
-.admin-login-security-dot {
-  width: 6px;
-  height: 6px;
-
-  border-radius: 50%;
-
-  background: #174c3a;
-
-  box-shadow:
-    0 0 0 3px rgba(23, 76, 58, 0.08);
-}
-
-/* ============================================================
-   RESPONSIVE
-   ============================================================ */
-
-@media (max-width: 780px) {
-  .admin-login-page {
-    padding: 18px;
-  }
-
-  .admin-login-shell {
-    grid-template-columns: 1fr;
-    min-height: 0;
-  }
-
-  .admin-login-brand {
-    min-height: 250px;
-    padding: 22px;
-  }
-
-  .admin-login-brand-art {
-    display: none;
-  }
-
-  .admin-login-brand-copy {
-    margin-top: 34px;
-  }
-
-  .admin-login-brand-copy h2 {
-    max-width: 430px;
-    font-size: 23px;
-  }
-
-  .admin-login-panel {
-    padding: 38px 28px 42px;
-  }
-}
-
-@media (max-width: 480px) {
-  .admin-login-page {
+@media (max-width: 520px) {
+  .wp-login-page {
     padding: 0;
-    background: #ffffff;
+    background: #fbfaf5;
   }
 
-  .admin-login-shell {
+  .wp-login-card {
     min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     border: 0;
     border-radius: 0;
     box-shadow: none;
   }
 
-  .admin-login-brand {
-    min-height: 215px;
-    border-radius: 0;
-  }
-
-  .admin-login-panel {
-    padding: 32px 22px 38px;
-  }
-
-  .admin-login-heading h1 {
-    font-size: 28px;
+  .wp-login-form-card {
+    padding: 22px;
   }
 }

@@ -1,0 +1,372 @@
+@import url('https://fonts.googleapis.com/css2?family=Allura&family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+.about-page {
+  background: #fbfaf5;
+}
+
+.about-hero {
+  padding: 92px 0 84px;
+  background:
+    radial-gradient(circle at 12% 14%, rgba(13,79,60,.07), transparent 27%),
+    radial-gradient(circle at 88% 8%, rgba(13,79,60,.045), transparent 24%),
+    linear-gradient(180deg, #fffdf9 0%, #f6f4ed 100%);
+}
+
+.about-hero-inner {
+  max-width: 1060px;
+  text-align: center;
+}
+
+.about-hero h1 {
+  max-width: 980px;
+  margin: 14px auto 0;
+  color: var(--wp-green-deep);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: clamp(54px, 6vw, 82px);
+  line-height: .92;
+  font-weight: 600;
+  letter-spacing: -.035em;
+}
+
+.about-hero p {
+  max-width: 820px;
+  margin: 26px auto 0;
+  color: #43564f;
+  font-size: 15px;
+  line-height: 1.75;
+}
+
+.about-story-strip {
+  border-top: 1px solid rgba(13,79,60,.09);
+  border-bottom: 1px solid rgba(13,79,60,.09);
+  background: #fffdf9;
+}
+
+.about-story-strip-inner {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.about-story-strip-inner > div {
+  min-height: 115px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 22px 30px;
+  border-right: 1px solid rgba(13,79,60,.09);
+  text-align: center;
+}
+
+.about-story-strip-inner > div:last-child {
+  border-right: 0;
+}
+
+.about-story-strip span {
+  color: #6f8179;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.about-story-strip strong {
+  margin-top: 7px;
+  color: var(--wp-green-deep);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.about-team {
+  padding: 96px 0 88px;
+}
+
+.about-person {
+  display: grid;
+  grid-template-columns: minmax(360px, .9fr) minmax(0, 1.1fr);
+  gap: 72px;
+  align-items: center;
+  padding: 64px 0;
+  border-bottom: 1px solid rgba(13,79,60,.10);
+}
+
+.about-person:first-child {
+  padding-top: 0;
+}
+
+.about-person:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.about-person.reverse .about-person-photo-wrap {
+  order: 2;
+}
+
+.about-person.reverse .about-person-copy {
+  order: 1;
+}
+
+.about-person-photo-wrap {
+  position: relative;
+}
+
+.about-person-photo {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border-radius: 30px;
+  background: #e9eee9;
+  box-shadow: 0 28px 65px rgba(7,62,48,.12);
+}
+
+.about-person.featured .about-person-photo {
+  aspect-ratio: 4 / 4.65;
+}
+
+.about-person-photo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(255,255,255,.42);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.about-person-photo img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center;
+}
+
+.about-person.featured .about-person-photo img {
+  object-position: center 45%;
+}
+
+.about-founder-badge {
+  position: absolute;
+  right: -14px;
+  bottom: 28px;
+  z-index: 3;
+  padding: 11px 18px;
+  border-radius: 999px;
+  background: #0d4f3c;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  box-shadow: 0 12px 30px rgba(7,62,48,.2);
+}
+
+.about-person-role {
+  display: block;
+  color: #2f725f;
+  font-size: 10px;
+  line-height: 1.4;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.about-person-copy h2 {
+  margin: 10px 0 0;
+  color: var(--wp-green-deep);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: clamp(42px, 4vw, 58px);
+  line-height: .98;
+  font-weight: 600;
+  letter-spacing: -.025em;
+}
+
+.about-person-text {
+  margin-top: 22px;
+}
+
+.about-person-text p {
+  margin: 0;
+  color: #455750;
+  font-size: 13px;
+  line-height: 1.78;
+}
+
+.about-person-text p + p {
+  margin-top: 15px;
+}
+
+.about-person.featured .about-person-copy {
+  position: relative;
+}
+
+.about-person.featured .about-person-copy::before {
+  content: '“';
+  position: absolute;
+  top: -45px;
+  right: 4%;
+  color: rgba(13,79,60,.07);
+  font-family: Georgia, serif;
+  font-size: 160px;
+  line-height: 1;
+}
+
+.about-closing {
+  padding: 24px 0 96px;
+}
+
+.about-closing-card {
+  padding: 62px 70px 58px;
+  border: 1px solid rgba(13,79,60,.12);
+  border-radius: 32px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(13,79,60,.08), transparent 30%),
+    linear-gradient(135deg, rgba(232,240,235,.95), rgba(255,253,249,.96));
+  text-align: center;
+  box-shadow: 0 28px 70px rgba(7,62,48,.08);
+}
+
+.about-closing h2 {
+  max-width: 760px;
+  margin: 10px auto 0;
+  color: var(--wp-green-deep);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: clamp(44px, 4.6vw, 62px);
+  line-height: .98;
+  font-weight: 600;
+}
+
+.about-closing p {
+  max-width: 790px;
+  margin: 17px auto 0;
+  color: #465950;
+  font-size: 13px;
+  line-height: 1.75;
+}
+
+.about-closing p strong {
+  color: var(--wp-green-deep);
+}
+
+.about-closing-signature {
+  margin-top: 30px;
+  color: rgba(13,79,60,.92);
+  font-family: 'Allura', cursive;
+  font-size: clamp(38px, 4vw, 55px);
+  line-height: 1;
+  transform: rotate(-2deg);
+}
+
+.about-closing-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+@media (max-width: 980px) {
+  .about-person {
+    gap: 44px;
+    grid-template-columns: minmax(300px, .88fr) minmax(0, 1.12fr);
+  }
+
+  .about-person-copy h2 {
+    font-size: 44px;
+  }
+}
+
+@media (max-width: 760px) {
+  .about-hero {
+    padding: 68px 0 62px;
+  }
+
+  .about-hero h1 {
+    font-size: 52px;
+  }
+
+  .about-story-strip-inner {
+    grid-template-columns: 1fr;
+  }
+
+  .about-story-strip-inner > div {
+    min-height: 86px;
+    border-right: 0;
+    border-bottom: 1px solid rgba(13,79,60,.09);
+  }
+
+  .about-story-strip-inner > div:last-child {
+    border-bottom: 0;
+  }
+
+  .about-team {
+    padding: 70px 0;
+  }
+
+  .about-person,
+  .about-person.reverse {
+    grid-template-columns: 1fr;
+    gap: 30px;
+    padding: 50px 0;
+  }
+
+  .about-person.reverse .about-person-photo-wrap,
+  .about-person.reverse .about-person-copy {
+    order: initial;
+  }
+
+  .about-person-photo-wrap {
+    max-width: 520px;
+  }
+
+  .about-person-photo {
+    aspect-ratio: 4 / 4.8;
+  }
+
+  .about-person.featured .about-person-photo {
+    aspect-ratio: 4 / 4.6;
+  }
+
+  .about-founder-badge {
+    right: 14px;
+  }
+
+  .about-closing-card {
+    padding: 48px 30px 44px;
+  }
+}
+
+@media (max-width: 520px) {
+  .about-hero h1 {
+    font-size: 43px;
+  }
+
+  .about-hero p {
+    font-size: 14px;
+  }
+
+  .about-person-copy h2 {
+    font-size: 38px;
+  }
+
+  .about-person-text p {
+    font-size: 12px;
+  }
+
+  .about-closing-card {
+    padding: 42px 22px 40px;
+    border-radius: 24px;
+  }
+
+  .about-closing h2 {
+    font-size: 40px;
+  }
+
+  .about-closing-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .about-closing-actions .wp-button {
+    width: 100%;
+  }
+}
